@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Registrar" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/navy_600</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/melon_600</item>
+        <item name="android:windowBackground">@color/page_bg</item>
+        <!-- Every text field in the app picks these up -->
+        <item name="textInputStyle">@style/Widget.Registrar.InputLayout</item>
+        <item name="editTextStyle">@style/Widget.Registrar.EditText</item>
+        <!-- To match the prototype font: Resource Manager > Font > add Inter,
+             then add <item name="android:fontFamily">@font/inter</item> here. -->
+    </style>
+
+    <style name="Widget.Registrar.InputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/white</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/input_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxStrokeErrorColor">@color/red_400</item>
+        <item name="errorTextColor">@color/red_600</item>
+        <item name="errorTextAppearance">@style/TextAppearance.Registrar.Error</item>
+        <item name="errorIconDrawable">@null</item>
+        <!-- Labels sit above the field, so no floating hint -->
+        <item name="hintEnabled">false</item>
+    </style>
+
+    <style name="Widget.Registrar.EditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textColorHint">@color/slate_400</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+
+    <style name="TextAppearance.Registrar.Error" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/red_600</item>
+    </style>
+
+    <style name="Registrar.Label" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/navy_700</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Registrar.DemoKey" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">66dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">#B3FFFFFF</item>
+    </style>
+
+    <style name="Registrar.DemoValue" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">#CCFFFFFF</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+
+    <!-- Reused by the roster's Add/Edit student sheet for the two dropdowns -->
+    <style name="Registrar.FieldLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/navy_700</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Lecturer dashboard: the 4 stat tiles -->
+    <style name="Registrar.StatTile" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/bg_stat_tile</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">10dp</item>
+    </style>
+
+    <style name="Registrar.StatNumber" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/navy_900</item>
+    </style>
+
+    <style name="Registrar.StatLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">3dp</item>
+        <item name="android:textSize">10.5sp</item>
+        <item name="android:textColor">@color/slate_500</item>
+    </style>
+
+    <!-- Lecturer dashboard + Requests: a clickable row with a leading icon chip -->
+    <style name="Registrar.ActionRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingHorizontal">14dp</item>
+        <item name="android:paddingVertical">13dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="Registrar.ActionIconChip" parent="">
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">32dp</item>
+    </style>
+
+    <style name="Registrar.ActionIcon" parent="">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:layout_gravity">center</item>
+    </style>
+
+    <style name="Registrar.ActionTextCol" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="Registrar.ActionTitle" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">13.5sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/navy_900</item>
+    </style>
+
+    <style name="Registrar.ActionSub" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">1dp</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">@color/slate_500</item>
+    </style>
+
+    <style name="Registrar.ActionChevron" parent="">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+    </style>
+
+    <style name="Registrar.ActionDivider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/slate_100</item>
+    </style>
+</resources>

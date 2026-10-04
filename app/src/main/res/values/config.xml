@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Testing build shows the demo accounts on the sign-in screen.
+         Set to false before the real demo: it shows lecturer sign-in details. -->
+    <bool name="show_demo_hints">true</bool>
+</resources>

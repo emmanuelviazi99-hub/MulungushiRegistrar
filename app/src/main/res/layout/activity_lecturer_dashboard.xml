@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/page_bg">
+
+    <!-- Top bar: crest tile, title + "Lecturer Portal", solid navy initials avatar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/page_bg">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <ImageView
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:background="@drawable/bg_logo_tile"
+                android:padding="7dp"
+                android:src="@drawable/mulungushi_logo"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/logo_description" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/login_title"
+                    android:textColor="@color/navy_900"
+                    android:textStyle="bold"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="@string/lecturer_portal_sub"
+                    android:textColor="@color/slate_500"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/buttonSignOut"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_avatar_solid"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"
+                tools:text="BN" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/slate_200" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:paddingBottom="28dp">
+
+            <TextView
+                android:id="@+id/textWelcome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/navy_900"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-medium"
+                tools:text="Welcome back, Bella" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="16dp"
+                android:text="@string/term_label"
+                android:textColor="@color/slate_500"
+                android:textSize="13sp" />
+
+            <!-- 4 stat tiles -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="18dp"
+                android:orientation="horizontal">
+
+                <LinearLayout android:id="@+id/tileStudents" style="@style/Registrar.StatTile">
+                    <TextView android:id="@+id/tileStudentsNum" style="@style/Registrar.StatNumber" tools:text="6" />
+                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_students" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/tileGroupsFull" style="@style/Registrar.StatTile">
+                    <TextView android:id="@+id/tileGroupsFullNum" style="@style/Registrar.StatNumber" tools:text="0" />
+                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_groups_full" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/tileRequests" style="@style/Registrar.StatTile">
+                    <TextView android:id="@+id/tileRequestsNum" style="@style/Registrar.StatNumber" tools:text="1" />
+                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_requests" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/tileConflicts" style="@style/Registrar.StatTile">
+                    <TextView android:id="@+id/tileConflictsNum" style="@style/Registrar.StatNumber" tools:text="0" />
+                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_conflicts" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/section_group_occupancy"
+                android:textColor="@color/melon_600"
+                android:textAllCaps="true"
+                android:letterSpacing="0.04"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/occupancyList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_plain"
+                android:padding="14dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/section_quick_actions"
+                android:textColor="@color/melon_600"
+                android:textAllCaps="true"
+                android:letterSpacing="0.04"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_plain">
+
+                <LinearLayout
+                    android:id="@+id/actionRequests"
+                    style="@style/Registrar.ActionRow">
+                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
+                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_swap" app:tint="@color/indigo_600" />
+                    </FrameLayout>
+                    <LinearLayout style="@style/Registrar.ActionTextCol">
+                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_requests_title" />
+                        <TextView android:id="@+id/actionRequestsSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                    </LinearLayout>
+                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                </LinearLayout>
+
+                <View style="@style/Registrar.ActionDivider" />
+
+                <LinearLayout
+                    android:id="@+id/actionSync"
+                    style="@style/Registrar.ActionRow">
+                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_red">
+                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_alert_triangle" app:tint="@color/red_600" />
+                    </FrameLayout>
+                    <LinearLayout style="@style/Registrar.ActionTextCol">
+                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_needs_attention_title" />
+                        <TextView android:id="@+id/actionSyncSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                    </LinearLayout>
+                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                </LinearLayout>
+
+                <View style="@style/Registrar.ActionDivider" />
+
+                <LinearLayout
+                    android:id="@+id/actionRoster"
+                    style="@style/Registrar.ActionRow">
+                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_badge_navy">
+                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_list" app:tint="@color/navy_700" />
+                    </FrameLayout>
+                    <LinearLayout style="@style/Registrar.ActionTextCol">
+                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_roster_title" />
+                        <TextView style="@style/Registrar.ActionSub" android:text="@string/action_roster_sub" />
+                    </LinearLayout>
+                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                </LinearLayout>
+
+                <View style="@style/Registrar.ActionDivider" />
+
+                <LinearLayout
+                    android:id="@+id/actionAddStudent"
+                    style="@style/Registrar.ActionRow"
+                    android:paddingBottom="14dp">
+                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_green">
+                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_add" app:tint="@color/green_700" />
+                    </FrameLayout>
+                    <LinearLayout style="@style/Registrar.ActionTextCol">
+                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_add_student_title" />
+                        <TextView style="@style/Registrar.ActionSub" android:text="@string/action_add_student_sub" />
+                    </LinearLayout>
+                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom nav: Home / Roster / Sync -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/white">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/slate_100" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:paddingBottom="4dp">
+
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_home" app:tint="@color/navy_600" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="@string/nav_home" android:textColor="@color/navy_600" android:textSize="11sp" android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navRoster"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_list" app:tint="@color/slate_400" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="@string/nav_roster" android:textColor="@color/slate_400" android:textSize="11sp" android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navSync"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_sync" app:tint="@color/slate_400" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="@string/nav_sync" android:textColor="@color/slate_400" android:textSize="11sp" android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

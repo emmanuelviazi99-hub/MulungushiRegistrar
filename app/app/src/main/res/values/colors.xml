@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Mulungushi blue and red, same values as the prototype -->
+    <color name="navy_50">#E8F1FA</color>
+    <color name="navy_100">#C2D9F0</color>
+    <color name="navy_600">#004F9F</color>
+    <color name="navy_700">#003B7A</color>
+    <color name="navy_900">#00234D</color>
+    <color name="melon_600">#E30613</color>
+
+    <color name="page_bg">#F6F8FA</color>
+    <color name="ink">#0F172A</color>
+    <color name="slate_100">#F1F5F9</color>
+    <color name="slate_200">#E2E8F0</color>
+    <color name="slate_400">#94A3B8</color>
+    <color name="slate_500">#64748B</color>
+    <color name="red_400">#F87171</color>
+    <color name="red_600">#DC2626</color>
+    <color name="red_50">#FDEBEC</color>
+
+    <color name="melon_50">#FDEBEC</color>
+    <color name="green_50">#ECFDF3</color>
+    <color name="green_700">#15803D</color>
+    <color name="amber_50">#FFFBEB</color>
+    <color name="amber_700">#B45309</color>
+    <color name="slate_300">#CBD5E1</color>
+    <color name="indigo_50">#EEF2FF</color>
+    <color name="indigo_600">#4F46E5</color>
+    <color name="indigo_700">#4338CA</color>
+    <color name="sky_50">#F0F9FF</color>
+    <color name="sky_700">#0369A1</color>
+    <color name="slate_600">#475569</color>
+</resources>

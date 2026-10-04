@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mulungushi Registrar</string>
+
+    <string name="login_title">Mulungushi Registrar</string>
+    <string name="login_subtitle">Sign in to continue to ICT361</string>
+    <string name="logo_description">Mulungushi University</string>
+
+    <string name="label_student_number">Student number</string>
+    <string name="hint_student_number">e.g. 202301045</string>
+    <string name="label_password">Password</string>
+    <string name="hint_password">Enter your password</string>
+    <string name="action_forgot">Forgot password?</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="register_prompt">New here?</string>
+    <string name="action_register">Register with claim code</string>
+
+    <!-- Short, one line. The staff email rule is never mentioned to students. -->
+    <string name="error_id_empty">Enter your student number.</string>
+    <string name="error_id_email">That email looks incomplete.</string>
+    <string name="error_id_digits">Enter your 9-digit student number.</string>
+    <string name="error_id_length">%1$d of 9 digits.</string>
+    <string name="error_id_not_real">Enter your real student number.</string>
+    <string name="error_password_empty">Enter your password.</string>
+    <string name="error_offline">You\'re offline. Connect to sign in.</string>
+    <string name="error_bad_credentials">Incorrect sign-in details. Try again.</string>
+
+    <string name="demo_title">Demo accounts (testing only)</string>
+    <string name="demo_label_student">Student</string>
+    <string name="demo_label_lecturer">Lecturer</string>
+    <string name="demo_label_password">Password</string>
+    <string name="demo_student_number">202301045</string>
+    <string name="demo_student_password">anything</string>
+    <string name="demo_note">Any 9-digit number with any password also signs in as a student.</string>
+
+    <string name="toast_not_built">Not built yet.</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_my_group">My group</string>
+    <string name="nav_sync">Sync</string>
+    <string name="nav_roster">Roster</string>
+
+    <!-- Student home -->
+    <string name="student_portal_sub">Student Portal</string>
+    <string name="welcome_back">Welcome back, %1$s</string>
+    <string name="term_label">Semester 2 · Week 4</string>
+    <string name="pending_sync_one">1 change pending sync. </string>
+    <string name="view_status">View status</string>
+    <string name="pill_pending">Pending</string>
+    <string name="move_to_group">Move to %1$s</string>
+    <string name="synced_ok">All changes are synced.</string>
+    <string name="group_places_filled">%1$d of %2$d places filled</string>
+    <string name="no_group_yet">No lab group yet</string>
+    <string name="request_group_below">Request a group below</string>
+    <string name="lab_group_prefix">Lab group %1$s</string>
+    <string name="card_group_change_title">Request group change</string>
+    <string name="card_group_change_sub">No request open</string>
+    <string name="card_edit_details_title">Edit my details</string>
+    <string name="card_edit_details_sub">Programme: %1$s</string>
+
+    <!-- Lecturer roster -->
+    <string name="roster_title">Student roster</string>
+    <string name="roster_records">%1$d records</string>
+    <string name="roster_search_hint">Search name or student number</string>
+    <string name="filter_programme">Programme</string>
+    <string name="filter_group">Group</string>
+    <string name="filter_all">All</string>
+    <string name="filter_clear">Clear filters</string>
+    <string name="roster_count_plural">%1$d students</string>
+    <string name="roster_count_single">%1$d student</string>
+    <string name="roster_empty_filtered">No students match these filters</string>
+    <string name="roster_empty_title">No students yet</string>
+    <string name="roster_empty_sub">Add your first student to start building the roster.</string>
+    <string name="action_add_student">Add student</string>
+
+    <!-- Add/edit student sheet -->
+    <string name="sheet_title_add">Add student</string>
+    <string name="sheet_title_edit">Edit student</string>
+    <string name="label_full_name">Full name</string>
+    <string name="hint_full_name">e.g. Mutinta Banda</string>
+    <string name="label_programme">Programme</string>
+    <string name="label_lab_group">Lab group</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_delete_record">Delete this record</string>
+    <string name="error_name_empty">Enter the student name.</string>
+    <string name="error_name_short">Too short. Enter first and last name.</string>
+    <string name="error_name_long">Keep it under 100 characters.</string>
+    <string name="error_name_digit">Names can\'t contain numbers.</string>
+    <string name="error_name_chars">Letters only (hyphens and apostrophes ok).</string>
+    <string name="error_name_two_words">Enter first and last name.</string>
+    <string name="error_number_empty">Enter the student number.</string>
+    <string name="error_number_space">No spaces. Use 9 digits.</string>
+    <string name="error_number_digits">Digits only. e.g. 202301045.</string>
+    <string name="error_number_length">%1$d of 9 digits.</string>
+    <string name="error_number_not_real">Enter a real student number.</string>
+    <string name="error_number_taken">%1$s already belongs to %2$s. Student numbers must be unique.</string>
+    <string name="number_correction_note">Saving records a number correction (was %1$s).</string>
+    <string name="error_group_full">This group is full (%1$d/%2$d). Pick another group or leave it Unassigned.</string>
+    <string name="unassigned">Unassigned</string>
+    <string name="full_suffix"> (Full)</string>
+
+    <!-- Delete confirm -->
+    <string name="delete_title">Remove %1$s?</string>
+    <string name="delete_message">Their place in %1$s will be released. The number stays reserved and will not be reassigned.</string>
+    <string name="action_remove">Remove</string>
+
+    <!-- Toasts -->
+    <string name="toast_student_added">Student added</string>
+    <string name="toast_changes_saved">Changes saved</string>
+    <string name="toast_number_corrected">Number corrected</string>
+    <string name="toast_record_removed">Record removed. The number stays reserved.</string>
+
+    <!-- Shared -->
+    <string name="action_back">Back</string>
+    <string name="pill_pending_short">Pending</string>
+
+    <!-- Register -->
+    <string name="register_title">Register</string>
+    <string name="register_step1_title">Verify your claim code</string>
+    <string name="register_step1_sub">Enter your details and the claim code your lecturer gave you.</string>
+    <string name="register_step2_title">Complete your profile</string>
+    <string name="register_step2_sub">Choose your programme and set a password.</string>
+    <string name="label_claim_code">Claim code</string>
+    <string name="hint_claim_code">e.g. MU-7K4Q</string>
+    <string name="error_claim_empty">Enter your claim code.</string>
+    <string name="error_claim_wrong">That claim code doesn\'t match. Ask your lecturer for a new one.</string>
+    <string name="hint_password_create">At least 8 characters</string>
+    <string name="error_password_short">At least 8 characters.</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_finish_register">Save &amp; finish</string>
+    <string name="demo_claim_note">Demo: any name and 9-digit number work, claim code is %1$s.</string>
+    <string name="toast_registered">Account created — welcome!</string>
+    <string name="error_number_registered">That number is already registered. Try signing in instead.</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_title">Reset password</string>
+    <string name="forgot_step1_title">Verify it\'s you</string>
+    <string name="forgot_step1_sub">Enter your student number and the claim code your lecturer gave you.</string>
+    <string name="forgot_step2_title">Choose a new password</string>
+    <string name="forgot_step2_sub">Pick one you don\'t use on any other account.</string>
+    <string name="forgot_error_mismatch">Those details don\'t match. Check them and try again.</string>
+    <string name="forgot_done_title">Password updated</string>
+    <string name="forgot_done_sub">Sign in with your new password.</string>
+    <string name="action_update_password">Update password</string>
+    <string name="action_back_to_sign_in">Back to sign in</string>
+
+    <!-- My group -->
+    <string name="my_group_title">My group</string>
+    <string name="my_group_members">Group members</string>
+    <string name="my_group_classmates">Classmates assigned to %1$s</string>
+    <string name="my_group_id_line">ID: %1$s  •  Programme: %2$s</string>
+    <string name="status_active">Status: Active</string>
+    <string name="my_group_empty">No one else is in this group yet.</string>
+    <string name="my_group_unassigned_note">You\'re not assigned to a group yet. Request one from Home.</string>
+
+    <!-- Group change -->
+    <string name="group_change_title">Request group change</string>
+    <string name="current_group_label">Current group</string>
+    <string name="not_assigned_yet">Not assigned yet</string>
+    <string name="choose_a_group">Choose a group</string>
+    <string name="places_filled">%1$d of %2$d places filled</string>
+    <string name="group_full_no_places">Full, no places left</string>
+    <string name="group_change_note">Asking does not reserve a place. Your lecturer confirms the move, and only if there is room.</string>
+    <string name="action_request_group">Request %1$s</string>
+    <string name="action_choose_group_first">Choose a group</string>
+    <string name="action_cancel_request">Cancel request</string>
+    <string name="requested_move_to">Move to %1$s</string>
+    <string name="requested_note">Your lecturer must confirm it.</string>
+    <string name="toast_request_sent">Request sent</string>
+    <string name="toast_request_cancelled">Request cancelled</string>
+
+    <!-- Edit details -->
+    <string name="edit_details_title">Edit my details</string>
+    <string name="label_locked_number">Student number</string>
+    <string name="locked_label">Locked</string>
+    <string name="only_lecturer_can_change">Only your lecturer can change this.</string>
+    <string name="action_request_correction">Request a correction</string>
+    <string name="correction_to">Correction to %1$s</string>
+    <string name="correction_note">Requested. Your lecturer must confirm it. Your number stays %1$s until then.</string>
+    <string name="sheet_number_correction_title">Request number correction</string>
+    <string name="sheet_number_correction_sub">Your lecturer checks this before anything changes. Your number stays %1$s until they confirm.</string>
+    <string name="label_correct_number">Correct student number</string>
+    <string name="error_number_same">That is already your student number.</string>
+    <string name="action_send_request">Send request</string>
+    <string name="action_save_changes_short">Save changes</string>
+
+    <!-- Sync -->
+    <string name="sync_title">Sync status</string>
+    <string name="sync_sub">All change states</string>
+    <string name="sync_group_transfer">Group transfer request → %1$s</string>
+    <string name="sync_number_correction">Number correction → %1$s</string>
+    <string name="sync_name_edit">Name and programme edit</string>
+    <string name="sync_confirm_note">Your lecturer must confirm before it takes effect.</string>
+    <string name="sync_saved_confirmed">Saved and confirmed by the server.</string>
+    <string name="sync_waiting">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
+    <string name="sync_up_to_date">Your changes are up to date. You\'ll only see your own records here.</string>
+    <string name="sync_footer_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
+    <string name="sync_footer_lecturer">Each status is conveyed by label text, not colour alone. The full class queue is lecturer-only.</string>
+    <string name="sync_lecturer_queue_title">Class-wide sync queue</string>
+    <string name="sync_lecturer_pending_line">%1$s — %2$s</string>
+    <string name="sync_lecturer_empty">Nothing waiting. Local and server records match.</string>
+
+    <!-- Lecturer home -->
+    <string name="lecturer_home_title">Mulungushi Registrar</string>
+    <string name="lecturer_portal_sub">Lecturer Portal</string>
+    <string name="stat_students">Students</string>
+    <string name="stat_group_full">Group full</string>
+    <string name="stat_requests">Requests</string>
+    <string name="group_occupancy">Group occupancy</string>
+    <string name="quick_actions">Quick actions</string>
+    <string name="qa_requests_sub_some">%1$d waiting</string>
+    <string name="qa_requests_sub_none">Nothing waiting</string>
+    <string name="qa_roster_title">Student roster</string>
+    <string name="qa_roster_sub">Search, filter, edit or remove students</string>
+    <string name="qa_add_title">Add a student</string>
+    <string name="qa_add_sub">Manual entry, assign a group</string>
+
+    <!-- Requests -->
+    <string name="requests_title">Requests</string>
+    <string name="requests_pending_sub">%1$d pending</string>
+    <string name="badge_group_change">Group change</string>
+    <string name="badge_number_correction">Number correction</string>
+    <string name="requests_group_line">%1$s → %2$s</string>
+    <string name="requests_group_note">%1$s has %2$d of %3$d places filled.</string>
+    <string name="requests_number_line">%1$s → %2$s</string>
+    <string name="action_approve">Approve</string>
+    <string name="action_decline">Decline</string>
+    <string name="requests_empty">No requests waiting</string>
+    <string name="toast_approved">Approved</string>
+    <string name="toast_declined">Declined</string>
+    <string name="toast_approve_failed_group">That group filled up — can\'t approve. Decline or ask the student to pick another.</string>
+    <string name="toast_approve_failed_number">That number is already taken — can\'t approve.</string>
+    <string name="request_group_change_title">Request group change</string>
+    <string name="group_full_note">Full, no places left</string>
+    <string name="request_group_fmt">Request %1$s</string>
+    <string name="number_correction_pending_note">Your lecturer must confirm it. Your number stays the same until then.</string>
+    <string name="only_lecturer_note">Only your lecturer can change this.</string>
+    <string name="request_correction_title">Request number correction</string>
+    <string name="request_correction_hint">Your lecturer checks this before anything changes. Your number stays the same until they confirm.</string>
+    <string name="label_reason_optional">Reason (optional)</string>
+    <string name="hint_reason">e.g. Two digits were swapped</string>
+    <string name="number_correction_to_fmt">Correction to %1$s</string>
+    <string name="sync_status_title">Sync status</string>
+    <string name="sync_status_sub">All change states</string>
+    <string name="pill_local">Saved locally</string>
+    <string name="pill_syncing">Syncing</string>
+    <string name="pill_synced">Synced</string>
+    <string name="pill_action">Action required</string>
+    <string name="name_programme_edit_title">Name and programme edit</string>
+    <string name="name_programme_synced_note">Saved and confirmed.</string>
+    <string name="sync_waiting_banner">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
+    <string name="sync_up_to_date_banner">Your changes are up to date. You\'ll only see your own records here.</string>
+    <string name="sync_footnote_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
+    <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone. This reflects the live roster — the offline queue and conflict handling described in the brief are not built yet.</string>
+    <string name="no_pending_requests">No requests waiting.</string>
+    <string name="group_change_label">Group change</string>
+    <string name="number_correction_label">Number correction</string>
+    <string name="requested_label">Requested by</string>
+    <string name="toast_request_approved">Approved</string>
+    <string name="toast_request_declined">Declined</string>
+    <string name="toast_group_full_decline">That group filled up — decline or ask the student to pick another.</string>
+    <string name="toast_number_taken_decline">That number is already taken — decline or ask for a different one.</string>
+    <string name="pending_requests_count">%1$d pending</string>
+    <string name="to_arrow_fmt">%1$s → %2$s</string>
+    <string name="welcome_back_lecturer">Welcome back, %1$s</string>
+    <string name="stat_groups_full">Group full</string>
+    <string name="stat_conflicts">Conflicts</string>
+    <string name="section_group_occupancy">Group occupancy</string>
+    <string name="section_quick_actions">Quick actions</string>
+    <string name="action_requests_title">Requests</string>
+    <string name="action_requests_sub_fmt">%1$d waiting</string>
+    <string name="action_requests_sub_none">Nothing waiting</string>
+    <string name="action_needs_attention_title">Needs attention</string>
+    <string name="action_conflicts_sub_fmt">%1$d conflict(s)</string>
+    <string name="action_roster_title">Student roster</string>
+    <string name="action_roster_sub">Search, filter, edit or remove</string>
+    <string name="action_add_student_title">Add a student</string>
+    <string name="action_add_student_sub">Manual entry, assign a group</string>
+</resources>

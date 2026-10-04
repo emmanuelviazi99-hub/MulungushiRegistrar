@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_sheet_top"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="24dp">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="14dp"
+            android:background="@color/slate_200" />
+
+        <TextView
+            android:id="@+id/sheetTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:textColor="@color/navy_900"
+            android:textSize="17sp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/sheet_title_add" />
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_full_name" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutName"
+            style="@style/Widget.Registrar.InputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputName"
+                style="@style/Widget.Registrar.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_full_name"
+                android:inputType="textPersonName" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_student_number" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutNumber"
+            style="@style/Widget.Registrar.InputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputNumber"
+                style="@style/Widget.Registrar.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_student_number"
+                android:inputType="number"
+                android:maxLength="9" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/numberCorrectionNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-8dp"
+            android:layout_marginBottom="10dp"
+            android:textColor="@color/slate_500"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Saving records a number correction (was 202301045)." />
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_programme" />
+
+        <Spinner
+            android:id="@+id/spinnerProgramme"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_search"
+            android:paddingHorizontal="10dp" />
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_lab_group" />
+
+        <Spinner
+            android:id="@+id/spinnerGroup"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_search"
+            android:paddingHorizontal="10dp" />
+
+        <TextView
+            android:id="@+id/groupFullError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/red_600"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="This group is full (15/15). Pick another group or leave it Unassigned." />
+
+        <TextView
+            android:id="@+id/formError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@color/red_50"
+            android:padding="12dp"
+            android:textColor="@color/red_600"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:text="202301045 already belongs to Chanda Mwansa. Student numbers must be unique." />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonCancel"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="@color/slate_100"
+                android:text="@string/action_cancel"
+                android:textColor="@color/navy_900"
+                android:textAllCaps="false" />
+
+            <Button
+                android:id="@+id/buttonSave"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:backgroundTint="@color/navy_600"
+                android:text="@string/action_save_changes"
+                android:textColor="@color/white"
+                android:textAllCaps="false" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/buttonDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="@string/action_delete_record"
+            android:textColor="@color/red_600"
+            android:textSize="13.5sp"
+            android:fontFamily="sans-serif-medium"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+</ScrollView>

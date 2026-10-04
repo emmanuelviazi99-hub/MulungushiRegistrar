@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- navy over the campus photo: 85% at the top, 60% in the middle, 80% at the bottom -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="270"
+        android:startColor="#D900234D"
+        android:centerColor="#9900234D"
+        android:endColor="#CC00234D" />
+</shape>

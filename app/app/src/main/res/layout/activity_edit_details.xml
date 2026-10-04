@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/page_bg">
+
+    <include layout="@layout/top_bar_back" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                style="@style/Registrar.FieldLabel"
+                android:text="@string/label_full_name" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutName"
+                style="@style/Widget.Registrar.InputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputName"
+                    style="@style/Widget.Registrar.EditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/Registrar.FieldLabel"
+                android:text="@string/label_programme" />
+
+            <Spinner
+                android:id="@+id/spinnerProgramme"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_search"
+                android:paddingHorizontal="10dp" />
+
+            <TextView
+                style="@style/Registrar.FieldLabel"
+                android:text="@string/label_student_number" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="2dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card_locked"
+                android:paddingHorizontal="14dp">
+
+                <TextView
+                    android:id="@+id/textNumberLocked"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/slate_500"
+                    android:textSize="15sp"
+                    tools:text="202301045" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/locked_label"
+                    android:textColor="@color/slate_500"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Pending correction state -->
+            <LinearLayout
+                android:id="@+id/numberPendingBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="20dp"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_plain"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/textNumberCorrectionTo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/navy_900"
+                        android:textStyle="bold"
+                        android:textSize="13.5sp"
+                        tools:text="Correction to 202301999" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill_indigo"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="@string/pill_pending_short"
+                        android:textColor="@color/indigo_600"
+                        android:textStyle="bold"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/number_correction_pending_note"
+                    android:textColor="@color/slate_500"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/buttonCancelNumberRequest"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:backgroundTint="@color/red_600"
+                    android:text="@string/action_cancel_request"
+                    android:textColor="@color/white"
+                    android:textAllCaps="false" />
+            </LinearLayout>
+
+            <!-- No pending correction: link to request one -->
+            <LinearLayout
+                android:id="@+id/requestCorrectionBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/only_lecturer_note"
+                    android:textColor="@color/slate_400"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/buttonRequestCorrection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="6dp"
+                    android:text="@string/action_request_correction"
+                    android:textColor="@color/navy_600"
+                    android:fontFamily="sans-serif-medium"
+                    android:textSize="13.5sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/formError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:background="@color/red_50"
+                android:padding="12dp"
+                android:textColor="@color/red_600"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="Name invalid. Enter first and last name." />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/buttonCancel"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:backgroundTint="@color/slate_100"
+                    android:text="@string/action_cancel"
+                    android:textColor="@color/navy_900"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/buttonSave"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:backgroundTint="@color/navy_600"
+                    android:text="@string/action_save_changes"
+                    android:textColor="@color/white"
+                    android:textAllCaps="false" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
