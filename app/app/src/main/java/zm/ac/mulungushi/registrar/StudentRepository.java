@@ -1,7 +1,10 @@
 package zm.ac.mulungushi.registrar;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Holds the student list in memory for this stage of the build.
@@ -24,6 +27,29 @@ public class StudentRepository {
 
     private final List<Student> students = new ArrayList<>();
 
+    /** One answered request, kept so the lecturer's Requests screen can show an Answered history. */
+    public static class RequestRecord {
+        public static final String GROUP = "group";
+        public static final String NUMBER = "number";
+        public static final String APPROVED = "approved";
+        public static final String DECLINED = "declined";
+
+        public int seq;
+        public String studentId;
+        public String studentName;
+        public String studentNumber;
+        public String kind;        // group | number
+        public String from;
+        public String to;
+        public String reason;      // number corrections only, may be null
+        public String requestedOn;
+        public String status;      // approved | declined
+    }
+
+    /** Newest last; the screen reverses it. In memory only, like the rest of this stage. */
+    private final List<RequestRecord> answered = new ArrayList<>();
+    private int nextSeq = 1;
+
     private StudentRepository() {
         seed();
     }
@@ -36,6 +62,7 @@ public class StudentRepository {
     private void seed() {
         Student chanda = new Student("s1", "Chanda Mwansa", "202301045", "CS", "G01", true);
         chanda.pendingGroup = "G02"; // same starting state as the prototype: one open group-change request
+        chanda.pendingGroupOn = today();
         students.add(chanda);
         students.add(new Student("s2", "Bwalya Phiri", "202301112", "IT", "G01", true));
         students.add(new Student("s3", "Mutinta Banda", "202301198", "DS", "G02", true));
@@ -118,24 +145,68 @@ public class StudentRepository {
         return getPendingRequests().size();
     }
 
+    private static String today() {
+        return new SimpleDateFormat("d MMM", Locale.ENGLISH).format(new Date());
+    }
+
+    /** Answered requests, newest first. */
+    public List<RequestRecord> getAnswered() {
+        List<RequestRecord> out = new ArrayList<>(answered);
+        java.util.Collections.reverse(out);
+        return out;
+    }
+
+    private void log(Student s, String kind, String from, String to, String reason, String on, String status) {
+        RequestRecord r = new RequestRecord();
+        r.seq = nextSeq++;
+        r.studentId = s.id;
+        r.studentName = s.name;
+        r.studentNumber = s.number;
+        r.kind = kind;
+        r.from = from;
+        r.to = to;
+        r.reason = reason;
+        r.requestedOn = on == null ? today() : on;
+        r.status = status;
+        answered.add(r);
+    }
+
     public void requestGroupChange(String studentId, String toGroup) {
         Student s = findById(studentId);
-        if (s != null) s.pendingGroup = toGroup;
+        if (s != null) {
+            s.pendingGroup = toGroup;
+            s.pendingGroupOn = today();
+        }
     }
 
     public void cancelGroupChange(String studentId) {
         Student s = findById(studentId);
-        if (s != null) s.pendingGroup = null;
+        if (s != null) {
+            s.pendingGroup = null;
+            s.pendingGroupOn = null;
+        }
     }
 
     public void requestNumberCorrection(String studentId, String toNumber) {
+        requestNumberCorrection(studentId, toNumber, null);
+    }
+
+    public void requestNumberCorrection(String studentId, String toNumber, String reason) {
         Student s = findById(studentId);
-        if (s != null) s.pendingNumber = toNumber;
+        if (s != null) {
+            s.pendingNumber = toNumber;
+            s.pendingNumberOn = today();
+            s.pendingNumberReason = (reason == null || reason.trim().isEmpty()) ? null : reason.trim();
+        }
     }
 
     public void cancelNumberCorrection(String studentId) {
         Student s = findById(studentId);
-        if (s != null) s.pendingNumber = null;
+        if (s != null) {
+            s.pendingNumber = null;
+            s.pendingNumberOn = null;
+            s.pendingNumberReason = null;
+        }
     }
 
     /** Lecturer approves a pending group move. Fails if the target group filled up in the meantime. */
@@ -143,13 +214,25 @@ public class StudentRepository {
         Student s = findById(studentId);
         if (s == null || s.pendingGroup == null) return false;
         if (!UNASSIGNED.equals(s.pendingGroup) && groupCount(s.pendingGroup) >= CAPACITY) return false;
+        log(s, RequestRecord.GROUP, s.group, s.pendingGroup, null, s.pendingGroupOn, RequestRecord.APPROVED);
         s.group = s.pendingGroup;
         s.pendingGroup = null;
+        s.pendingGroupOn = null;
+        s.noticeKind = "approved";
+        s.noticeSubject = "group";
         return true;
     }
 
     public void declineGroupChange(String studentId) {
+        Student s = findById(studentId);
+        if (s != null && s.pendingGroup != null) {
+            log(s, RequestRecord.GROUP, s.group, s.pendingGroup, null, s.pendingGroupOn, RequestRecord.DECLINED);
+        }
         cancelGroupChange(studentId);
+        if (s != null) {
+            s.noticeKind = "declined";
+            s.noticeSubject = "group";
+        }
     }
 
     /** Lecturer approves a pending number correction. Fails if another record already owns that number. */
@@ -157,12 +240,25 @@ public class StudentRepository {
         Student s = findById(studentId);
         if (s == null || s.pendingNumber == null) return false;
         if (findOwnerOfNumber(s.pendingNumber, s.id) != null) return false;
+        log(s, RequestRecord.NUMBER, s.number, s.pendingNumber, s.pendingNumberReason, s.pendingNumberOn, RequestRecord.APPROVED);
         s.number = s.pendingNumber;
         s.pendingNumber = null;
+        s.pendingNumberOn = null;
+        s.pendingNumberReason = null;
+        s.noticeKind = "approved";
+        s.noticeSubject = "number";
         return true;
     }
 
     public void declineNumberCorrection(String studentId) {
+        Student s = findById(studentId);
+        if (s != null && s.pendingNumber != null) {
+            log(s, RequestRecord.NUMBER, s.number, s.pendingNumber, s.pendingNumberReason, s.pendingNumberOn, RequestRecord.DECLINED);
+        }
         cancelNumberCorrection(studentId);
+        if (s != null) {
+            s.noticeKind = "declined";
+            s.noticeSubject = "number";
+        }
     }
 }

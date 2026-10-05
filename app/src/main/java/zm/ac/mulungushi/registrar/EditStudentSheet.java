@@ -37,6 +37,7 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
     }
 
     private static final String ARG_ID = "id";
+    private static final String ARG_PREFILL = "prefill";
 
     private Listener listener;
     private Student original; // null when adding a new student
@@ -52,9 +53,15 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
     }
 
     public static EditStudentSheet forEdit(String studentId) {
+        return forEdit(studentId, null);
+    }
+
+    /** Opens the record with a requested number already typed in; nothing changes until Save. */
+    public static EditStudentSheet forEdit(String studentId, String prefillNumber) {
         EditStudentSheet f = new EditStudentSheet();
         Bundle b = new Bundle();
         b.putString(ARG_ID, studentId);
+        if (prefillNumber != null) b.putString(ARG_PREFILL, prefillNumber);
         f.setArguments(b);
         return f;
     }
@@ -113,6 +120,8 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         if (original != null) {
             inputName.setText(original.name);
             inputNumber.setText(original.number);
+            Bundle args = getArguments();
+            if (args != null && args.getString(ARG_PREFILL) != null) inputNumber.setText(args.getString(ARG_PREFILL));
             spinnerProgramme.setSelection(indexOf(StudentRepository.PROGRAMMES, original.programme));
             setGroupSelection(original.group);
         }
@@ -244,7 +253,18 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
             boolean numberChanged = !original.number.equals(number);
             Student updated = new Student(original.id, name, number, programme, group, true);
             updated.pendingGroup = original.pendingGroup;
+            updated.pendingGroupOn = original.pendingGroupOn;
+            updated.pendingGroupSeq = original.pendingGroupSeq;
+            updated.pendingNumber = original.pendingNumber;
+            updated.pendingNumberOn = original.pendingNumberOn;
+            updated.pendingNumberReason = original.pendingNumberReason;
+            updated.pendingNumberSeq = original.pendingNumberSeq;
+            updated.noticeKind = original.noticeKind;
+            updated.noticeSubject = original.noticeSubject;
             repo.update(updated);
+            if (numberChanged && original.pendingNumber != null && original.pendingNumber.equals(number)) {
+                repo.resolveNumberRequest(original.id, original.number);
+            }
             finishWith(getString(numberChanged ? R.string.toast_number_corrected : R.string.toast_changes_saved));
         }
     }

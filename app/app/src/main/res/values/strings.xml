@@ -249,10 +249,10 @@
     <string name="pill_action">Action required</string>
     <string name="name_programme_edit_title">Name and programme edit</string>
     <string name="name_programme_synced_note">Saved and confirmed.</string>
-    <string name="sync_waiting_banner">%1$d change(s) waiting to sync. You will only see your own records here.</string>
-    <string name="sync_up_to_date_banner">Your changes are up to date. You will only see your own records here.</string>
+    <string name="sync_waiting_banner">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
+    <string name="sync_up_to_date_banner">Your changes are up to date. You\'ll only see your own records here.</string>
     <string name="sync_footnote_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
-    <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone. This reflects the live roster — the offline queue and conflict handling described in the brief are not built yet.</string>
+    <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone.</string>
     <string name="no_pending_requests">No requests waiting.</string>
     <string name="group_change_label">Group change</string>
     <string name="number_correction_label">Number correction</string>
@@ -277,4 +277,36 @@
     <string name="action_roster_sub">Search, filter, edit or remove</string>
     <string name="action_add_student_title">Add a student</string>
     <string name="action_add_student_sub">Manual entry, assign a group</string>
+
+    <plurals name="sync_waiting_banner_plural">
+        <item quantity="one">%1$d change waiting to sync. You\'ll only see your own records here.</item>
+        <item quantity="other">%1$d changes waiting to sync. You\'ll only see your own records here.</item>
+    </plurals>
+    <string name="notify_title">Get notified</string>
+    <string name="notify_body">Hear or feel an alert when your request is answered.</string>
+    <string name="notify_allow">Allow notifications</string>
+    <string name="notify_later">Not now</string>
+    <string name="notify_channel_name">Request answers</string>
+    <string name="toast_notifications_on">Notifications on.</string>
+    <string name="toast_request_sent_pending">Request sent. Pending confirmation.</string>
+    <string name="toast_request_cancelled_dot">Request cancelled.</string>
+    <string name="toast_changes_saved_dot">Changes saved.</string>
+    <string name="notice_group_approved">Your group request was approved.</string>
+    <string name="notice_group_declined">Your group request was declined.</string>
+    <string name="notice_number_approved">Your number correction was approved.</string>
+    <string name="notice_number_declined">Your number correction was declined.</string>
+    <string name="sign_out_note">Unsynced changes stay saved on this device and sync next time you sign in. Access is cleared when you sign out.</string>
+    <string name="action_close">Close</string>
+    <string name="account_student_fmt">Student · %1$s</string>
+    <string name="account_lecturer_fmt">Lecturer · %1$s</string>
+    <string name="tab_pending">Pending</string>
+    <string name="tab_pending_count_fmt">Pending (%1$d)</string>
+    <string name="tab_answered">Answered</string>
+    <string name="no_answered_requests">No answered requests yet.</string>
+    <string name="badge_approved">Approved</string>
+    <string name="badge_declined">Declined</string>
+    <string name="requested_on_fmt">Requested %1$s.</string>
+    <string name="group_places_fmt">%1$s has %2$d of %3$d places filled.</string>
+    <string name="label_correct_number">Correct student number</string>
+    <string name="hint_nine_digits">9 digits</string>
 </resources>

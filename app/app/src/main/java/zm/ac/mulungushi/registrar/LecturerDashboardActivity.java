@@ -26,8 +26,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lecturer_dashboard);
 
-        ((TextView) findViewById(R.id.buttonSignOut)).setText(RosterFormat.initialsOf(LECTURER_NAME));
-        findViewById(R.id.buttonSignOut).setOnClickListener(v -> signOut());
+        RosterFormat.bindHomeAvatar(this, LECTURER_NAME, SignOutSheet.lecturerDetail(this));
 
         findViewById(R.id.actionRequests).setOnClickListener(v ->
                 startActivity(new Intent(this, RequestsActivity.class)));
@@ -38,13 +37,10 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         findViewById(R.id.actionAddStudent).setOnClickListener(v ->
                 EditStudentSheet.forAdd().show(getSupportFragmentManager(), this));
 
-        findViewById(R.id.navHome).setOnClickListener(v -> { /* already here */ });
-        findViewById(R.id.navRoster).setOnClickListener(v ->
-                startActivity(new Intent(this, LecturerRosterActivity.class)));
-        findViewById(R.id.navSync).setOnClickListener(v ->
-                startActivity(new Intent(this, SyncActivity.class).putExtra(SyncActivity.EXTRA_ROLE, SyncActivity.ROLE_LECTURER)));
+        BottomNav.bindLecturer(this, BottomNav.HOME);
 
         render();
+        RosterFormat.stagger(this);
     }
 
     @Override
@@ -55,7 +51,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
 
     @Override
     public void onSaved(String toastMessage) {
-        android.widget.Toast.makeText(this, toastMessage, android.widget.Toast.LENGTH_SHORT).show();
+        Feedback.show(this, toastMessage);
         render();
     }
 
@@ -98,23 +94,24 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         label.setText(group);
         label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
         label.setTextColor(getResources().getColor(R.color.navy_900));
-        label.setTextSize(13);
+        label.setTextSize(14.5f);
         label.setLayoutParams(new LinearLayout.LayoutParams(dp(34), LinearLayout.LayoutParams.WRAP_CONTENT));
         row.addView(label);
 
         LinearLayout track = new LinearLayout(this);
         track.setOrientation(LinearLayout.HORIZONTAL);
-        track.setBackgroundColor(getResources().getColor(R.color.slate_100));
-        LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(0, dp(6), 1f);
+        track.setBackgroundResource(R.drawable.bg_track);
+        LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(0, dp(8), 1f);
         trackLp.setMarginStart(dp(6));
         trackLp.setMarginEnd(dp(6));
         track.setLayoutParams(trackLp);
 
         boolean full = count >= StudentRepository.CAPACITY;
         View fill = new View(this);
-        fill.setBackgroundColor(getResources().getColor(full ? R.color.red_400 : R.color.navy_600));
+        fill.setBackgroundResource(full ? R.drawable.bg_fill_red : R.drawable.bg_fill_navy);
         float frac = Math.min(1f, count / (float) StudentRepository.CAPACITY);
         track.addView(fill, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, frac == 0 ? 0.0001f : frac));
+        RosterFormat.growBar(fill);
         View empty = new View(this);
         track.addView(empty, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f - frac == 0 ? 0.0001f : 1f - frac));
         row.addView(track);
@@ -122,7 +119,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         TextView countView = new TextView(this);
         countView.setText(count + "/" + StudentRepository.CAPACITY);
         countView.setTextColor(getResources().getColor(R.color.slate_500));
-        countView.setTextSize(11.5f);
+        countView.setTextSize(13f);
         countView.setLayoutParams(new LinearLayout.LayoutParams(dp(42), LinearLayout.LayoutParams.WRAP_CONTENT));
         countView.setGravity(Gravity.END);
         row.addView(countView);

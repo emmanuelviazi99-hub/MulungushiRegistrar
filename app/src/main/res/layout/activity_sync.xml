@@ -8,8 +8,10 @@
     <include layout="@layout/top_bar_back" />
 
     <ScrollView
+        android:id="@+id/screenScroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -17,18 +19,12 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <HorizontalScrollView
+            <LinearLayout
+                android:id="@+id/legendRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="18dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/legendRow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" />
-            </HorizontalScrollView>
+                android:layout_marginBottom="10dp"
+                android:orientation="vertical" />
 
             <LinearLayout
                 android:id="@+id/syncContent"
@@ -43,7 +39,9 @@
                 android:layout_marginTop="10dp"
                 android:paddingTop="12dp"
                 android:textColor="@color/slate_400"
-                android:textSize="11.5sp" />
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
+
+    <include layout="@layout/bottom_nav" />
 </LinearLayout>

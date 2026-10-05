@@ -18,6 +18,17 @@ public class Student {
     public String pendingGroup;
     /** Number correction this student has requested, or null. Stands in for the prototype's numberRequest. */
     public String pendingNumber;
+    /** When each open request was made, e.g. "4 Oct", and the optional reason for a number correction. */
+    public String pendingGroupOn;
+    public String pendingNumberOn;
+    public String pendingNumberReason;
+    /** Order the requests came in, so the lecturer handles oldest first. */
+    public int pendingGroupSeq;
+    public int pendingNumberSeq;
+    /** Set when a lecturer answers a request: "approved" or "declined". Shown to the student on their next visit, then cleared. */
+    public String noticeKind;
+    /** "group" or "number" - which request the notice is about. */
+    public String noticeSubject;
 
     public Student(String id, String name, String number, String programme, String group, boolean active) {
         this.id = id;
@@ -33,6 +44,13 @@ public class Student {
         Student c = new Student(id, name, number, programme, group, active);
         c.pendingGroup = pendingGroup;
         c.pendingNumber = pendingNumber;
+        c.pendingGroupOn = pendingGroupOn;
+        c.pendingNumberOn = pendingNumberOn;
+        c.pendingNumberReason = pendingNumberReason;
+        c.pendingGroupSeq = pendingGroupSeq;
+        c.pendingNumberSeq = pendingNumberSeq;
+        c.noticeKind = noticeKind;
+        c.noticeSubject = noticeSubject;
         return c;
     }
 }

@@ -24,24 +24,24 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="24dp"
                 android:orientation="horizontal">
 
                 <View
                     android:id="@+id/stepDot1"
                     android:layout_width="0dp"
-                    android:layout_height="5dp"
+                    android:layout_height="6dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="4dp"
-                    android:background="@color/melon_600" />
+                    android:background="@drawable/bg_step_on" />
 
                 <View
                     android:id="@+id/stepDot2"
                     android:layout_width="0dp"
-                    android:layout_height="5dp"
+                    android:layout_height="6dp"
                     android:layout_weight="1"
                     android:layout_marginStart="4dp"
-                    android:background="@color/slate_200" />
+                    android:background="@drawable/bg_step_off" />
             </LinearLayout>
 
             <!-- Step 1 -->
@@ -62,8 +62,8 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="18dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="20dp"
                     android:text="@string/register_step1_sub"
                     android:textColor="@color/slate_500"
                     android:textSize="14sp" />
@@ -80,7 +80,7 @@
                         style="@style/Widget.Registrar.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_full_name"
+                        android:hint="@string/hint_register_name"
                         android:inputType="textPersonName" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -96,7 +96,7 @@
                         style="@style/Widget.Registrar.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_student_number"
+                        android:hint="@string/hint_register_number"
                         android:inputType="number"
                         android:maxLength="9" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -125,16 +125,23 @@
                     android:backgroundTint="@color/navy_600"
                     android:text="@string/action_continue"
                     android:textColor="@color/white"
-                    android:textAllCaps="false" />
+                    android:textAllCaps="false"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="12dp" />
 
                 <TextView
                     android:id="@+id/textDemoNote"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:background="@drawable/bg_card_plain"
-                    android:padding="12dp"
-                    android:textColor="@color/slate_500"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/bg_demo_note"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="12dp"
+                    android:lineSpacingExtra="2dp"
+                    android:textColor="@color/slate_600"
                     android:textSize="12sp"
                     tools:text="Demo: any name and 9-digit number work, claim code is MU-7K4Q." />
             </LinearLayout>
@@ -162,7 +169,7 @@
                     android:layout_marginBottom="18dp"
                     android:text="@string/register_step2_sub"
                     android:textColor="@color/slate_500"
-                    android:textSize="14sp" />
+                    android:textSize="16sp" />
 
                 <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_programme" />
                 <Spinner
@@ -215,7 +222,10 @@
                         android:backgroundTint="@color/navy_600"
                         android:text="@string/action_finish_register"
                         android:textColor="@color/white"
-                        android:textAllCaps="false" />
+                        android:textAllCaps="false"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

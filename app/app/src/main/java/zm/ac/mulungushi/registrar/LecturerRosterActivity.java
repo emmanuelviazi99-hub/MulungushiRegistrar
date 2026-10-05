@@ -67,14 +67,8 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         });
 
         findViewById(R.id.fabAdd).setOnClickListener(v -> openAdd());
-        findViewById(R.id.buttonSignOut).setOnClickListener(v -> signOut());
-        ((TextView) findViewById(R.id.buttonSignOut)).setText(initialsOf(LECTURER_NAME));
-        findViewById(R.id.navRoster).setOnClickListener(v -> { /* already here */ });
-        findViewById(R.id.navHome).setOnClickListener(v ->
-                startActivity(new android.content.Intent(this, LecturerDashboardActivity.class)));
-        findViewById(R.id.navSync).setOnClickListener(v ->
-                startActivity(new android.content.Intent(this, SyncActivity.class)
-                        .putExtra(SyncActivity.EXTRA_ROLE, SyncActivity.ROLE_LECTURER)));
+        RosterFormat.bindHomeAvatar(this, LECTURER_NAME, SignOutSheet.lecturerDetail(this));
+        BottomNav.bindLecturer(this, BottomNav.MIDDLE);
 
         refresh();
     }
@@ -122,16 +116,19 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
     private void showProgrammeFilter() {
         StudentRepository repo = StudentRepository.getInstance();
         List<String> labels = new ArrayList<>();
+        List<String> counts = new ArrayList<>();
         List<String> values = new ArrayList<>();
-        labels.add(getString(R.string.filter_all) + " (" + repo.getActive().size() + ")");
+        labels.add("All programmes");
+        counts.add(String.valueOf(repo.getActive().size()));
         values.add("all");
         for (String p : StudentRepository.PROGRAMMES) {
             int n = 0;
             for (Student s : repo.getActive()) if (s.programme.equals(p)) n++;
-            labels.add(p + " (" + n + ")");
+            labels.add(p);
+            counts.add(String.valueOf(n));
             values.add(p);
         }
-        showChoiceDialog(getString(R.string.filter_programme), labels, values, programmeFilter, v -> {
+        showChoiceSheet(getString(R.string.filter_programme), labels, counts, values, programmeFilter, v -> {
             programmeFilter = v;
             refresh();
         });
@@ -140,19 +137,23 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
     private void showGroupFilter() {
         StudentRepository repo = StudentRepository.getInstance();
         List<String> labels = new ArrayList<>();
+        List<String> counts = new ArrayList<>();
         List<String> values = new ArrayList<>();
-        labels.add(getString(R.string.filter_all));
+        labels.add("All groups");
+        counts.add("");
         values.add("all");
         for (String g : StudentRepository.GROUPS) {
             int c = repo.groupCount(g);
-            labels.add(g + " — " + c + "/" + StudentRepository.CAPACITY + (c >= StudentRepository.CAPACITY ? " (Full)" : ""));
+            labels.add(g);
+            counts.add(c + " of " + StudentRepository.CAPACITY);
             values.add(g);
         }
         int unassigned = 0;
         for (Student s : repo.getActive()) if (StudentRepository.UNASSIGNED.equals(s.group)) unassigned++;
-        labels.add(getString(R.string.unassigned) + " (" + unassigned + ")");
+        labels.add(getString(R.string.unassigned));
+        counts.add(String.valueOf(unassigned));
         values.add(StudentRepository.UNASSIGNED);
-        showChoiceDialog(getString(R.string.filter_group), labels, values, groupFilter, v -> {
+        showChoiceSheet(getString(R.string.filter_group), labels, counts, values, groupFilter, v -> {
             groupFilter = v;
             refresh();
         });
@@ -160,16 +161,83 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
 
     private interface OnPick { void pick(String value); }
 
-    private void showChoiceDialog(String title, List<String> labels, List<String> values, String current, OnPick onPick) {
-        int checked = values.indexOf(current);
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setSingleChoiceItems(labels.toArray(new String[0]), checked, (dialog, which) -> {
-                    onPick.pick(values.get(which));
-                    dialog.dismiss();
-                })
-                .setNegativeButton(R.string.action_cancel, null)
-                .show();
+    /** Bottom sheet picker (drag handle, tick on the current choice, counts on the right). */
+    private void showChoiceSheet(String title, List<String> labels, List<String> counts,
+                                 List<String> values, String current, OnPick onPick) {
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+
+        android.widget.LinearLayout root = new android.widget.LinearLayout(this);
+        root.setOrientation(android.widget.LinearLayout.VERTICAL);
+        root.setBackgroundResource(R.drawable.bg_sheet_top);
+        root.setPadding(0, 0, 0, RosterFormat.dp(this, 12));
+
+        View handle = new View(this);
+        android.graphics.drawable.GradientDrawable hb = new android.graphics.drawable.GradientDrawable();
+        hb.setColor(androidx.core.content.ContextCompat.getColor(this, R.color.slate_200));
+        hb.setCornerRadius(RosterFormat.dp(this, 3));
+        handle.setBackground(hb);
+        android.widget.LinearLayout.LayoutParams hlp = new android.widget.LinearLayout.LayoutParams(
+                RosterFormat.dp(this, 36), RosterFormat.dp(this, 5));
+        hlp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        hlp.topMargin = RosterFormat.dp(this, 10);
+        hlp.bottomMargin = RosterFormat.dp(this, 14);
+        root.addView(handle, hlp);
+
+        TextView titleView = new TextView(this);
+        titleView.setText(title);
+        titleView.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.navy_900));
+        titleView.setTextSize(20f);
+        titleView.setTypeface(null, android.graphics.Typeface.BOLD);
+        titleView.setPadding(RosterFormat.dp(this, 20), 0, RosterFormat.dp(this, 20), RosterFormat.dp(this, 10));
+        root.addView(titleView);
+
+        for (int i = 0; i < labels.size(); i++) {
+            final String value = values.get(i);
+            boolean on = value.equals(current);
+
+            android.widget.LinearLayout row = new android.widget.LinearLayout(this);
+            row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            row.setPadding(RosterFormat.dp(this, 20), 0, RosterFormat.dp(this, 20), 0);
+            row.setMinimumHeight(RosterFormat.dp(this, 56));
+            if (on) row.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.navy_50));
+            row.setClickable(true);
+            row.setOnClickListener(v -> {
+                onPick.pick(value);
+                dialog.dismiss();
+            });
+
+            TextView label = new TextView(this);
+            label.setText(labels.get(i));
+            label.setTextSize(17f);
+            label.setTextColor(androidx.core.content.ContextCompat.getColor(this, on ? R.color.navy_700 : R.color.navy_900));
+            if (on) label.setTypeface(null, android.graphics.Typeface.BOLD);
+            row.addView(label, new android.widget.LinearLayout.LayoutParams(0,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            TextView count = new TextView(this);
+            count.setText(counts.get(i));
+            count.setTextSize(15f);
+            count.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.slate_400));
+            row.addView(count);
+
+            TextView tick = new TextView(this);
+            tick.setText(on ? "\u2713" : "");
+            tick.setTextSize(20f);
+            tick.setTypeface(null, android.graphics.Typeface.BOLD);
+            tick.setGravity(android.view.Gravity.CENTER);
+            tick.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.navy_600));
+            row.addView(tick, new android.widget.LinearLayout.LayoutParams(RosterFormat.dp(this, 32),
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            root.addView(row);
+        }
+
+        dialog.setContentView(root);
+        View sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (sheet != null) sheet.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        dialog.show();
     }
 
     private void openAdd() {
@@ -182,7 +250,7 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
 
     @Override
     public void onSaved(String toastMessage) {
-        Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show();
+        Feedback.show(this, toastMessage);
         refresh();
     }
 

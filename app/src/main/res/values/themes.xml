@@ -6,11 +6,28 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSecondary">@color/melon_600</item>
         <item name="android:windowBackground">@color/page_bg</item>
+        <item name="android:windowAnimationStyle">@style/Registrar.WindowAnim</item>
         <!-- Every text field in the app picks these up -->
         <item name="textInputStyle">@style/Widget.Registrar.InputLayout</item>
         <item name="editTextStyle">@style/Widget.Registrar.EditText</item>
         <!-- To match the prototype font: Resource Manager > Font > add Inter,
              then add <item name="android:fontFamily">@font/inter</item> here. -->
+    </style>
+
+    <!-- Screens push in and pop out with a soft slide and fade, tabs cross-fade (see BottomNav) -->
+    <style name="Registrar.WindowAnim" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
+    </style>
+
+    <!-- Splash: navy from the very first frame so there is no white flash -->
+    <style name="Theme.Registrar.Splash" parent="Theme.Registrar">
+        <item name="android:windowBackground">@color/navy_900</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/navy_900</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <style name="Widget.Registrar.InputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
@@ -25,7 +42,7 @@
         <item name="boxStrokeErrorColor">@color/red_400</item>
         <item name="errorTextColor">@color/red_600</item>
         <item name="errorTextAppearance">@style/TextAppearance.Registrar.Error</item>
-        <item name="errorIconDrawable">@null</item>
+        <item name="errorIconDrawable">@drawable/ic_blank</item>
         <!-- Labels sit above the field, so no floating hint -->
         <item name="hintEnabled">false</item>
     </style>
@@ -85,18 +102,21 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
         <item name="android:orientation">vertical</item>
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/bg_stat_tile</item>
-        <item name="android:paddingTop">12dp</item>
+        <item name="android:elevation">2dp</item>
+        <item name="android:paddingTop">14dp</item>
         <item name="android:paddingBottom">10dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
     </style>
 
     <style name="Registrar.StatNumber" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">17sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/navy_900</item>
     </style>
@@ -104,8 +124,8 @@
     <style name="Registrar.StatLabel" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">3dp</item>
-        <item name="android:textSize">10.5sp</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:textSize">10sp</item>
         <item name="android:textColor">@color/slate_500</item>
     </style>
 

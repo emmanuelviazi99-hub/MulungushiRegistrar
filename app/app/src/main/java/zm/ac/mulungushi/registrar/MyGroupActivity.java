@@ -24,7 +24,11 @@ public class MyGroupActivity extends AppCompatActivity {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         Student self = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        RosterFormat.bindAvatar(this, self.name, SignOutSheet.studentDetail(this, self.number));
+        RosterFormat.hideBack(this);
+        BottomNav.bindStudent(this, BottomNav.MIDDLE, self.number);
         render(self);
+        RosterFormat.stagger(this);
     }
 
     private void render(Student self) {
@@ -48,17 +52,16 @@ public class MyGroupActivity extends AppCompatActivity {
         }
 
         List<Student> mates = repo.getActive();
-        int shown = 0;
-        for (Student s : mates) {
-            if (!s.id.equals(self.id) && self.group.equals(s.group)) {
-                list.addView(buildRow(s));
-                shown++;
-            }
+        List<Student> members = new java.util.ArrayList<>();
+        for (Student s : mates) if (self.group.equals(s.group)) members.add(s);
+        int shown = members.size();
+        for (int i = 0; i < members.size(); i++) {
+            list.addView(buildRow(members.get(i), i < members.size() - 1));
         }
         findViewById(R.id.textEmptyMembers).setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
     }
 
-    private View buildRow(Student s) {
+    private View buildRow(Student s, boolean withDivider) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -74,7 +77,7 @@ public class MyGroupActivity extends AppCompatActivity {
         TextView initials = new TextView(this);
         initials.setText(RosterFormat.initialsOf(s.name));
         initials.setTextColor(getResources().getColor(R.color.navy_700));
-        initials.setTextSize(13);
+        initials.setTextSize(14.5f);
         FrameLayout.LayoutParams initialsLp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         initialsLp.gravity = android.view.Gravity.CENTER;
@@ -92,13 +95,13 @@ public class MyGroupActivity extends AppCompatActivity {
         name.setText(s.name);
         name.setTextColor(getResources().getColor(R.color.navy_900));
         name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD);
-        name.setTextSize(13.5f);
+        name.setTextSize(15f);
         textCol.addView(name);
 
         TextView number = new TextView(this);
         number.setText(s.number);
         number.setTextColor(getResources().getColor(R.color.slate_400));
-        number.setTextSize(12);
+        number.setTextSize(13.5f);
         textCol.addView(number);
 
         row.addView(textCol);
@@ -107,17 +110,19 @@ public class MyGroupActivity extends AppCompatActivity {
         statusBadge.setText(R.string.status_active);
         statusBadge.setBackgroundResource(R.drawable.bg_card_green);
         statusBadge.setTextColor(getResources().getColor(R.color.green_700));
-        statusBadge.setTextSize(11);
+        statusBadge.setTextSize(12.5f);
         statusBadge.setPadding(dp(8), dp(3), dp(8), dp(3));
         row.addView(statusBadge);
 
         LinearLayout wrapper = new LinearLayout(this);
         wrapper.setOrientation(LinearLayout.VERTICAL);
         wrapper.addView(row);
-        View bottomLine = new View(this);
-        bottomLine.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
-        bottomLine.setBackgroundColor(getResources().getColor(R.color.slate_100));
-        wrapper.addView(bottomLine);
+        if (withDivider) {
+            View bottomLine = new View(this);
+            bottomLine.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
+            bottomLine.setBackgroundColor(getResources().getColor(R.color.slate_100));
+            wrapper.addView(bottomLine);
+        }
         return wrapper;
     }
 

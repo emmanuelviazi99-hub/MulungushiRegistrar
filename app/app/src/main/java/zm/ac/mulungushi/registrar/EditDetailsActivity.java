@@ -1,17 +1,15 @@
 package zm.ac.mulungushi.registrar;
 
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -39,6 +37,9 @@ public class EditDetailsActivity extends AppCompatActivity {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
+        BottomNav.bindStudent(this, BottomNav.HOME, student.number);
+        RosterFormat.stagger(this);
 
         layoutName = findViewById(R.id.layoutName);
         inputName = findViewById(R.id.inputName);
@@ -60,6 +61,7 @@ public class EditDetailsActivity extends AppCompatActivity {
         findViewById(R.id.buttonCancelNumberRequest).setOnClickListener(v -> {
             StudentRepository.getInstance().cancelNumberCorrection(student.id);
             render();
+            Feedback.show(this, R.string.toast_request_cancelled_dot);
         });
 
         render();
@@ -98,61 +100,58 @@ public class EditDetailsActivity extends AppCompatActivity {
         updated.name = name;
         updated.programme = programme;
         StudentRepository.getInstance().update(updated);
-        android.widget.Toast.makeText(this, R.string.toast_changes_saved, android.widget.Toast.LENGTH_SHORT).show();
+        Feedback.postForNext(getString(R.string.toast_changes_saved_dot));
         finish();
     }
 
     private void showCorrectionDialog() {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        int pad = (int) (20 * getResources().getDisplayMetrics().density);
-        box.setPadding(pad, pad / 2, pad, 0);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View content = getLayoutInflater().inflate(R.layout.sheet_number_correction, null);
+        dialog.setContentView(content);
+        View sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (sheet != null) sheet.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setDimAmount(0.4f);
+            dialog.getWindow().setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+        dialog.getBehavior().setSkipCollapsed(true);
 
-        TextView hint = new TextView(this);
-        hint.setText(R.string.request_correction_hint);
-        hint.setTextColor(getResources().getColor(R.color.slate_500));
-        hint.setTextSize(13);
-        hint.setPadding(0, 0, 0, (int) (12 * getResources().getDisplayMetrics().density));
-        box.addView(hint);
+        TextInputLayout numberLayout = content.findViewById(R.id.layoutCorrectNumber);
+        TextInputEditText numberInput = content.findViewById(R.id.inputCorrectNumber);
+        TextInputEditText reasonInput = content.findViewById(R.id.inputReason);
 
-        EditText numberInput = new EditText(this);
-        numberInput.setHint(R.string.hint_student_number);
-        numberInput.setInputType(InputType.TYPE_CLASS_NUMBER);
-        numberInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(9)});
-        box.addView(numberInput);
-
-        TextView error = new TextView(this);
-        error.setTextColor(getResources().getColor(R.color.red_600));
-        error.setTextSize(12);
-        error.setVisibility(View.GONE);
-        box.addView(error);
-
-        androidx.appcompat.app.AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.request_correction_title)
-                .setView(box)
-                .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton(R.string.action_send_request, null)
-                .create();
-        dialog.setOnShowListener(d -> {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-                String value = numberInput.getText().toString();
-                StudentValidator.NumberResult result = StudentValidator.checkNumber(value);
-                if (value.equals(student.number)) {
-                    error.setText(R.string.error_number_same);
-                    error.setVisibility(View.VISIBLE);
-                    return;
-                }
-                if (!StudentValidator.isOk(result)) {
-                    error.setText(numberError(result, value));
-                    error.setVisibility(View.VISIBLE);
-                    return;
-                }
-                StudentRepository.getInstance().requestNumberCorrection(student.id, value);
-                dialog.dismiss();
-                render();
-            });
+        content.findViewById(R.id.buttonSheetCancel).setOnClickListener(v -> dialog.dismiss());
+        content.findViewById(R.id.buttonSheetSend).setOnClickListener(v -> {
+            String value = numberInput.getText() == null ? "" : numberInput.getText().toString().trim();
+            String reason = reasonInput.getText() == null ? "" : reasonInput.getText().toString().trim();
+            StudentValidator.NumberResult result = StudentValidator.checkNumber(value);
+            if (value.equals(student.number)) {
+                numberLayout.setError(getString(R.string.error_number_same));
+                return;
+            }
+            if (!StudentValidator.isOk(result)) {
+                numberLayout.setError(numberError(result, value));
+                return;
+            }
+            numberLayout.setError(null);
+            StudentRepository.getInstance().requestNumberCorrection(student.id, value, reason);
+            dialog.dismiss();
+            render();
+            Feedback.show(this, R.string.toast_request_sent_pending);
+            if (Notifier.ASK.equals(Notifier.pref)) {
+                new android.os.Handler(android.os.Looper.getMainLooper())
+                        .postDelayed(() -> Notifier.showSheet(this), 1200);
+            }
+        });
+        numberInput.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) { numberLayout.setError(null); }
+            @Override public void afterTextChanged(android.text.Editable e) {}
         });
         dialog.show();
+        numberInput.requestFocus();
     }
 
     private String nameError(StudentValidator.NameResult r) {

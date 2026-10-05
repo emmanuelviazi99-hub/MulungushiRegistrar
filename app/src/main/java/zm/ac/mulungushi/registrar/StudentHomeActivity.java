@@ -18,30 +18,56 @@ public class StudentHomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_student_home);
+        ConnectivityBanner.attach(this);
 
         String number = getIntent().getStringExtra(EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
 
-        findViewById(R.id.buttonSignOut).setOnClickListener(v -> signOut());
         findViewById(R.id.cardGroupChange).setOnClickListener(v -> openGroupChange());
         findViewById(R.id.cardEditDetails).setOnClickListener(v -> openEditDetails());
         findViewById(R.id.cardGroup).setOnClickListener(v -> openMyGroup());
-        findViewById(R.id.navHome).setOnClickListener(v -> { /* already here */ });
-        findViewById(R.id.navMyGroup).setOnClickListener(v -> openMyGroup());
-        findViewById(R.id.navSync).setOnClickListener(v -> openSync());
+        BottomNav.bindStudent(this, BottomNav.HOME, student.number);
 
         render();
+        RosterFormat.stagger(this);
+        RosterFormat.growBar(findViewById(R.id.occupancyFill));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         render();
+        if (student.noticeKind != null) {
+            deliverNotice();
+        } else {
+            Feedback.showPending(this);
+        }
+        if (Notifier.askSoon) {
+            Notifier.askSoon = false;
+            if (Notifier.ASK.equals(Notifier.pref)) {
+                new android.os.Handler(android.os.Looper.getMainLooper())
+                        .postDelayed(() -> Notifier.showSheet(this), 1200);
+            }
+        }
+    }
+
+    /** A lecturer answered a request: say so, and alert if the student turned alerts on. */
+    private void deliverNotice() {
+        boolean approved = "approved".equals(student.noticeKind);
+        boolean group = "group".equals(student.noticeSubject);
+        int res = group
+                ? (approved ? R.string.notice_group_approved : R.string.notice_group_declined)
+                : (approved ? R.string.notice_number_approved : R.string.notice_number_declined);
+        String message = getString(res);
+        student.noticeKind = null;
+        student.noticeSubject = null;
+        Notifier.alert(this, message);
+        Feedback.show(this, message);
     }
 
     private void render() {
-        ((TextView) findViewById(R.id.buttonSignOut)).setText(initialsOf(student.name));
+        RosterFormat.bindHomeAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
 
         TextView welcome = findViewById(R.id.textWelcome);
         welcome.setText(getString(R.string.welcome_back, firstName(student.name)));
@@ -68,9 +94,9 @@ public class StudentHomeActivity extends AppCompatActivity {
         empty.setLayoutParams(emptyLp);
         track.setVisibility(assigned ? View.VISIBLE : View.GONE);
         if (assigned && count >= StudentRepository.CAPACITY) {
-            fill.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.red_400));
+            fill.setBackgroundResource(R.drawable.bg_fill_red);
         } else {
-            fill.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.navy_600));
+            fill.setBackgroundResource(R.drawable.bg_fill_navy);
         }
 
         TextView programmeSub = findViewById(R.id.textProgrammeSub);
@@ -95,7 +121,7 @@ public class StudentHomeActivity extends AppCompatActivity {
             icon.setImageResource(R.drawable.ic_sync);
             icon.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.indigo_700));
             text.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.indigo_700));
-            String lead = getString(R.string.pending_sync_one);
+            String lead = getString(R.string.pending_sync_one) + " ";
             String link = getString(R.string.view_status);
             android.text.SpannableString span = new android.text.SpannableString(lead + link);
             span.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD),

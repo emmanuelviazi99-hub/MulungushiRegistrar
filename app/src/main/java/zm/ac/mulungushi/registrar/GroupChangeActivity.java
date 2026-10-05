@@ -27,6 +27,7 @@ public class GroupChangeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_change);
+        ConnectivityBanner.attach(this);
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.request_group_change_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -34,8 +35,11 @@ public class GroupChangeActivity extends AppCompatActivity {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
+        BottomNav.bindStudent(this, BottomNav.HOME, student.number);
 
         render();
+        RosterFormat.stagger(this);
     }
 
     @Override
@@ -59,7 +63,8 @@ public class GroupChangeActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.textPendingMove)).setText(getString(R.string.move_to_group, student.pendingGroup));
             findViewById(R.id.buttonCancelRequest).setOnClickListener(v -> {
                 StudentRepository.getInstance().cancelGroupChange(student.id);
-                render();
+                Feedback.postForNext(getString(R.string.toast_request_cancelled_dot));
+                finish();
             });
         } else {
             buildOptions();
@@ -129,7 +134,7 @@ public class GroupChangeActivity extends AppCompatActivity {
         sub.setText(full ? getString(R.string.group_full_note)
                 : getString(R.string.group_places_filled, count, StudentRepository.CAPACITY));
         sub.setTextColor(getResources().getColor(R.color.slate_500));
-        sub.setTextSize(12);
+        sub.setTextSize(13.5f);
         textCol.addView(sub);
 
         row.addView(textCol);
@@ -168,7 +173,9 @@ public class GroupChangeActivity extends AppCompatActivity {
             submit.setText(getString(R.string.request_group_fmt, choice));
             submit.setOnClickListener(v -> {
                 StudentRepository.getInstance().requestGroupChange(student.id, choice);
-                render();
+                Feedback.postForNext(getString(R.string.toast_request_sent_pending));
+                Notifier.askSoon = true;
+                finish();
             });
         }
     }

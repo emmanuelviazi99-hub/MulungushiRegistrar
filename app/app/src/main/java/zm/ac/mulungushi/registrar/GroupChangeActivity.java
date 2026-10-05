@@ -34,8 +34,11 @@ public class GroupChangeActivity extends AppCompatActivity {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
+        BottomNav.bindStudent(this, BottomNav.HOME, student.number);
 
         render();
+        RosterFormat.stagger(this);
     }
 
     @Override
@@ -59,7 +62,8 @@ public class GroupChangeActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.textPendingMove)).setText(getString(R.string.move_to_group, student.pendingGroup));
             findViewById(R.id.buttonCancelRequest).setOnClickListener(v -> {
                 StudentRepository.getInstance().cancelGroupChange(student.id);
-                render();
+                Feedback.postForNext(getString(R.string.toast_request_cancelled_dot));
+                finish();
             });
         } else {
             buildOptions();
@@ -99,9 +103,17 @@ public class GroupChangeActivity extends AppCompatActivity {
         row.setEnabled(!full);
         row.setAlpha(full ? 0.55f : 1f);
 
-        View dot = new View(this);
+        android.widget.FrameLayout dot = new android.widget.FrameLayout(this);
         dot.setLayoutParams(new LinearLayout.LayoutParams(dp(20), dp(20)));
         dot.setBackgroundResource(R.drawable.bg_radio_off);
+        View innerDot = new View(this);
+        android.widget.FrameLayout.LayoutParams innerLp =
+                new android.widget.FrameLayout.LayoutParams(dp(10), dp(10));
+        innerLp.gravity = Gravity.CENTER;
+        innerDot.setLayoutParams(innerLp);
+        innerDot.setBackgroundResource(R.drawable.dot_navy);
+        innerDot.setVisibility(View.GONE);
+        dot.addView(innerDot);
         row.addView(dot);
 
         LinearLayout textCol = new LinearLayout(this);
@@ -121,7 +133,7 @@ public class GroupChangeActivity extends AppCompatActivity {
         sub.setText(full ? getString(R.string.group_full_note)
                 : getString(R.string.group_places_filled, count, StudentRepository.CAPACITY));
         sub.setTextColor(getResources().getColor(R.color.slate_500));
-        sub.setTextSize(12);
+        sub.setTextSize(13.5f);
         textCol.addView(sub);
 
         row.addView(textCol);
@@ -132,11 +144,11 @@ public class GroupChangeActivity extends AppCompatActivity {
                 LinearLayout options = findViewById(R.id.groupOptions);
                 for (int i = 0; i < options.getChildCount(); i++) {
                     LinearLayout r = (LinearLayout) options.getChildAt(i);
-                    View d = r.getChildAt(0);
-                    d.setBackgroundResource(R.drawable.bg_radio_off);
+                    android.widget.FrameLayout d = (android.widget.FrameLayout) r.getChildAt(0);
+                    d.getChildAt(0).setVisibility(View.GONE);
                     r.setBackgroundResource(R.drawable.bg_card_plain);
                 }
-                dot.setBackgroundResource(R.drawable.bg_radio_on);
+                innerDot.setVisibility(View.VISIBLE);
                 row.setBackgroundResource(R.drawable.bg_card_selected);
                 updateSubmit();
             });
@@ -160,7 +172,9 @@ public class GroupChangeActivity extends AppCompatActivity {
             submit.setText(getString(R.string.request_group_fmt, choice));
             submit.setOnClickListener(v -> {
                 StudentRepository.getInstance().requestGroupChange(student.id, choice);
-                render();
+                Feedback.postForNext(getString(R.string.toast_request_sent_pending));
+                Notifier.askSoon = true;
+                finish();
             });
         }
     }

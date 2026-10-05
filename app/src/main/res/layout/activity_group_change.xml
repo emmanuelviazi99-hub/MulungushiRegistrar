@@ -9,8 +9,10 @@
     <include layout="@layout/top_bar_back" />
 
     <ScrollView
+        android:id="@+id/screenScroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,7 +33,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/current_group_label"
                     android:textColor="@color/slate_500"
-                    android:textSize="12sp" />
+                    android:textSize="13.5sp" />
 
                 <TextView
                     android:id="@+id/textCurrentGroup"
@@ -40,7 +42,7 @@
                     android:layout_marginTop="2dp"
                     android:textColor="@color/navy_900"
                     android:textStyle="bold"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     tools:text="G01" />
             </LinearLayout>
 
@@ -68,7 +70,7 @@
                         android:layout_weight="1"
                         android:textColor="@color/navy_900"
                         android:textStyle="bold"
-                        android:textSize="14sp"
+                        android:textSize="16sp"
                         tools:text="Move to G02" />
 
                     <TextView
@@ -80,7 +82,7 @@
                         android:text="@string/pill_pending_short"
                         android:textColor="@color/indigo_600"
                         android:textStyle="bold"
-                        android:textSize="11sp" />
+                        android:textSize="12.5sp" />
                 </LinearLayout>
 
                 <TextView
@@ -89,7 +91,7 @@
                     android:layout_marginBottom="14dp"
                     android:text="@string/requested_note"
                     android:textColor="@color/slate_500"
-                    android:textSize="12.5sp" />
+                    android:textSize="14sp" />
 
                 <Button
                     android:id="@+id/buttonCancelRequest"
@@ -116,7 +118,7 @@
                     android:background="@color/red_50"
                     android:padding="12dp"
                     android:textColor="@color/red_600"
-                    android:textSize="13sp"
+                    android:textSize="14.5sp"
                     android:visibility="gone"
                     tools:text="That group filled up. Choose another." />
 
@@ -137,7 +139,7 @@
                     android:layout_marginBottom="16dp"
                     android:text="@string/group_change_note"
                     android:textColor="@color/slate_400"
-                    android:textSize="12sp" />
+                    android:textSize="13.5sp" />
 
                 <Button
                     android:id="@+id/buttonSubmit"
@@ -151,4 +153,6 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <include layout="@layout/bottom_nav" />
 </LinearLayout>

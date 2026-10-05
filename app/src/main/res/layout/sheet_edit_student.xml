@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:textColor="@color/navy_900"
-            android:textSize="17sp"
+            android:textSize="22sp"
             android:fontFamily="sans-serif-medium"
             android:text="@string/sheet_title_add" />
 
@@ -80,7 +80,7 @@
             android:layout_marginTop="-8dp"
             android:layout_marginBottom="10dp"
             android:textColor="@color/slate_500"
-            android:textSize="12sp"
+            android:textSize="13.5sp"
             android:visibility="gone"
             tools:text="Saving records a number correction (was 202301045)." />
 
@@ -113,7 +113,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:textColor="@color/red_600"
-            android:textSize="12sp"
+            android:textSize="13.5sp"
             android:visibility="gone"
             tools:text="This group is full (15/15). Pick another group or leave it Unassigned." />
 
@@ -125,7 +125,7 @@
             android:background="@color/red_50"
             android:padding="12dp"
             android:textColor="@color/red_600"
-            android:textSize="13sp"
+            android:textSize="14.5sp"
             android:visibility="gone"
             tools:text="202301045 already belongs to Chanda Mwansa. Student numbers must be unique." />
 
@@ -167,7 +167,7 @@
             android:padding="8dp"
             android:text="@string/action_delete_record"
             android:textColor="@color/red_600"
-            android:textSize="13.5sp"
+            android:textSize="15sp"
             android:fontFamily="sans-serif-medium"
             android:visibility="gone"
             android:clickable="true"

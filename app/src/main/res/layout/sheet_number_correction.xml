@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet_top"
+    android:fillViewport="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="28dp">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_sheet_handle" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/request_correction_title"
+            android:textColor="@color/navy_900"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/request_correction_hint"
+            android:textColor="@color/slate_500"
+            android:textSize="14.5sp" />
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_correct_number" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutCorrectNumber"
+            style="@style/Widget.Registrar.InputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputCorrectNumber"
+                style="@style/Widget.Registrar.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_nine_digits"
+                android:inputType="number"
+                android:maxLength="9" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/Registrar.FieldLabel"
+            android:text="@string/label_reason_optional" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutReason"
+            style="@style/Widget.Registrar.InputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputReason"
+                style="@style/Widget.Registrar.EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_reason"
+                android:inputType="textCapSentences"
+                android:maxLength="120" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonSheetCancel"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/slate_100"
+                android:text="@string/action_cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/navy_900"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/buttonSheetSend"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/navy_600"
+                android:text="@string/action_send_request"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

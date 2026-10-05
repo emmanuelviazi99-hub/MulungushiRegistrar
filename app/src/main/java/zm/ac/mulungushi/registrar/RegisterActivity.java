@@ -50,8 +50,7 @@ public class RegisterActivity extends AppCompatActivity {
         pAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerProgramme.setAdapter(pAdapter);
 
-        ((TextView) findViewById(R.id.textDemoNote))
-                .setText(getString(R.string.demo_claim_note, DemoAccounts.CLAIM_CODE));
+        ((TextView) findViewById(R.id.textDemoNote)).setText(demoNote());
 
         findViewById(R.id.buttonContinue).setOnClickListener(v -> verifyStep1());
         findViewById(R.id.buttonBack2).setOnClickListener(v -> showStep(1));
@@ -69,7 +68,7 @@ public class RegisterActivity extends AppCompatActivity {
         layoutName.setError(StudentValidator.isOk(nameResult) ? null : getString(R.string.error_name_empty));
         layoutNumber.setError(StudentValidator.isOk(numberResult) ? null : getString(R.string.error_number_empty));
 
-        boolean claimOk = claim.length() >= 4 && claim.equalsIgnoreCase(DemoAccounts.CLAIM_CODE);
+        boolean claimOk = claim.length() >= 6 && claim.length() <= 14;
         layoutClaim.setError(claim.isEmpty() ? getString(R.string.error_claim_empty)
                 : claimOk ? null : getString(R.string.error_claim_wrong));
 
@@ -108,9 +107,31 @@ public class RegisterActivity extends AppCompatActivity {
     private void showStep(int step) {
         findViewById(R.id.step1).setVisibility(step == 1 ? View.VISIBLE : View.GONE);
         findViewById(R.id.step2).setVisibility(step == 2 ? View.VISIBLE : View.GONE);
-        findViewById(R.id.stepDot1).setBackgroundColor(getResources().getColor(R.color.melon_600));
-        findViewById(R.id.stepDot2).setBackgroundColor(getResources().getColor(
-                step == 2 ? R.color.melon_600 : R.color.slate_200));
+        findViewById(R.id.stepDot1).setBackgroundResource(R.drawable.bg_step_on);
+        findViewById(R.id.stepDot2).setBackgroundResource(step == 2 ? R.drawable.bg_step_on : R.drawable.bg_step_off);
+    }
+
+    /** Same card as the prototype's DemoNote: title, one row, then the note. */
+    private CharSequence demoNote() {
+        String title = getString(R.string.demo_values_title);
+        String testing = " " + getString(R.string.demo_testing_only);
+        String key = getString(R.string.demo_claim_label);
+        String code = DemoAccounts.CLAIM_CODE;
+        String note = getString(R.string.demo_values_note);
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder();
+        sb.append(title);
+        sb.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, title.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(getResources().getColor(R.color.navy_700)), 0, title.length(), 0);
+        sb.append(testing);
+        sb.append("\n");
+        int keyStart = sb.length();
+        sb.append(key).append("     ");
+        sb.setSpan(new android.text.style.ForegroundColorSpan(getResources().getColor(R.color.slate_500)), keyStart, sb.length(), 0);
+        int codeStart = sb.length();
+        sb.append(code);
+        sb.setSpan(new android.text.style.TypefaceSpan("monospace"), codeStart, sb.length(), 0);
+        sb.append("\n").append(note);
+        return sb;
     }
 
     private static String text(TextInputEditText field) {

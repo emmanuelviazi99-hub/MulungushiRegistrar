@@ -35,24 +35,42 @@ public class SyncActivity extends AppCompatActivity {
         sub.setText(R.string.sync_status_sub);
         sub.setVisibility(View.VISIBLE);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        RosterFormat.hideBack(this);
 
         buildLegend();
 
         String role = getIntent().getStringExtra(EXTRA_ROLE);
         if (ROLE_LECTURER.equals(role)) {
+            RosterFormat.bindAvatar(this, "Bella Nyirenda", SignOutSheet.lecturerDetail(this));
+            BottomNav.bindLecturer(this, BottomNav.SYNC);
             renderLecturer();
         } else {
             renderStudent();
         }
+        RosterFormat.stagger(this);
     }
 
     private void buildLegend() {
-        LinearLayout row = findViewById(R.id.legendRow);
-        addLegendPill(row, R.string.pill_local, R.drawable.bg_pill_slate, R.color.slate_600);
-        addLegendPill(row, R.string.pill_pending, R.drawable.bg_pill_indigo, R.color.indigo_600);
-        addLegendPill(row, R.string.pill_syncing, R.drawable.bg_pill_sky, R.color.sky_700);
-        addLegendPill(row, R.string.pill_synced, R.drawable.bg_pill_green, R.color.green_700);
-        addLegendPill(row, R.string.pill_action, R.drawable.bg_pill_red, R.color.red_600);
+        LinearLayout box = findViewById(R.id.legendRow);
+        LinearLayout row1 = newLegendRow();
+        LinearLayout row2 = newLegendRow();
+        box.addView(row1);
+        box.addView(row2);
+        addLegendPill(row1, R.string.pill_local, R.drawable.bg_pill_slate, R.color.slate_600);
+        addLegendPill(row1, R.string.pill_pending, R.drawable.bg_pill_indigo, R.color.indigo_600);
+        addLegendPill(row1, R.string.pill_syncing, R.drawable.bg_pill_sky, R.color.sky_700);
+        addLegendPill(row2, R.string.pill_synced, R.drawable.bg_pill_green, R.color.green_700);
+        addLegendPill(row2, R.string.pill_action, R.drawable.bg_pill_red, R.color.red_600);
+    }
+
+    private LinearLayout newLegendRow() {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(8);
+        r.setLayoutParams(lp);
+        return r;
     }
 
     private void addLegendPill(LinearLayout row, int textRes, int bgRes, int colorRes) {
@@ -60,13 +78,14 @@ public class SyncActivity extends AppCompatActivity {
         pill.setText(textRes);
         pill.setBackgroundResource(bgRes);
         pill.setTextColor(getResources().getColor(colorRes));
-        pill.setTextSize(11.5f);
+        pill.setTextSize(13f);
         pill.setTypeface(pill.getTypeface(), android.graphics.Typeface.BOLD);
         int padH = dp(10), padV = dp(5);
         pill.setPadding(padH, padV, padH, padV);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMarginEnd(dp(8));
+        RosterFormat.addDot(pill, getResources().getColor(colorRes));
         row.addView(pill, lp);
     }
 
@@ -74,6 +93,8 @@ public class SyncActivity extends AppCompatActivity {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
         if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
         Student student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
+        BottomNav.bindStudent(this, BottomNav.SYNC, student.number);
 
         LinearLayout content = findViewById(R.id.syncContent);
         int waiting = 0;
@@ -95,7 +116,7 @@ public class SyncActivity extends AppCompatActivity {
                 getString(R.string.name_programme_synced_note), R.string.pill_synced, R.drawable.bg_pill_green, R.color.green_700));
 
         TextView banner = bannerView(waiting > 0
-                ? getString(R.string.sync_waiting_banner, waiting)
+                ? getResources().getQuantityString(R.plurals.sync_waiting_banner_plural, waiting, waiting)
                 : getString(R.string.sync_up_to_date_banner), waiting > 0);
         content.addView(banner, 0);
 
@@ -110,7 +131,7 @@ public class SyncActivity extends AppCompatActivity {
             TextView empty = new TextView(this);
             empty.setText(R.string.no_pending_requests);
             empty.setTextColor(getResources().getColor(R.color.slate_400));
-            empty.setTextSize(13);
+            empty.setTextSize(14.5f);
             empty.setPadding(0, dp(20), 0, dp(20));
             empty.setGravity(Gravity.CENTER);
             content.addView(empty);
@@ -120,13 +141,13 @@ public class SyncActivity extends AppCompatActivity {
                     content.addView(statusCard(
                             s.name + " — " + getString(R.string.group_change_label),
                             getString(R.string.to_arrow_fmt, s.group, s.pendingGroup),
-                            R.string.pill_syncing, R.drawable.bg_pill_sky, R.color.sky_700));
+                            R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
                 }
                 if (s.pendingNumber != null) {
                     content.addView(statusCard(
                             s.name + " — " + getString(R.string.number_correction_label),
                             getString(R.string.to_arrow_fmt, s.number, s.pendingNumber),
-                            R.string.pill_syncing, R.drawable.bg_pill_sky, R.color.sky_700));
+                            R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
                 }
             }
         }
@@ -152,7 +173,7 @@ public class SyncActivity extends AppCompatActivity {
         titleView.setText(title);
         titleView.setTypeface(titleView.getTypeface(), android.graphics.Typeface.BOLD);
         titleView.setTextColor(getResources().getColor(R.color.navy_900));
-        titleView.setTextSize(14);
+        titleView.setTextSize(16f);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         header.addView(titleView, titleLp);
 
@@ -160,10 +181,11 @@ public class SyncActivity extends AppCompatActivity {
         pill.setText(pillTextRes);
         pill.setBackgroundResource(pillBg);
         pill.setTextColor(getResources().getColor(pillColor));
-        pill.setTextSize(11);
+        pill.setTextSize(12.5f);
         pill.setTypeface(pill.getTypeface(), android.graphics.Typeface.BOLD);
         int ph = dp(9), pv = dp(4);
         pill.setPadding(ph, pv, ph, pv);
+        RosterFormat.addDot(pill, getResources().getColor(pillColor));
         header.addView(pill);
 
         card.addView(header);
@@ -171,7 +193,7 @@ public class SyncActivity extends AppCompatActivity {
         TextView subView = new TextView(this);
         subView.setText(sub);
         subView.setTextColor(getResources().getColor(R.color.slate_500));
-        subView.setTextSize(12.5f);
+        subView.setTextSize(14f);
         LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         subLp.topMargin = dp(4);
@@ -185,7 +207,7 @@ public class SyncActivity extends AppCompatActivity {
         banner.setText(text);
         banner.setBackgroundResource(waiting ? R.drawable.bg_banner_indigo : R.drawable.bg_card_green);
         banner.setTextColor(getResources().getColor(waiting ? R.color.indigo_700 : R.color.green_700));
-        banner.setTextSize(13);
+        banner.setTextSize(14.5f);
         int pad = dp(14);
         banner.setPadding(pad, pad, pad, pad);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
