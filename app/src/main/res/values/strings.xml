@@ -252,7 +252,7 @@
     <string name="sync_waiting_banner">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
     <string name="sync_up_to_date_banner">Your changes are up to date. You\'ll only see your own records here.</string>
     <string name="sync_footnote_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
-    <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone.</string>
+    <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone. The full class queue is lecturer-only.</string>
     <string name="no_pending_requests">No requests waiting</string>
     <string name="group_change_label">Group change</string>
     <string name="number_correction_label">Number correction</string>
@@ -322,4 +322,32 @@
     <string name="demo_testing_only">(testing only)</string>
     <string name="demo_claim_label">Claim code</string>
     <string name="demo_values_note">Any name, any 9-digit number and any 6 to 14 character code also work.</string>
+    <string name="sync_group_transfer_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your current group stays active until then.</string>
+    <string name="sync_number_title">Number correction → %1$s</string>
+    <string name="sync_number_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your number stays %2$s until then.</string>
+    <string name="sync_edit_synced_note">Saved and confirmed by the server.</string>
+    <string name="group_pending_confirm">Your lecturer must confirm it.</string>
+    <string name="group_stay_fmt">You stay in %1$s until then.</string>
+    <string name="sync_syncing_title">Group change — Bwalya Phiri</string>
+    <string name="sync_syncing_note">Retrying with the same operation ID — safe to repeat, cannot double-apply.</string>
+    <string name="sync_conflict_title">Conflicting edit — Mutinta Banda</string>
+    <string name="sync_conflict_note">Their offline edit and the current server record differ. Nothing has been overwritten.</string>
+    <string name="sync_conflict_resolved_note">Resolved — local and server records now match.</string>
+    <string name="sync_offline_proposal">Offline proposal</string>
+    <string name="sync_current_server">Current on server</string>
+    <string name="sync_proposal_body">Programme: DS\nGroup: G03</string>
+    <string name="sync_server_body">Programme: DS\nGroup: G02 (you moved this student)</string>
+    <string name="action_keep_proposal">Keep proposal</string>
+    <string name="action_accept_server">Accept server version</string>
+    <string name="toast_kept_proposal">Kept the offline proposal</string>
+    <string name="toast_accepted_server">Accepted the server version</string>
+    <string name="pill_resolved">Resolved</string>
+    <string name="sync_warn_banner">Deleting Natasha Zulu removed her offline edit\'s target — resurrection was blocked automatically.</string>
+    <string name="sync_ok_banner">2 changes synced successfully across the roster. Local and server records now match.</string>
+    <string name="sync_waiting_one">1 change waiting to sync. You\'ll only see your own records here.</string>
+    <string name="sync_waiting_many">%1$d changes waiting to sync. You\'ll only see your own records here.</string>
+    <plurals name="conflicts_to_review">
+        <item quantity="one">%1$d conflict to review</item>
+        <item quantity="other">%1$d conflicts to review</item>
+    </plurals>
 </resources>

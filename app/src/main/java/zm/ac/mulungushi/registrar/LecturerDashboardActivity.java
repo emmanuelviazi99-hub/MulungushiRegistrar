@@ -64,7 +64,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         int groupsFull = 0;
         for (String g : StudentRepository.GROUPS) if (repo.groupCount(g) >= StudentRepository.CAPACITY) groupsFull++;
         int requestCount = repo.pendingRequestCount();
-        int conflictCount = 0; // stub — see class comment
+        int conflictCount = repo.conflictCount();
 
         ((TextView) findViewById(R.id.tileStudentsNum)).setText(String.valueOf(activeCount));
         ((TextView) findViewById(R.id.tileGroupsFullNum)).setText(String.valueOf(groupsFull));
@@ -74,7 +74,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         ((TextView) findViewById(R.id.actionRequestsSub)).setText(requestCount > 0
                 ? getString(R.string.action_requests_waiting_fmt, requestCount)
                 : getString(R.string.action_requests_sub_none));
-        ((TextView) findViewById(R.id.actionSyncSub)).setText(getString(R.string.action_conflicts_review_fmt, conflictCount));
+        ((TextView) findViewById(R.id.actionSyncSub)).setText(getResources().getQuantityString(R.plurals.conflicts_to_review, conflictCount, conflictCount));
 
         LinearLayout occupancy = findViewById(R.id.occupancyList);
         occupancy.removeAllViews();

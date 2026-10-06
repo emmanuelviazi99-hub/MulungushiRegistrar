@@ -23,7 +23,7 @@ public final class StudentValidator {
 
     private static final Pattern DIGIT = Pattern.compile("\\d");
     private static final Pattern NAME_CHARS =
-            Pattern.compile("[\\p{L}][\\p{L}'.\\- ]*", Pattern.UNICODE_CHARACTER_CLASS);
+            Pattern.compile("[\\p{L}][\\p{L}' .\\-]*");
     private static final Pattern DIGITS_ONLY = Pattern.compile("\\d+");
     private static final Pattern SAME_DIGIT = Pattern.compile("(\\d)\\1{8}");
     private static final Pattern SPACE = Pattern.compile("\\s");

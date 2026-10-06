@@ -101,9 +101,13 @@ final class ConnectivityBanner {
 
     private static boolean isOnline(ConnectivityManager cm) {
         if (cm == null) return true;
-        Network n = cm.getActiveNetwork();
-        if (n == null) return false;
-        NetworkCapabilities c = cm.getNetworkCapabilities(n);
-        return c != null && c.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        try {
+            Network n = cm.getActiveNetwork();
+            if (n == null) return false;
+            NetworkCapabilities c = cm.getNetworkCapabilities(n);
+            return c != null && c.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        } catch (RuntimeException e) {
+            return true; // e.g. permission missing: assume online rather than crash
+        }
     }
 }

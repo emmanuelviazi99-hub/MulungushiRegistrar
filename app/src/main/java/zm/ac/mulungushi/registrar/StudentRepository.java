@@ -46,6 +46,12 @@ public class StudentRepository {
         public String status;      // approved | declined
     }
 
+    /** The one demo sync conflict the prototype shows (Mutinta Banda). Resolving it clears the lecturer's Conflicts count. */
+    private boolean conflictResolved = false;
+    public boolean isConflictResolved() { return conflictResolved; }
+    public void resolveConflict() { conflictResolved = true; }
+    public int conflictCount() { return conflictResolved ? 0 : 1; }
+
     /** Newest last; the screen reverses it. In memory only, like the rest of this stage. */
     private final List<RequestRecord> answered = new ArrayList<>();
     private int nextSeq = 10;

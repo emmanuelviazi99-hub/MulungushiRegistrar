@@ -10,6 +10,7 @@
         <!-- Every text field in the app picks these up -->
         <item name="textInputStyle">@style/Widget.Registrar.InputLayout</item>
         <item name="editTextStyle">@style/Widget.Registrar.EditText</item>
+        <item name="materialButtonStyle">@style/Widget.Registrar.Button</item>
         <!-- To match the prototype font: Resource Manager > Font > add Inter,
              then add <item name="android:fontFamily">@font/inter</item> here. -->
     </style>
@@ -28,6 +29,14 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/navy_900</item>
         <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Prototype buttons: 12dp corners, bold 15sp, no all-caps -->
+    <style name="Widget.Registrar.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="Widget.Registrar.InputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">

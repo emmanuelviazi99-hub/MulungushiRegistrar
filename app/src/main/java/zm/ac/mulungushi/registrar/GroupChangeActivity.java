@@ -61,6 +61,12 @@ public class GroupChangeActivity extends AppCompatActivity {
 
         if (hasPending) {
             ((TextView) findViewById(R.id.textPendingMove)).setText(getString(R.string.move_to_group, student.pendingGroup));
+            TextView pill = findViewById(R.id.pillPending);
+            RosterFormat.addDot(pill, getResources().getColor(R.color.indigo_600));
+            String on = student.pendingGroupOn == null ? "today" : student.pendingGroupOn;
+            String note = getString(R.string.requested_on_fmt, on) + " " + getString(R.string.group_pending_confirm);
+            if (assigned) note += " " + getString(R.string.group_stay_fmt, student.group);
+            ((TextView) findViewById(R.id.textRequestedNote)).setText(note);
             findViewById(R.id.buttonCancelRequest).setOnClickListener(v -> {
                 StudentRepository.getInstance().cancelGroupChange(student.id);
                 Feedback.postForNext(getString(R.string.toast_request_cancelled_dot));
@@ -101,6 +107,7 @@ public class GroupChangeActivity extends AppCompatActivity {
         rowLp.bottomMargin = dp8;
         row.setLayoutParams(rowLp);
         row.setBackgroundResource(R.drawable.bg_card_plain);
+        row.setElevation(dp(1));
         row.setEnabled(!full);
         row.setAlpha(full ? 0.55f : 1f);
 
@@ -128,13 +135,14 @@ public class GroupChangeActivity extends AppCompatActivity {
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         title.setTextColor(getResources().getColor(R.color.navy_900));
         title.setTextSize(14.5f);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
         textCol.addView(title);
 
         TextView sub = new TextView(this);
         sub.setText(full ? getString(R.string.group_full_note)
                 : getString(R.string.group_places_filled, count, StudentRepository.CAPACITY));
         sub.setTextColor(getResources().getColor(R.color.slate_500));
-        sub.setTextSize(13.5f);
+        sub.setTextSize(12f);
         textCol.addView(sub);
 
         row.addView(textCol);

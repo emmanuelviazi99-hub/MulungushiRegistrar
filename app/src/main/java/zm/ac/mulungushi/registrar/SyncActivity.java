@@ -1,29 +1,35 @@
 package zm.ac.mulungushi.registrar;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.ImageViewCompat;
 
-import java.util.List;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.GradientDrawable;
 
 /**
- * Ported from SyncScreen. The prototype's lecturer view includes a few
- * hardcoded dramatized rows (a specific "syncing" retry, a specific named
- * conflict) to showcase every status at once. Those aren't derived from any
- * real state in this build, so rather than invent fake data, this screen
- * shows the live pending requests from StudentRepository and says plainly
- * that offline queueing/conflict handling aren't built yet (see the brief's
- * Activity E). The status-pill legend itself is kept as reference.
+ * Ported from SyncScreen, including the prototype's lecturer view: a retrying
+ * "Syncing" row, the Mutinta Banda conflict card (offline proposal vs current
+ * on server, with Keep / Accept), and the two notices. Those lecturer rows are
+ * the prototype's showcase of every status, so they are fixed demo content;
+ * the student view is built from the student's real requests.
  */
 public class SyncActivity extends AppCompatActivity {
 
     public static final String EXTRA_ROLE = "role";
     public static final String ROLE_STUDENT = "student";
     public static final String ROLE_LECTURER = "lecturer";
+
+    private static final int PENDING = 0, SYNCING = 1, SYNCED = 2, ACTION = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +43,7 @@ public class SyncActivity extends AppCompatActivity {
         sub.setVisibility(View.VISIBLE);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         RosterFormat.hideBack(this);
+        findViewById(R.id.dashLine).setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         buildLegend();
 
@@ -50,6 +57,8 @@ public class SyncActivity extends AppCompatActivity {
         }
         RosterFormat.stagger(this);
     }
+
+    // ---------- legend ----------
 
     private void buildLegend() {
         LinearLayout box = findViewById(R.id.legendRow);
@@ -79,16 +88,17 @@ public class SyncActivity extends AppCompatActivity {
         pill.setText(textRes);
         pill.setBackgroundResource(bgRes);
         pill.setTextColor(getResources().getColor(colorRes));
-        pill.setTextSize(13f);
-        pill.setTypeface(pill.getTypeface(), android.graphics.Typeface.BOLD);
-        int padH = dp(10), padV = dp(5);
-        pill.setPadding(padH, padV, padH, padV);
+        pill.setTextSize(11f);
+        pill.setTypeface(null, Typeface.BOLD);
+        pill.setPadding(dp(10), dp(4), dp(10), dp(4));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMarginEnd(dp(8));
         RosterFormat.addDot(pill, getResources().getColor(colorRes));
         row.addView(pill, lp);
     }
+
+    // ---------- student ----------
 
     private void renderStudent() {
         String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
@@ -101,121 +111,249 @@ public class SyncActivity extends AppCompatActivity {
         int waiting = 0;
 
         if (student.pendingGroup != null) {
-            content.addView(statusCard(
-                    getString(R.string.to_arrow_fmt, getString(R.string.group_change_label), student.pendingGroup),
-                    getString(R.string.requested_note), R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
+            String on = student.pendingGroupOn == null ? "today" : student.pendingGroupOn;
+            content.addView(statusCard(getString(R.string.sync_group_transfer, student.pendingGroup),
+                    getString(R.string.sync_group_transfer_note, on), R.string.pill_pending_short, PENDING, 12));
             waiting++;
         }
         if (student.pendingNumber != null) {
-            content.addView(statusCard(
-                    getString(R.string.to_arrow_fmt, getString(R.string.number_correction_label), student.pendingNumber),
-                    getString(R.string.number_correction_pending_note), R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
+            String on = student.pendingNumberOn == null ? "today" : student.pendingNumberOn;
+            content.addView(statusCard(getString(R.string.sync_number_title, student.pendingNumber),
+                    getString(R.string.sync_number_note, on, student.number), R.string.pill_pending_short, PENDING, 12));
             waiting++;
         }
-        // Name/programme edits apply immediately in this build (no offline queue yet), so this is always Synced.
+        // Name/programme edits apply straight away in this build, so this row is always Synced.
         content.addView(statusCard(getString(R.string.name_programme_edit_title),
-                getString(R.string.name_programme_synced_note), R.string.pill_synced, R.drawable.bg_pill_green, R.color.green_700));
+                getString(R.string.sync_edit_synced_note), R.string.pill_synced, SYNCED, 16));
 
-        TextView banner = bannerView(waiting > 0
-                ? getResources().getQuantityString(R.plurals.sync_waiting_banner_plural, waiting, waiting)
-                : getString(R.string.sync_up_to_date_banner), waiting > 0);
-        content.addView(banner, 0);
+        String text;
+        if (waiting == 0) text = getString(R.string.sync_up_to_date_banner);
+        else if (waiting == 1) text = getString(R.string.sync_waiting_one);
+        else text = getString(R.string.sync_waiting_many, waiting);
+        content.addView(banner(waiting > 0 ? "offline" : "ok", text));
 
         ((TextView) findViewById(R.id.textFootnote)).setText(R.string.sync_footnote_student);
     }
 
+    // ---------- lecturer ----------
+
     private void renderLecturer() {
         LinearLayout content = findViewById(R.id.syncContent);
-        List<Student> pending = StudentRepository.getInstance().getPendingRequests();
-
-        if (pending.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText(R.string.no_pending_requests);
-            empty.setTextColor(getResources().getColor(R.color.slate_400));
-            empty.setTextSize(14.5f);
-            empty.setPadding(0, dp(20), 0, dp(20));
-            empty.setGravity(Gravity.CENTER);
-            content.addView(empty);
-        } else {
-            for (Student s : pending) {
-                if (s.pendingGroup != null) {
-                    content.addView(statusCard(
-                            s.name + " — " + getString(R.string.group_change_label),
-                            getString(R.string.to_arrow_fmt, s.group, s.pendingGroup),
-                            R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
-                }
-                if (s.pendingNumber != null) {
-                    content.addView(statusCard(
-                            s.name + " — " + getString(R.string.number_correction_label),
-                            getString(R.string.to_arrow_fmt, s.number, s.pendingNumber),
-                            R.string.pill_pending_short, R.drawable.bg_pill_indigo, R.color.indigo_600));
-                }
-            }
-        }
+        content.addView(statusCard(getString(R.string.sync_syncing_title),
+                getString(R.string.sync_syncing_note), R.string.pill_syncing, SYNCING, 12));
+        content.addView(conflictCard());
+        content.addView(banner("warn", getString(R.string.sync_warn_banner)));
+        content.addView(banner("ok", getString(R.string.sync_ok_banner)));
         ((TextView) findViewById(R.id.textFootnote)).setText(R.string.sync_footnote_lecturer);
     }
 
-    private View statusCard(String title, String sub, int pillTextRes, int pillBg, int pillColor) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundResource(R.drawable.bg_card_plain);
-        int pad = dp(14);
-        card.setPadding(pad, pad, pad, pad);
-        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+    private View conflictCard() {
+        final StudentRepository repo = StudentRepository.getInstance();
+        final boolean resolved = repo.isConflictResolved();
+
+        LinearLayout card = newCard(16);
+        card.setBackgroundResource(resolved ? R.drawable.bg_card_resolved : R.drawable.bg_card_conflict);
+
+        card.addView(headerRow(getString(R.string.sync_conflict_title),
+                resolved ? R.string.pill_resolved : R.string.pill_action, resolved ? SYNCED : ACTION));
+
+        if (resolved) {
+            card.addView(body(getString(R.string.sync_conflict_resolved_note), 0));
+            return card;
+        }
+
+        card.addView(body(getString(R.string.sync_conflict_note), 12));
+
+        LinearLayout boxes = new LinearLayout(this);
+        boxes.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams boxesLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        cardLp.bottomMargin = dp(10);
-        card.setLayoutParams(cardLp);
+        boxesLp.bottomMargin = dp(12);
+        boxes.setLayoutParams(boxesLp);
+        boxes.addView(compareBox(R.string.sync_offline_proposal, R.string.sync_proposal_body,
+                R.drawable.bg_dashed_box_sky, true));
+        boxes.addView(compareBox(R.string.sync_current_server, R.string.sync_server_body,
+                R.drawable.bg_dashed_box_grey, false));
+        card.addView(boxes);
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
 
-        TextView titleView = new TextView(this);
-        titleView.setText(title);
-        titleView.setTypeface(titleView.getTypeface(), android.graphics.Typeface.BOLD);
-        titleView.setTextColor(getResources().getColor(R.color.navy_900));
-        titleView.setTextSize(16f);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        header.addView(titleView, titleLp);
+        Button keep = actionButton(R.string.action_keep_proposal, R.color.slate_100, R.color.navy_700);
+        LinearLayout.LayoutParams keepLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        keepLp.setMarginEnd(dp(5));
+        keep.setOnClickListener(v -> resolve(R.string.toast_kept_proposal));
+        buttons.addView(keep, keepLp);
 
-        TextView pill = new TextView(this);
-        pill.setText(pillTextRes);
-        pill.setBackgroundResource(pillBg);
-        pill.setTextColor(getResources().getColor(pillColor));
-        pill.setTextSize(12.5f);
-        pill.setTypeface(pill.getTypeface(), android.graphics.Typeface.BOLD);
-        int ph = dp(9), pv = dp(4);
-        pill.setPadding(ph, pv, ph, pv);
-        RosterFormat.addDot(pill, getResources().getColor(pillColor));
-        header.addView(pill);
+        Button accept = actionButton(R.string.action_accept_server, R.color.navy_600, R.color.white);
+        LinearLayout.LayoutParams acceptLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        acceptLp.setMarginStart(dp(5));
+        accept.setOnClickListener(v -> resolve(R.string.toast_accepted_server));
+        buttons.addView(accept, acceptLp);
 
-        card.addView(header);
-
-        TextView subView = new TextView(this);
-        subView.setText(sub);
-        subView.setTextColor(getResources().getColor(R.color.slate_500));
-        subView.setTextSize(14f);
-        LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        subLp.topMargin = dp(4);
-        card.addView(subView, subLp);
-
+        card.addView(buttons);
         return card;
     }
 
-    private TextView bannerView(String text, boolean waiting) {
-        TextView banner = new TextView(this);
-        banner.setText(text);
-        banner.setBackgroundResource(waiting ? R.drawable.bg_banner_indigo : R.drawable.bg_card_green);
-        banner.setTextColor(getResources().getColor(waiting ? R.color.indigo_700 : R.color.green_700));
-        banner.setTextSize(14.5f);
-        int pad = dp(14);
-        banner.setPadding(pad, pad, pad, pad);
+    private void resolve(int toastRes) {
+        StudentRepository.getInstance().resolveConflict();
+        Feedback.show(this, toastRes);
+        LinearLayout content = findViewById(R.id.syncContent);
+        content.removeAllViews();
+        renderLecturer();
+    }
+
+    private View compareBox(int titleRes, int bodyRes, int bgRes, boolean first) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundResource(bgRes);
+        box.setPadding(dp(10), dp(10), dp(10), dp(10));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+        if (first) lp.setMarginEnd(dp(4)); else lp.setMarginStart(dp(4));
+        box.setLayoutParams(lp);
+
+        TextView title = new TextView(this);
+        title.setText(getString(titleRes).toUpperCase());
+        title.setTextSize(11f);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setLetterSpacing(0.04f);
+        title.setTextColor(getResources().getColor(R.color.slate_500));
+        title.setPadding(0, 0, 0, dp(4));
+        box.addView(title);
+
+        TextView text = new TextView(this);
+        text.setText(bodyRes);
+        text.setTextSize(12f);
+        text.setLineSpacing(dp(2), 1f);
+        text.setTextColor(getResources().getColor(R.color.navy_900));
+        box.addView(text);
+        return box;
+    }
+
+    // ---------- shared pieces ----------
+
+    private LinearLayout newCard(int bottomMarginDp) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackgroundResource(R.drawable.bg_card_plain);
+        card.setElevation(dp(2));
+        card.setPadding(dp(16), dp(16), dp(16), dp(16));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = dp(12);
-        banner.setLayoutParams(lp);
-        return banner;
+        lp.bottomMargin = dp(bottomMarginDp);
+        card.setLayoutParams(lp);
+        return card;
+    }
+
+    private View statusCard(String title, String sub, int pillTextRes, int tone, int bottomMarginDp) {
+        LinearLayout card = newCard(bottomMarginDp);
+        card.addView(headerRow(title, pillTextRes, tone));
+        card.addView(body(sub, 0));
+        return card;
+    }
+
+    private View headerRow(String title, int pillTextRes, int tone) {
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        hlp.bottomMargin = dp(4);
+        header.setLayoutParams(hlp);
+
+        TextView titleView = new TextView(this);
+        titleView.setText(title);
+        titleView.setTypeface(null, Typeface.BOLD);
+        titleView.setTextColor(getResources().getColor(R.color.navy_900));
+        titleView.setTextSize(14f);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        titleLp.setMarginEnd(dp(8));
+        header.addView(titleView, titleLp);
+
+        int bg, color;
+        switch (tone) {
+            case SYNCING: bg = R.drawable.bg_pill_sky; color = R.color.sky_700; break;
+            case SYNCED: bg = R.drawable.bg_pill_green; color = R.color.green_700; break;
+            case ACTION: bg = R.drawable.bg_pill_red; color = R.color.red_600; break;
+            default: bg = R.drawable.bg_pill_indigo; color = R.color.indigo_600; break;
+        }
+        TextView pill = new TextView(this);
+        pill.setText(pillTextRes);
+        pill.setBackgroundResource(bg);
+        pill.setTextColor(getResources().getColor(color));
+        pill.setTextSize(11f);
+        pill.setTypeface(null, Typeface.BOLD);
+        pill.setPadding(dp(10), dp(4), dp(10), dp(4));
+        RosterFormat.addDot(pill, getResources().getColor(color));
+        header.addView(pill);
+        return header;
+    }
+
+    private TextView body(String text, int bottomMarginDp) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextColor(getResources().getColor(R.color.slate_500));
+        tv.setTextSize(12.5f);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(bottomMarginDp);
+        tv.setLayoutParams(lp);
+        return tv;
+    }
+
+    private Button actionButton(int label, int bgColor, int textColor) {
+        Button b = new Button(this);
+        b.setText(label);
+        b.setAllCaps(false);
+        b.setTextSize(15f);
+        b.setTypeface(null, Typeface.BOLD);
+        b.setTextColor(getResources().getColor(textColor));
+        b.setStateListAnimator(null);
+        b.setElevation(0f);
+        b.setMinHeight(dp(48));
+        b.setMinimumHeight(dp(48));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(getResources().getColor(bgColor));
+        bg.setCornerRadius(dp(12));
+        b.setBackground(bg);
+        return b;
+    }
+
+    /** Prototype Banner: tinted rounded box, 18dp icon, 13sp text. */
+    private View banner(String tone, String text) {
+        int bg, fg, icon;
+        switch (tone) {
+            case "warn": bg = R.color.amber_50; fg = R.color.amber_700; icon = R.drawable.ic_alert_circle; break;
+            case "ok": bg = R.color.green_50; fg = R.color.green_700; icon = R.drawable.ic_check_circle; break;
+            default: bg = R.color.indigo_50; fg = R.color.indigo_700; icon = R.drawable.ic_sync; break;
+        }
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(dp(14), dp(14), dp(14), dp(14));
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(getResources().getColor(bg));
+        shape.setCornerRadius(dp(12));
+        row.setBackground(shape);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(16);
+        row.setLayoutParams(lp);
+
+        ImageView iv = new ImageView(this);
+        iv.setImageResource(icon);
+        ImageViewCompat.setImageTintList(iv, ColorStateList.valueOf(getResources().getColor(fg)));
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(18), dp(18));
+        ilp.topMargin = dp(1);
+        ilp.setMarginEnd(dp(10));
+        row.addView(iv, ilp);
+
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(13f);
+        tv.setLineSpacing(0f, 1.1f);
+        tv.setTextColor(getResources().getColor(fg));
+        row.addView(tv, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        return row;
     }
 
     private int dp(int value) {

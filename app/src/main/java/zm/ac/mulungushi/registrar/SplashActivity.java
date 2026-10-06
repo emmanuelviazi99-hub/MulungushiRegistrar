@@ -72,6 +72,7 @@ public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashLog.install(this);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         final float d = getResources().getDisplayMetrics().density;
@@ -110,7 +111,7 @@ public class SplashActivity extends AppCompatActivity {
         FrameLayout.LayoutParams glp = new FrameLayout.LayoutParams((int) (gradsH * 67f / 105.2f), gradsH);
         glp.gravity = Gravity.END | Gravity.TOP;
         glp.rightMargin = (int) Math.min(wPx * 0.07f, 34f * d);
-        glp.topMargin = (int) (hPx * 0.48f);
+        glp.topMargin = (int) (hPx * 0.51f);
         red.addView(grads, glp);
 
         root.addView(blue, new FrameLayout.LayoutParams(-1, -1));
@@ -208,9 +209,11 @@ public class SplashActivity extends AppCompatActivity {
     private void goToLogin() {
         if (left) return;
         left = true;
-        startActivity(new Intent(this, LoginActivity.class));
-        overridePendingTransition(R.anim.page_fade_in, R.anim.hold);
-        finish();
+        CrashLog.showIfAny(this, () -> {
+            startActivity(new Intent(this, LoginActivity.class));
+            overridePendingTransition(R.anim.page_fade_in, R.anim.hold);
+            finish();
+        });
     }
 
     private int statusBarHeight() {
