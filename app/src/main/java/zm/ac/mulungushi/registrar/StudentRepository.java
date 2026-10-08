@@ -67,6 +67,7 @@ public class StudentRepository {
 
     private void seed() {
         Student chanda = new Student("s1", "Chanda Mwansa", "202301045", "CS", "G01", true);
+        chanda.email = DemoAccounts.STUDENT_EMAIL; // so Forgot password works for the demo student
         chanda.pendingGroup = "G02"; // same starting state as the prototype: one open group-change request
         chanda.pendingGroupOn = "12 Sep";
         chanda.pendingGroupSeq = 4;
@@ -137,6 +138,16 @@ public class StudentRepository {
         Student demo = new Student("demo-" + number, "Demo Student", number, "CS", UNASSIGNED, true);
         students.add(demo);
         return demo;
+    }
+
+    /** The active student registered with this email, or null. Case does not matter. */
+    public Student findByEmail(String email) {
+        if (email == null) return null;
+        String e = email.trim();
+        for (Student s : students) {
+            if (s.active && s.email != null && s.email.equalsIgnoreCase(e)) return s;
+        }
+        return null;
     }
 
     public void add(Student s) {

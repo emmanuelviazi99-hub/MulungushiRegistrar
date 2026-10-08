@@ -14,18 +14,31 @@
 
         <include layout="@layout/top_bar_back" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="invisible" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- 2-step progress -->
+            <!-- progress dots and label -->
             <LinearLayout
+                android:id="@+id/stepHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
 
                 <View
                     android:id="@+id/stepDot1"
@@ -40,11 +53,43 @@
                     android:layout_width="0dp"
                     android:layout_height="6dp"
                     android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
                     android:layout_marginStart="4dp"
                     android:background="@drawable/bg_step_off" />
+
+                <View
+                    android:id="@+id/stepDot3"
+                    android:layout_width="0dp"
+                    android:layout_height="6dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_step_off" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textStepLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/slate_500"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="Step 1 of 3" />
             </LinearLayout>
 
-            <!-- Step 1 -->
+            <!-- form-level message (network problem etc.) -->
+            <TextView
+                android:id="@+id/textFormError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@color/red_50"
+                android:padding="12dp"
+                android:textColor="@color/red_600"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="Could not reach the server. Check your connection and try again." />
+
             <LinearLayout
                 android:id="@+id/step1"
                 android:layout_width="match_parent"
@@ -81,7 +126,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/hint_register_name"
-                        android:inputType="textPersonName" />
+                        android:inputType="textPersonName|textCapWords"
+                        android:imeOptions="actionNext"
+                        android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_student_number" />
@@ -98,55 +145,82 @@
                         android:layout_height="wrap_content"
                         android:hint="@string/hint_register_number"
                         android:inputType="number"
+                        android:imeOptions="actionNext"
+                        android:singleLine="true"
                         android:maxLength="9" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_claim_code" />
+                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_phone" />
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutClaim"
+                    android:id="@+id/layoutPhone"
+                    style="@style/Widget.Registrar.InputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputPhone"
+                        style="@style/Widget.Registrar.EditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/hint_phone"
+                        android:inputType="phone"
+                        android:imeOptions="actionNext"
+                        android:singleLine="true"
+                        android:maxLength="16" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_nrc" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutNrc"
+                    style="@style/Widget.Registrar.InputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputNrc"
+                        style="@style/Widget.Registrar.EditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/hint_nrc"
+                        android:inputType="number"
+                        android:imeOptions="actionNext"
+                        android:singleLine="true"
+                        android:digits="0123456789/"
+                        android:maxLength="11" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_email" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutEmail"
                     style="@style/Widget.Registrar.InputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp">
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/inputClaim"
+                        android:id="@+id/inputEmail"
                         style="@style/Widget.Registrar.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_claim_code"
-                        android:inputType="textCapCharacters" />
+                        android:hint="@string/hint_email"
+                        android:inputType="textEmailAddress"
+                        android:imeOptions="actionDone"
+                        android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
-                    android:id="@+id/buttonContinue"
+                    android:id="@+id/buttonProceed"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="8dp"
                     android:backgroundTint="@color/navy_600"
-                    android:text="@string/action_continue"
+                    android:text="@string/action_proceed"
                     android:textColor="@color/white"
                     android:textAllCaps="false"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     app:cornerRadius="12dp" />
-
-                <TextView
-                    android:id="@+id/textDemoNote"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:background="@drawable/bg_demo_note"
-                    android:paddingStart="14dp"
-                    android:paddingTop="12dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="12dp"
-                    android:lineSpacingExtra="2dp"
-                    android:textColor="@color/slate_600"
-                    android:textSize="12sp"
-                    tools:text="Demo: any name and 9-digit number work, claim code is MU-7K4Q." />
             </LinearLayout>
 
-            <!-- Step 2 -->
             <LinearLayout
                 android:id="@+id/step2"
                 android:layout_width="match_parent"
@@ -163,13 +237,105 @@
                     android:textSize="19sp" />
 
                 <TextView
+                    android:id="@+id/textCodeSub"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="18dp"
-                    android:text="@string/register_step2_sub"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="20dp"
+                    android:text="@string/register_step2_sub_fmt"
                     android:textColor="@color/slate_500"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
+
+                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_claim_code" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutCode"
+                    style="@style/Widget.Registrar.InputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputCode"
+                        style="@style/Widget.Registrar.EditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/hint_claim_code"
+                        android:inputType="textCapCharacters|textNoSuggestions"
+                        android:imeOptions="actionDone"
+                        android:singleLine="true"
+                        android:letterSpacing="0.1"
+                        android:textSize="20sp"
+                        android:maxLength="14" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/buttonBack2"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="@color/slate_100"
+                        android:text="@string/action_back"
+                        android:textColor="@color/navy_900"
+                        android:textAllCaps="false" />
+
+                    <Button
+                        android:id="@+id/buttonVerify"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:backgroundTint="@color/navy_600"
+                        android:text="@string/action_verify"
+                        android:textColor="@color/white"
+                        android:textAllCaps="false"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textResend"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:text="@string/action_resend"
+                    android:textColor="@color/slate_400"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/step3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/register_step3_title"
+                    android:textColor="@color/navy_900"
+                    android:textStyle="bold"
+                    android:textSize="19sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="20dp"
+                    android:text="@string/register_step3_sub"
+                    android:textColor="@color/slate_500"
+                    android:textSize="14sp" />
 
                 <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_programme" />
                 <Spinner
@@ -186,7 +352,7 @@
                     style="@style/Widget.Registrar.InputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="14dp"
                     app:endIconMode="password_toggle">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/inputPassword"
@@ -194,22 +360,44 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/hint_password_create"
-                        android:inputType="textPassword" />
+                        android:inputType="textPassword"
+                        android:imeOptions="actionNext"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_confirm_password" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutConfirm"
+                    style="@style/Widget.Registrar.InputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:endIconMode="password_toggle">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputConfirm"
+                        style="@style/Widget.Registrar.EditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/hint_confirm_password"
+                        android:inputType="textPassword"
+                        android:imeOptions="actionDone"
+                        android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/buttonBack2"
+                        android:id="@+id/buttonBack3"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="6dp"
                         android:backgroundTint="@color/slate_100"
-                        android:text="@string/action_cancel"
+                        android:text="@string/action_back"
                         android:textColor="@color/navy_900"
                         android:textAllCaps="false" />
 
@@ -220,7 +408,7 @@
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
                         android:backgroundTint="@color/navy_600"
-                        android:text="@string/action_finish_register"
+                        android:text="@string/action_finish"
                         android:textColor="@color/white"
                         android:textAllCaps="false"
                         android:textSize="15sp"
@@ -228,6 +416,22 @@
                         app:cornerRadius="12dp" />
                 </LinearLayout>
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/textDemoNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_demo_note"
+                android:paddingStart="14dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="12dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/slate_600"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Demo (testing only): the code is MU-7K4Q." />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -14,6 +14,10 @@ public class Student {
     public String programme; // CS, IT or DS
     public String group;     // G01..G04 or Unassigned
     public boolean active;
+    /** Contact details collected at registration. Null for records added by a lecturer or seeded before this existed. */
+    public String email;
+    public String phone; // +260XXXXXXXXX
+    public String nrc;   // 123456/10/1
     /** Group this student has asked to move to, or null. Stands in for the prototype's groupRequest until the sync queue exists. */
     public String pendingGroup;
     /** Number correction this student has requested, or null. Stands in for the prototype's numberRequest. */
@@ -42,6 +46,9 @@ public class Student {
     /** Shallow copy, used so an open edit sheet never mutates the stored record until Save. */
     public Student copy() {
         Student c = new Student(id, name, number, programme, group, active);
+        c.email = email;
+        c.phone = phone;
+        c.nrc = nrc;
         c.pendingGroup = pendingGroup;
         c.pendingNumber = pendingNumber;
         c.pendingGroupOn = pendingGroupOn;

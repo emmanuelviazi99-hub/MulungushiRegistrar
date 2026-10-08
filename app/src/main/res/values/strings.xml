@@ -117,10 +117,6 @@
 
     <!-- Register -->
     <string name="register_title">Register</string>
-    <string name="register_step1_title">Verify your claim code</string>
-    <string name="register_step1_sub">Enter your details and the claim code your lecturer gave you.</string>
-    <string name="register_step2_title">Complete your profile</string>
-    <string name="register_step2_sub">Choose your programme and set a password.</string>
     <string name="label_claim_code">Claim code</string>
     <string name="hint_claim_code">e.g. MU-7K4Q</string>
     <string name="error_claim_empty">Enter your claim code.</string>
@@ -128,18 +124,10 @@
     <string name="hint_password_create">At least 8 characters</string>
     <string name="error_password_short">At least 8 characters.</string>
     <string name="action_continue">Continue</string>
-    <string name="action_finish_register">Save &amp; finish</string>
-    <string name="demo_claim_note">Demo: any name and 9-digit number work, claim code is %1$s.</string>
-    <string name="toast_registered">Account created — welcome!</string>
     <string name="error_number_registered">That number is already registered. Try signing in instead.</string>
 
     <!-- Forgot password -->
     <string name="forgot_title">Reset password</string>
-    <string name="forgot_step1_title">Verify it\'s you</string>
-    <string name="forgot_step1_sub">Enter your student number and the claim code your lecturer gave you.</string>
-    <string name="forgot_step2_title">Choose a new password</string>
-    <string name="forgot_step2_sub">Pick one you don\'t use on any other account.</string>
-    <string name="forgot_error_mismatch">Those details don\'t match. Check them and try again.</string>
     <string name="forgot_done_title">Password updated</string>
     <string name="forgot_done_sub">Sign in with your new password.</string>
     <string name="action_update_password">Update password</string>
@@ -350,4 +338,62 @@
         <item quantity="one">%1$d conflict to review</item>
         <item quantity="other">%1$d conflicts to review</item>
     </plurals>
+
+    <!-- ===== Register with claim code (3 pages) and Forgot password (email, code, new password) ===== -->
+    <string name="register_step1_title">Create your account</string>
+    <string name="register_step1_sub">Enter your details. We\'ll email you a claim code.</string>
+    <string name="register_step2_title">Enter your claim code</string>
+    <string name="register_step2_sub_fmt">We sent a code to %1$s. It is valid for %2$d minutes.</string>
+    <string name="register_step3_title">Finish your account</string>
+    <string name="register_step3_sub">Choose your programme and set a password.</string>
+    <string name="toast_registered">Account created. Welcome!</string>
+
+    <string name="forgot_step1_title">Reset your password</string>
+    <string name="forgot_step1_sub">Enter the email you registered with. We\'ll send you a code.</string>
+    <string name="forgot_step2_title">Enter your code</string>
+    <string name="forgot_step2_sub_fmt">If %1$s is registered, we\'ve sent a code to it. It is valid for %2$d minutes.</string>
+    <string name="forgot_step3_title">Choose a new password</string>
+    <string name="forgot_step3_sub">Pick one you don\'t use on any other account.</string>
+
+    <string name="step_label_fmt">Step %1$d of %2$d</string>
+    <string name="label_phone">Phone number</string>
+    <string name="hint_phone">+260 9XX XXX XXX</string>
+    <string name="label_nrc">NRC</string>
+    <string name="hint_nrc">123456/10/1</string>
+    <string name="label_email">Email</string>
+    <string name="hint_email">name@example.com</string>
+    <string name="label_confirm_password">Confirm password</string>
+    <string name="hint_confirm_password">Type it again</string>
+    <string name="label_new_password">New password</string>
+    <string name="label_token">Token</string>
+    <string name="hint_token">Code from your email</string>
+
+    <string name="action_proceed">Proceed</string>
+    <string name="action_verify">Verify</string>
+    <string name="action_finish">Finish</string>
+    <string name="action_resend">Resend code</string>
+    <string name="resend_in_fmt">Resend code in %1$s</string>
+    <string name="toast_code_sent">Code sent</string>
+    <string name="toast_code_resent">New code sent</string>
+
+    <string name="error_email_empty">Enter your email.</string>
+    <string name="error_email_invalid">That email doesn\'t look right. Example: name@example.com</string>
+    <string name="error_phone_empty">Enter your phone number.</string>
+    <string name="error_phone_invalid">Use +260 followed by 9 digits.</string>
+    <string name="error_nrc_empty">Enter your NRC.</string>
+    <string name="error_nrc_invalid">Use the format 123456/10/1.</string>
+    <string name="error_code_empty">Enter the code from your email.</string>
+    <string name="error_code_invalid">That isn\'t a valid code. Check the email and try again.</string>
+    <string name="error_code_wrong_fmt">That code is wrong. %1$d tries left.</string>
+    <string name="error_code_expired">That code has expired. Request a new one.</string>
+    <string name="error_code_locked">Too many wrong tries. Request a new code.</string>
+    <string name="error_confirm_empty">Type your password again.</string>
+    <string name="error_password_mismatch">The two passwords don\'t match.</string>
+    <string name="error_not_on_roster">We can\'t find that student number on the university list.</string>
+    <string name="error_email_in_use">That email is already registered. Try signing in instead.</string>
+    <string name="error_not_verified">Please verify your code first.</string>
+    <string name="error_network">Couldn\'t reach the server. Check your connection and try again.</string>
+
+    <string name="demo_code_note_fmt">Demo (testing only): no email is sent. The code is %1$s.</string>
+    <string name="demo_reset_note_fmt">Demo (testing only): reset the demo student with %1$s. The code is %2$s.</string>
 </resources>
