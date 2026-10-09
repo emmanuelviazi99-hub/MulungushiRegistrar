@@ -32,7 +32,7 @@ public final class LoginValidator {
         if (t.contains("@")) {
             return EMAIL.matcher(t).matches() ? Result.OK_STAFF : Result.EMAIL_INCOMPLETE;
         }
-        if (!DIGITS.matcher(t).matches()) return Result.NOT_DIGITS;
+        if (!DIGITS.matcher(t).matches()) return Result.OK_STAFF;
         if (t.length() != 9) return Result.WRONG_LENGTH;
         if (SAME_DIGIT.matcher(t).matches()
                 || "0123456789".contains(t)

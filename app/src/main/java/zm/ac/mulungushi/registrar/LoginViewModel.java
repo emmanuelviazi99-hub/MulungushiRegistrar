@@ -65,7 +65,8 @@ public class LoginViewModel extends ViewModel {
             return;
         }
         if (r == LoginValidator.Result.OK_STAFF) {
-            boolean match = identity.trim().equalsIgnoreCase(DemoAccounts.LECTURER_EMAIL)
+            String trimmed = identity.trim();
+            boolean match = (trimmed.equalsIgnoreCase(DemoAccounts.LECTURER_EMAIL) || trimmed.equalsIgnoreCase("lecturer1"))
                     && password.equals(DemoAccounts.LECTURER_PASSWORD);
             if (match) {
                 signedIn.setValue(Role.LECTURER);
