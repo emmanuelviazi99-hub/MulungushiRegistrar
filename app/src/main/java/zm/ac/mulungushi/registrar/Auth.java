@@ -12,7 +12,7 @@ public final class Auth {
 
     public static synchronized AuthService get() {
         if (service == null) {
-            service = new DemoAuthService(); // <- replace with the real server class
+            service = new ApiAuthService(); // <- replace with the real server class
         }
         return service;
     }
