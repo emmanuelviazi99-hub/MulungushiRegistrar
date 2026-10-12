@@ -6,7 +6,8 @@ package zm.ac.mulungushi.registrar;
  * ApiAuthService is the implementation; Auth.get() hands it out.
  *
  * The screens only show the answer. The server enforces the rules:
- *  - a student's number + NRC + date of birth must match the roster a lecturer created
+ *  - a new student can sign up straight away; if the student number is already on the
+ *    roster, its NRC + date of birth must match (so nobody takes over someone's record)
  *  - a lecturer's email + employee ID must be on the staff list
  *  - a code is valid for CODE_VALID_MINUTES, allows MAX_CODE_TRIES tries, and a new
  *    one can be asked for every RESEND_SECONDS
@@ -123,13 +124,16 @@ public interface AuthService {
 
     // ---- student sign-up ----
 
-    /** Checks the details against the roster, then emails a code. Calling it again is "Resend code". */
+    /** Checks the details (against the roster if the number is on it), then emails a code. Calling it again is "Resend code". */
     void requestRegistrationCode(Registration details, Callback callback);
 
     /** Checks the code the student typed. */
     void verifyRegistrationCode(String email, String code, Callback callback);
 
-    /** Creates the account and signs in. Only works after the code was verified. */
+    /**
+     * Creates the account (and, for a student not on the roster yet, their student record)
+     * and signs in. Only works after the code was verified. programme is required for a new student.
+     */
     void completeRegistration(String email, String programme, String password, Callback callback);
 
     // ---- lecturer sign-up ----

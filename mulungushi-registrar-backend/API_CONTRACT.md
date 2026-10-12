@@ -21,7 +21,7 @@ The examples below were captured from the running server.
 
 | Method | Endpoint | Who | Purpose |
 |---|---|---|---|
-| POST | `/auth/register/request` | anyone | Student sign-up step 1: prove you are on the roster, get a code by email |
+| POST | `/auth/register/request` | anyone | Student sign-up step 1: give your details (roster or new student), get a code by email |
 | POST | `/auth/register/verify` | anyone | Step 2: enter the code |
 | POST | `/auth/register/complete` | anyone | Step 3: choose a password; account created, signed in |
 | POST | `/auth/staff/request` | anyone | Lecturer sign-up step 1: email + employee ID on the staff list |
@@ -64,7 +64,10 @@ when typing.
 ### `POST /auth/register/request` (student)
 
 ```json
-// Request — studentNumber + nrc + dateOfBirth must all match the roster row a lecturer created.
+// Request. Two cases, same body:
+//  - studentNumber already on the roster: nrc + dateOfBirth must match that row
+//  - a new studentNumber (self sign-up): accepted if the nrc is not another student's.
+//    Nothing is saved in students yet; the record is created at /register/complete.
 // nrc may be typed with or without slashes; phone accepts 0977…, 260977…, +260 977 …
 {
   "fullName": "Chanda Mwansa",
@@ -81,7 +84,7 @@ when typing.
 
 | Error | When |
 |---|---|
-| 404 `NOT_ON_ROSTER` | The details do not match a roster row. One answer for every mismatch, so it cannot be used to find out which student numbers exist |
+| 404 `NOT_ON_ROSTER` | The number is on the roster but the NRC or birth date is different, or a new number was given with an NRC that belongs to another student. One answer for every mismatch, so it never says which detail was wrong |
 | 409 `ALREADY_REGISTERED` | This student already has an account |
 | 409 `EMAIL_IN_USE` | Another account uses that email |
 | 429 `RESEND_TOO_SOON` | Asked again within 30 seconds. Extra field: `"retryAfterSeconds": 22` |
@@ -108,7 +111,8 @@ answer for all of them).
 ### `POST /auth/register/complete`
 
 ```json
-// Request — programmeCode is optional (the roster value is the default)
+// Request — programmeCode: optional for a roster student (the roster value is the default),
+// REQUIRED for a self sign-up (new student), who is created now with no lab group
 { "email": "chanda@example.com", "password": "Str0ngPass!", "programmeCode": "CS" }
 
 // 201 — signed in
@@ -129,8 +133,11 @@ answer for all of them).
 ```
 
 Errors: 403 `NOT_VERIFIED` (no accepted code in the last 30 minutes, or it was
-already used), 422 `VALIDATION_ERROR` (password must be 8–72 characters), 400
-`INVALID_PROGRAMME`.
+already used), 422 `VALIDATION_ERROR` (password must be 8–72 characters, or
+`"programmeCode: choose your programme"` for a new student; the code is not used
+up, so just send again with a programme), 400 `INVALID_PROGRAMME`, 409
+`ALREADY_REGISTERED` (someone else finished signing up with that new student
+number or NRC a moment earlier).
 
 ### `POST /auth/staff/request` → `/auth/staff/verify` → `/auth/staff/complete` (lecturer)
 
@@ -373,7 +380,7 @@ stays `PENDING` and the student is unchanged: 409 `GROUP_FULL`, 409
 |---|---|---|
 | `VALIDATION_ERROR` | 422 | A field failed validation; `message` starts with the field name |
 | `INVALID_PROGRAMME` / `INVALID_GROUP` | 400 | No programme / lab group with that code |
-| `NOT_ON_ROSTER` | 404 | Sign-up details do not match the roster / staff list |
+| `NOT_ON_ROSTER` | 404 | Sign-up details clash with the roster (wrong NRC or birth date for a roster number, or someone else's NRC), or a lecturer is not on the staff list |
 | `ALREADY_REGISTERED` | 409 | This person already has an account |
 | `EMAIL_IN_USE` | 409 | Another account uses that email |
 | `BAD_CODE` | 400 | Wrong verification code; `triesLeft` says how many remain |

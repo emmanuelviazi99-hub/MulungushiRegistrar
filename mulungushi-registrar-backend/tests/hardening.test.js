@@ -24,9 +24,9 @@ afterAll(async () => {
   await pool.end();
 });
 
-test('asking for codes is limited to 10 per 15 minutes per address (each one sends an email)', async () => {
+test('asking for codes is limited to 20 per 15 minutes per address (each one sends an email)', async () => {
   const ask = () => request(app).post('/api/auth/password/request').send({ email: 'someone@example.com' });
-  for (let i = 0; i < 10; i += 1) expect((await ask()).status).toBe(200);
+  for (let i = 0; i < 20; i += 1) expect((await ask()).status).toBe(200);
   const blocked = await ask();
   expect(blocked.status).toBe(429);
   expect(blocked.body.error).toBe('RATE_LIMITED');

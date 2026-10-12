@@ -4,16 +4,18 @@
 //
 // Sign-up is a three step conversation, the same shape the Android app's
 // AuthService expects:
-//   1. request   — the person proves they are on the university's list, and a
-//                  verification code is sent to their email (and phone, if SMS
-//                  delivery is switched on)
+//   1. request   — the details are checked, and a verification code is sent to
+//                  their email (and phone, if SMS delivery is switched on)
 //   2. verify    — they type the code (10 minutes, 5 tries)
 //   3. complete  — they choose a password; the account is created
 //
 // Who may sign up:
-//   student   studentNumber + NRC + dateOfBirth must ALL match a roster row a
-//             lecturer created. (The number alone is not secret enough — it is
-//             printed on timetables — so the NRC and birth date act as the proof.)
+//   student   anyone, for a student number that is not on the roster yet: the
+//             student row is created when the emailed code is confirmed.
+//             If a lecturer already added that number, the NRC + date of birth
+//             must match that row. (The number alone is not secret enough — it
+//             is printed on timetables — so the NRC and birth date are the proof
+//             that the record is yours.) An NRC can only belong to one student.
 //   lecturer  email + employee ID must be on staff_roster, which only the server
 //             operator can edit. A lecturer account can edit the roster, so it
 //             must never be creatable by simply knowing an email address.
@@ -85,8 +87,12 @@ function codeSentBody(email, issued) {
   };
 }
 
-/** Maps the unique-key violations an account INSERT can raise. */
+/** Maps the unique-key violations an account INSERT (or a self sign-up's student INSERT) can raise. */
 function translateAccountDuplicate(err) {
+  // Someone else finished signing up with this student number or NRC between our check and now.
+  if (err instanceof ApiError && (err.code === 'DUPLICATE_STUDENT_NUMBER' || err.code === 'DUPLICATE_NRC')) {
+    return new ApiError(409, 'ALREADY_REGISTERED', 'This student number or NRC has just been registered. Please sign in, or ask your lecturer.');
+  }
   if (err && err.code === 'ER_DUP_ENTRY') {
     const msg = String(err.sqlMessage || '');
     if (msg.includes('uq_account_email')) return new ApiError(409, 'EMAIL_IN_USE', 'That email address is already used by another account.');
@@ -103,13 +109,17 @@ function translateAccountDuplicate(err) {
  * with the same code, exactly one flips consumed_at and the other stops.
  *
  * The verification code row already records WHO is signing up (student_id for
- * a student, staff_id for a lecturer), so it is copied straight onto the
+ * a roster student, staff_id for a lecturer), so it is copied straight onto the
  * account; the account's role is then derived by the database from that link.
  *
- * @param afterInsert optional extra work in the same transaction
+ * @param linkStudent optional (conn, codeRow) => student_id, run in the same
+ *        transaction before the account is inserted. Student sign-up uses it to
+ *        create the student row (self sign-up) or update the chosen programme.
+ *        If anything fails, nothing is kept: not the student, not the account,
+ *        and the code is not used up.
  * @returns the new account_id
  */
-async function createAccountFromCode({ purpose, email, password, afterInsert }) {
+async function createAccountFromCode({ purpose, email, password, linkStudent }) {
   const verified = await codeService.requireVerified({ purpose, email });
   const passwordHash = await bcrypt.hash(password, bcryptRounds());
   try {
@@ -117,15 +127,16 @@ async function createAccountFromCode({ purpose, email, password, afterInsert }) 
       if (!(await codeService.consume(conn, verified.code_id))) {
         throw new ApiError(403, 'NOT_VERIFIED', 'Please verify your code first.');
       }
+      // A student sign-up may first create the student row (self sign-up of a new number).
+      const studentId = linkStudent ? await linkStudent(conn, verified) : verified.student_id;
       const [result] = await conn.query(
         'INSERT INTO accounts (email, phone, password_hash, student_id, staff_id) VALUES (?, ?, ?, ?, ?)',
-        [email, verified.phone, passwordHash, verified.student_id, verified.staff_id]
+        [email, verified.phone, passwordHash, studentId, verified.staff_id]
       );
-      if (afterInsert) await afterInsert(conn, verified);
       return result.insertId;
     });
   } catch (err) {
-    throw translateAccountDuplicate(err);
+    throw translateAccountDuplicate(studentService.translateDuplicate(err));
   }
 }
 
@@ -134,33 +145,49 @@ async function createAccountFromCode({ purpose, email, password, afterInsert }) 
 // ---------------------------------------------------------------------------
 
 async function studentRegisterRequest(req, res) {
-  const { studentNumber, nrc, dateOfBirth, email, phone } = req.body;
+  const { fullName, studentNumber, nrc, dateOfBirth, email, phone } = req.body;
 
-  const [students] = await pool.query(
-    'SELECT student_id FROM students WHERE student_number = ? AND nrc = ? AND date_of_birth = ? AND active = 1',
-    [studentNumber, nrc, dateOfBirth]
-  );
-  // One answer whether the number is unknown or the NRC / birth date is wrong,
-  // so this endpoint cannot be used to discover which student numbers exist.
-  if (students.length === 0) {
-    throw new ApiError(
+  const notOnRecord = () =>
+    new ApiError(
       404,
       'NOT_ON_ROSTER',
-      'We could not match those details to the university record. Check them, or ask your lecturer.'
+      'That student number or NRC is already on the university record with different details. Check them, or ask your lecturer.'
     );
-  }
-  const studentId = students[0].student_id;
 
-  const [existing] = await pool.query('SELECT account_id FROM accounts WHERE student_id = ?', [studentId]);
-  if (existing.length > 0) {
-    throw new ApiError(409, 'ALREADY_REGISTERED', 'This student already has an account. Please sign in.');
+  // Is this student number already on the roster (added by a lecturer, or signed up before)?
+  // A soft-deleted student's number stays reserved, so it counts too.
+  const [byNumber] = await pool.query(
+    `SELECT student_id, (nrc = ? AND date_of_birth = ? AND active = 1) AS matches
+       FROM students WHERE student_number = ?`,
+    [nrc, dateOfBirth, studentNumber]
+  );
+
+  let studentId = null;
+  let newStudent = null;
+  if (byNumber.length > 0) {
+    // On the roster: the NRC and birth date must prove the record is theirs. One
+    // answer for every mismatch, so it never says which detail was wrong.
+    if (!byNumber[0].matches) throw notOnRecord();
+    studentId = byNumber[0].student_id;
+    const [existing] = await pool.query('SELECT account_id FROM accounts WHERE student_id = ?', [studentId]);
+    if (existing.length > 0) {
+      throw new ApiError(409, 'ALREADY_REGISTERED', 'This student already has an account. Please sign in.');
+    }
+  } else {
+    // A new student. Their NRC must not already belong to another student.
+    const [byNrc] = await pool.query('SELECT student_id FROM students WHERE nrc = ?', [nrc]);
+    if (byNrc.length > 0) throw notOnRecord();
+    // Nothing is written to students yet: the details wait on the code row and the
+    // student is created only when the emailed code has been confirmed.
+    newStudent = { fullName, studentNumber, nrc, dateOfBirth };
   }
+
   const [emailUsed] = await pool.query('SELECT account_id FROM accounts WHERE email = ?', [email]);
   if (emailUsed.length > 0) {
     throw new ApiError(409, 'EMAIL_IN_USE', 'That email address is already used by another account.');
   }
 
-  const issued = await codeService.issue({ purpose: 'STUDENT_SIGNUP', email, studentId, phone });
+  const issued = await codeService.issue({ purpose: 'STUDENT_SIGNUP', email, studentId, newStudent, phone });
   await deliverOrDiscard({ codeId: issued.codeId, email, phone, code: issued.code, purpose: 'STUDENT_SIGNUP' });
   res.json(codeSentBody(email, issued));
 }
@@ -168,25 +195,39 @@ async function studentRegisterRequest(req, res) {
 async function studentRegisterVerify(req, res) {
   const { email, code } = req.body;
   const row = await codeService.verify({ purpose: 'STUDENT_SIGNUP', email, code });
-  const [[student]] = await pool.query('SELECT full_name FROM students WHERE student_id = ?', [row.student_id]);
-  res.json({ success: true, status: 'OK', fullName: student ? student.full_name : null });
+  const pending = codeService.newStudentOf(row);
+  let fullName = pending ? pending.fullName : null;
+  if (!pending) {
+    const [[student]] = await pool.query('SELECT full_name FROM students WHERE student_id = ?', [row.student_id]);
+    fullName = student ? student.full_name : null;
+  }
+  res.json({ success: true, status: 'OK', fullName });
 }
 
 async function studentRegisterComplete(req, res) {
   const { email, password, programmeCode } = req.body;
-  // The student chooses their programme at sign-up (the roster value is only a default).
+  // The student chooses their programme at sign-up (for a roster student the roster value is only a default).
   const programmeId = programmeCode ? await studentService.programmeIdFor(pool, programmeCode) : null;
 
   const accountId = await createAccountFromCode({
     purpose: 'STUDENT_SIGNUP',
     email,
     password,
-    afterInsert: async (conn, verified) => {
-      if (programmeId === null) return;
-      await conn.query(
-        'UPDATE students SET programme_id = ?, version = version + 1 WHERE student_id = ? AND programme_id <> ?',
-        [programmeId, verified.student_id, programmeId]
-      );
+    linkStudent: async (conn, verified) => {
+      const pending = codeService.newStudentOf(verified);
+      if (pending) {
+        // Self sign-up: the email is confirmed, so now the student row is created
+        // (Unassigned; a lecturer places them in a lab group).
+        if (!programmeCode) throw new ApiError(422, 'VALIDATION_ERROR', 'programmeCode: choose your programme');
+        return studentService.insertStudent(conn, { ...pending, programmeCode });
+      }
+      if (programmeId !== null) {
+        await conn.query(
+          'UPDATE students SET programme_id = ?, version = version + 1 WHERE student_id = ? AND programme_id <> ?',
+          [programmeId, verified.student_id, programmeId]
+        );
+      }
+      return verified.student_id;
     },
   });
   res.status(201).json(await sessionBody(accountId));

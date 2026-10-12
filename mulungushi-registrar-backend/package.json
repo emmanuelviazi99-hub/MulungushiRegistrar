@@ -9,7 +9,9 @@
     "seed:accounts": "node database/seed-accounts.js",
     "test": "jest --runInBand",
     "staff:add": "node database/add-staff.js",
-    "email:test": "node scripts/email-test.js"
+    "email:test": "node scripts/email-test.js",
+    "db:setup": "node scripts/db-setup.js",
+    "db:migrate": "node scripts/db-migrate.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

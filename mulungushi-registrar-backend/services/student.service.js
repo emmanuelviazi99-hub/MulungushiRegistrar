@@ -5,6 +5,7 @@
 //
 //   findStudent / listStudents   the ONE query that joins programme + group codes
 //   createStudent                lecturer adds a student (POST /students, offline CREATE)
+//   insertStudent                the same insert inside a caller's transaction (self sign-up)
 //   updateStudent                name / programme, and (lecturer only) NRC / birth date
 //                                (PUT /students/:id, PUT /students/me, offline EDIT)
 //   deleteStudent                soft delete (DELETE /students/:id, offline DELETE)
@@ -127,14 +128,17 @@ async function programmeIdFor(db, programmeCode) {
 // --- writes -----------------------------------------------------------------
 
 /**
- * Lecturer adds a student. When a group is requested, the seat lock is taken
- * BEFORE the insert inside one transaction, so "check the count" and "insert"
- * can never be separated by another request (see group.service.js).
+ * Inserts a student using a transaction the caller already opened (validates the
+ * input first). Used by createStudent, and by self sign-up, which creates the
+ * student and the account in one transaction.
+ *
+ * When a group is requested, the seat lock is taken BEFORE the insert, so "check
+ * the count" and "insert" can never be separated by another request (group.service.js).
  *
  * @param input { fullName, studentNumber, nrc, dateOfBirth, programmeCode, groupCode? }
  * @returns the new student_id
  */
-async function createStudent(input) {
+async function insertStudent(conn, input) {
   const fullName = String(input.fullName ?? '').trim();
   const studentNumber = String(input.studentNumber ?? '').trim();
   const nrc = v.normaliseNrc(input.nrc);
@@ -148,20 +152,23 @@ async function createStudent(input) {
   if (!v.isValidNrc(nrc)) throw fail('nrc', 'must look like 123456/10/1');
   if (!v.isValidDob(dateOfBirth)) throw fail('dateOfBirth', 'must be a real date in the past, formatted YYYY-MM-DD');
 
-  try {
-    return await withTransaction(async (conn) => {
-      const programmeId = await programmeIdFor(conn, input.programmeCode);
-      // Takes the group lock and throws GROUP_FULL if there is no seat. null = Unassigned.
-      const groupId = groupCode ? await groupService.reserveSeat(conn, groupCode) : null;
+  const programmeId = await programmeIdFor(conn, input.programmeCode);
+  // Takes the group lock and throws GROUP_FULL if there is no seat. null = Unassigned.
+  const groupId = groupCode ? await groupService.reserveSeat(conn, groupCode) : null;
 
-      const studentId = crypto.randomUUID();
-      await conn.query(
-        `INSERT INTO students (student_id, student_number, nrc, date_of_birth, full_name, programme_id, group_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [studentId, studentNumber, nrc, dateOfBirth, fullName, programmeId, groupId]
-      );
-      return studentId;
-    });
+  const studentId = crypto.randomUUID();
+  await conn.query(
+    `INSERT INTO students (student_id, student_number, nrc, date_of_birth, full_name, programme_id, group_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [studentId, studentNumber, nrc, dateOfBirth, fullName, programmeId, groupId]
+  );
+  return studentId;
+}
+
+/** Lecturer adds a student (POST /students, offline CREATE). Returns the new student_id. */
+async function createStudent(input) {
+  try {
+    return await withTransaction((conn) => insertStudent(conn, input));
   } catch (err) {
     throw translateDuplicate(err); // the rollback already left nothing half-created
   }
@@ -259,6 +266,7 @@ module.exports = {
   listStudents,
   programmeIdFor,
   createStudent,
+  insertStudent,
   updateStudent,
   deleteStudent,
   translateDuplicate,

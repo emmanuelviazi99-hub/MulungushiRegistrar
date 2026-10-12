@@ -68,21 +68,23 @@ describe('student sign-up', () => {
     expect((await request(app).post('/api/auth/login').send({ loginKey: 'CHANDA@example.COM', password: 'Str0ngPass!' })).status).toBe(200);
   });
 
-  test('details that do not match the roster are refused with one identical answer', async () => {
+  test('a number already on the roster needs its own NRC and birth date; one identical answer for every mismatch', async () => {
     const wrongNrc = await askForCode(studentRequestBody('202301002', 'a@example.com', { nrc: '700099/10/1' }));
     const wrongDob = await askForCode(studentRequestBody('202301002', 'a@example.com', { dateOfBirth: '1999-01-01' }));
-    const unknownNumber = await askForCode(studentRequestBody('202301002', 'a@example.com', { studentNumber: '999999999' }));
+    // a NEW number, but with an NRC that already belongs to another student
+    const someoneElsesNrc = await askForCode(studentRequestBody('202301002', 'a@example.com', { studentNumber: '202499999' }));
     const deleted = await askForCode({ ...studentRequestBody('202301002', 'a@example.com'), studentNumber: '202301099', nrc: '700099/10/1', dateOfBirth: '2001-01-01' });
 
-    for (const res of [wrongNrc, wrongDob, unknownNumber, deleted]) {
+    for (const res of [wrongNrc, wrongDob, someoneElsesNrc, deleted]) {
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('NOT_ON_ROSTER');
     }
-    // Same body whichever part was wrong: the endpoint cannot be used to find out which student numbers exist.
-    expect(wrongNrc.body).toEqual(unknownNumber.body);
-    expect(wrongDob.body).toEqual(unknownNumber.body);
+    // Same body whichever part was wrong, so it never says which detail is the right one.
+    expect(wrongNrc.body).toEqual(someoneElsesNrc.body);
+    expect(wrongDob.body).toEqual(someoneElsesNrc.body);
     expect(outbox).toHaveLength(0); // nothing was sent to anyone
   });
+
 
   test('an already-registered student, or an email already in use, is refused', async () => {
     await signUpStudent(app, outbox, { studentNumber: '202301003', email: 'mutinta@example.com' });
@@ -265,6 +267,108 @@ describe('verification code rules', () => {
 });
 
 // ---------------------------------------------------------------------------
+describe('self sign-up: a student who is not on the roster yet', () => {
+  const countStudents = async () => (await pool.query('SELECT COUNT(*) AS n FROM students'))[0][0].n;
+  const newcomer = (studentNumber, email, overrides = {}) => ({
+    fullName: 'Natasha Banda',
+    studentNumber,
+    nrc: `${studentNumber.slice(3, 9)}/10/1`,
+    dateOfBirth: '2004-02-02',
+    email,
+    phone: '0977000111',
+    ...overrides,
+  });
+
+  test('signs up from the app alone: the student record is created only when the emailed code is confirmed', async () => {
+    const email = 'natasha@example.com';
+    const before = await countStudents();
+
+    const asked = await askForCode(newcomer('202400101', email));
+    expect(asked.status).toBe(200);
+    expect(await countStudents()).toBe(before); // nothing written yet
+
+    const verified = await verifyCode(email, lastCodeFor(outbox, email));
+    expect(verified.status).toBe(200);
+    expect(verified.body.fullName).toBe('Natasha Banda');
+    expect(await countStudents()).toBe(before); // still nothing: no password chosen yet
+
+    const done = await complete(email, { programmeCode: 'IT' });
+    expect(done.status).toBe(201);
+    expect(await countStudents()).toBe(before + 1);
+    expect(done.body.account).toMatchObject({ role: 'STUDENT', email, displayName: 'Natasha Banda', phone: '+260977000111' });
+    expect(done.body.student).toMatchObject({
+      studentNumber: '202400101',
+      fullName: 'Natasha Banda',
+      nrc: '400101/10/1',
+      dateOfBirth: '2004-02-02',
+      programmeCode: 'IT',
+      groupCode: null, // Unassigned until a lecturer places them
+    });
+
+    // a real account: signs in by number, and the lecturer sees them on the roster
+    expect((await request(app).post('/api/auth/login').send({ loginKey: '202400101', password: 'Str0ngPass!' })).status).toBe(200);
+    const lecturer = await createLecturer(pool, { email: 'roster.check@test.example', employeeId: 'EMP-9401' });
+    const token = await loginAs(app, lecturer.email, lecturer.password);
+    const found = await request(app).get('/api/students?search=202400101').set('Authorization', `Bearer ${token}`);
+    expect(found.body.students.map((x) => x.fullName)).toEqual(['Natasha Banda']);
+    // and a lecturer can no longer add someone else with that number or NRC
+    const clash = await request(app).post('/api/students').set('Authorization', `Bearer ${token}`)
+      .send({ fullName: 'Someone Else', studentNumber: '202400101', nrc: '499999/10/1', dateOfBirth: '2003-03-03', programmeCode: 'CS' });
+    expect(clash.status).toBe(409);
+    expect(clash.body.error).toBe('DUPLICATE_STUDENT_NUMBER');
+  });
+
+  test('an abandoned sign-up leaves nothing behind, and the number stays free for its real owner', async () => {
+    const before = await countStudents();
+    expect((await askForCode(newcomer('202400102', 'impostor@example.com'))).status).toBe(200);
+    // never verified: no student row, no account
+    expect(await countStudents()).toBe(before);
+    const [[{ n }]] = await pool.query("SELECT COUNT(*) AS n FROM accounts WHERE email = 'impostor@example.com'");
+    expect(n).toBe(0);
+
+    const owner = 'owner102@example.com';
+    expect((await askForCode(newcomer('202400102', owner))).status).toBe(200);
+    expect((await verifyCode(owner, lastCodeFor(outbox, owner))).status).toBe(200);
+    expect((await complete(owner, { programmeCode: 'CS' })).status).toBe(201);
+  });
+
+  test('a new student must choose a programme; forgetting it does not use up the code', async () => {
+    const email = 'noprog@example.com';
+    await askForCode(newcomer('202400103', email));
+    await verifyCode(email, lastCodeFor(outbox, email));
+    const missing = await complete(email); // no programmeCode
+    expect(missing.status).toBe(422);
+    expect(missing.body.message).toContain('programmeCode');
+    const fixed = await complete(email, { programmeCode: 'DS' });
+    expect(fixed.status).toBe(201);
+    expect(fixed.body.student.programmeCode).toBe('DS');
+  });
+
+  test('two people racing to claim the same new number: exactly one gets it, the other is told', async () => {
+    const a = 'racer.a@example.com';
+    const b = 'racer.b@example.com';
+    await askForCode(newcomer('202400104', a, { nrc: '400104/10/1' }));
+    await askForCode(newcomer('202400104', b, { nrc: '400104/10/2', fullName: 'Other Person' }));
+    await verifyCode(a, lastCodeFor(outbox, a));
+    await verifyCode(b, lastCodeFor(outbox, b));
+    const before = await countStudents();
+
+    const results = await Promise.all([complete(a, { programmeCode: 'CS' }), complete(b, { programmeCode: 'CS' })]);
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect(results.find((r) => r.status === 409).body.error).toBe('ALREADY_REGISTERED');
+    expect(await countStudents()).toBe(before + 1);
+    const [[{ n }]] = await pool.query("SELECT COUNT(*) AS n FROM students WHERE student_number = '202400104'");
+    expect(n).toBe(1);
+  });
+
+  test('the usual rules still apply: a taken email is refused, and a self signed-up student cannot sign up twice', async () => {
+    expect((await askForCode(newcomer('202400105', 'natasha@example.com'))).body.error).toBe('EMAIL_IN_USE');
+    const again = await askForCode(newcomer('202400101', 'second@example.com', { nrc: '400101/10/1', dateOfBirth: '2004-02-02' }));
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe('ALREADY_REGISTERED');
+  });
+});
+
 describe('lecturer sign-up', () => {
   const staffAsk = (body) => request(app).post('/api/auth/staff/request').send(body);
 

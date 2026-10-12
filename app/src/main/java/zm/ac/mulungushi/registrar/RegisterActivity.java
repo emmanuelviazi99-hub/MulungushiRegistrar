@@ -25,8 +25,9 @@ import java.util.Calendar;
 
 /**
  * Create an account, three pages:
- *   1. details. Student: full name, student number, date of birth, phone, NRC, email
- *      (number + NRC + date of birth must match the roster a lecturer created).
+ *   1. details. Student: full name, student number, date of birth, phone, NRC, email.
+ *      A student not on the roster yet is created when the code is confirmed; if a
+ *      lecturer already added the number, its NRC + date of birth must match.
  *      Lecturer: full name, phone (optional), email, employee ID (must be on the staff list).
  *      Proceed asks the server to email a code.
  *   2. code: the code from the email. Valid for 10 minutes, 5 tries, Resend after 30 seconds.

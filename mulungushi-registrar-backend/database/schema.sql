@@ -32,10 +32,16 @@
 --    ID number belongs. The immutable student_id stays the key.
 --
 -- 6. Accounts are created in real time through a verification-code flow
---    (verification_codes). A student can only sign up if their student
---    number + NRC + date of birth match a roster row a lecturer created.
+--    (verification_codes).
+--    Students sign themselves up. If a lecturer already added their student
+--    number, the NRC + date of birth must match that row (so nobody can take
+--    over someone else's record). If the number is new, the details wait on the
+--    code row (verification_codes.new_student) and the student row is created
+--    only when the emailed code has been confirmed - an abandoned sign-up
+--    leaves nothing behind in students.
 --    A lecturer can only sign up if their email + employee ID are on
---    staff_roster, which only the server operator can edit (npm run staff:add).
+--    staff_roster, which only the server operator can edit (npm run staff:add):
+--    a lecturer account can change every student, so it is never open to all.
 --    Codes are stored as keyed HMACs, expire after 10 minutes, and allow 5
 --    wrong attempts.
 --
@@ -63,6 +69,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS schema_migrations;
 DROP TABLE IF EXISTS operation_receipts;
 DROP TABLE IF EXISTS change_requests;
 DROP TABLE IF EXISTS number_correction_requests;   -- old name, replaced by change_requests
@@ -182,6 +189,8 @@ CREATE TABLE verification_codes (
   student_id  CHAR(36)     NULL,
   staff_id    INT          NULL,
   account_id  INT          NULL,
+  new_student JSON         NULL,                      -- self sign-up of a number not on the roster yet:
+                                                      -- {fullName, studentNumber, nrc, dateOfBirth}
   phone       VARCHAR(16)  NULL,                      -- sign-up only: copied onto the account at completion
   attempts    TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- wrong-or-right tries used (max 5)
   expires_at  DATETIME(3)  NOT NULL,
@@ -191,11 +200,13 @@ CREATE TABLE verification_codes (
   CONSTRAINT fk_vcode_student FOREIGN KEY (student_id) REFERENCES students(student_id),
   CONSTRAINT fk_vcode_staff   FOREIGN KEY (staff_id)   REFERENCES staff_roster(staff_id),
   CONSTRAINT fk_vcode_account FOREIGN KEY (account_id) REFERENCES accounts(account_id),
-  -- exactly the one link the purpose needs: who is signing up, or whose password is reset
+  -- exactly what the purpose needs: who is signing up, or whose password is reset.
+  -- A student sign-up points at an existing roster row OR carries a new student's details, never both.
   CONSTRAINT chk_vcode_link CHECK (
-    (purpose = 'STUDENT_SIGNUP' AND student_id IS NOT NULL AND staff_id IS NULL     AND account_id IS NULL) OR
-    (purpose = 'STAFF_SIGNUP'   AND staff_id   IS NOT NULL AND student_id IS NULL   AND account_id IS NULL) OR
-    (purpose = 'PASSWORD_RESET' AND account_id IS NOT NULL AND student_id IS NULL   AND staff_id IS NULL)
+    (purpose = 'STUDENT_SIGNUP' AND (student_id IS NULL) <> (new_student IS NULL)
+                                AND staff_id IS NULL AND account_id IS NULL) OR
+    (purpose = 'STAFF_SIGNUP'   AND staff_id   IS NOT NULL AND student_id IS NULL AND account_id IS NULL AND new_student IS NULL) OR
+    (purpose = 'PASSWORD_RESET' AND account_id IS NOT NULL AND student_id IS NULL AND staff_id IS NULL   AND new_student IS NULL)
   ),
   INDEX idx_vcode_lookup (email, purpose, consumed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -253,3 +264,15 @@ CREATE TABLE operation_receipts (
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_receipt_account FOREIGN KEY (account_id) REFERENCES accounts(account_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- -----------------------------------------------------------------
+-- schema_migrations — which files in database/migrations/ this database
+-- already has. This schema.sql already includes all of them, so they are
+-- recorded here; npm run db:migrate only runs files not listed.
+-- -----------------------------------------------------------------
+CREATE TABLE schema_migrations (
+  name       VARCHAR(100) NOT NULL PRIMARY KEY,
+  applied_at DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql');

@@ -263,7 +263,7 @@
 
     <!-- ===== Register with an emailed code (3 pages) and Forgot password (email, code, new password) ===== -->
     <string name="register_step1_title">Create your account</string>
-    <string name="register_step1_sub">Enter your details exactly as the university has them. We\'ll email you a code.</string>
+    <string name="register_step1_sub">New here? Just enter your details. If your lecturer already added you, use the same student number, NRC and date of birth. We\'ll email you a code.</string>
     <string name="register_step2_title">Enter the code from your email</string>
     <string name="register_step2_sub_fmt">We sent a code to %1$s. It is valid for %2$d minutes.</string>
     <string name="register_step3_title">Finish your account</string>
@@ -311,7 +311,7 @@
     <string name="error_code_locked">Too many wrong tries. Request a new code.</string>
     <string name="error_confirm_empty">Type your password again.</string>
     <string name="error_password_mismatch">The two passwords don\'t match.</string>
-    <string name="error_not_on_roster">Those details don\'t match the university record. Check your student number, NRC and date of birth, or ask your lecturer.</string>
+    <string name="error_not_on_roster">That student number or NRC is already on the university record with different details. Check them, or ask your lecturer.</string>
     <string name="error_email_in_use">That email is already registered. Try signing in instead.</string>
     <string name="error_not_verified">Please verify your code first.</string>
     <string name="error_network">Couldn\'t reach the server. Check your connection and try again.</string>

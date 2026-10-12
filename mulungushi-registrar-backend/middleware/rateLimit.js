@@ -33,11 +33,16 @@ function makeLimiter({ windowMs = 15 * 60 * 1000, limit }) {
   });
 }
 
+// Per address, per 15 minutes. Adjustable in .env. Note that every phone using the
+// USB tunnel (adb reverse) or the same Wi-Fi router can appear as ONE address, so a
+// group testing together shares these numbers.
+const limitFromEnv = (name, fallback) => Number(process.env[name]) || fallback;
+
 module.exports = {
   makeLimiter,
   // asking for codes (each one sends an email/SMS, so keep this tight)
-  codeRequestLimiter: makeLimiter({ limit: 10 }),
+  codeRequestLimiter: makeLimiter({ limit: limitFromEnv('RATE_LIMIT_CODE_REQUESTS', 20) }),
   // entering codes / finishing sign-up
-  codeVerifyLimiter: makeLimiter({ limit: 30 }),
-  loginLimiter: makeLimiter({ limit: 30 }),
+  codeVerifyLimiter: makeLimiter({ limit: limitFromEnv('RATE_LIMIT_CODE_CHECKS', 30) }),
+  loginLimiter: makeLimiter({ limit: limitFromEnv('RATE_LIMIT_LOGINS', 30) }),
 };

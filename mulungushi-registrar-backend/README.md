@@ -8,7 +8,10 @@ What it does:
 - **Accounts are created in real time** by the people themselves, with a
   **verification code sent by email (Nodemailer)**:
   - a **student** gives their name, email, student number, NRC and date of
-    birth; the number + NRC + birth date must match the row a lecturer added
+    birth. A student who is **not on the roster yet** can sign up on their
+    own: their student record is created only once the emailed code is
+    confirmed. If a lecturer already added that number, the NRC and birth date
+    must match that row
   - a **lecturer** gives their name, email and employee ID, which must be on
     the staff list the server operator keeps
   - the code (e.g. `MU-7K4QXP`) is emailed, typed back into the app, and then
@@ -36,18 +39,29 @@ npm install
 cp .env.example .env          # Windows: copy .env.example .env
 ```
 
-Create the database, then load the tables and demo data. In MySQL Workbench you
-can instead open each `.sql` file and run it with the lightning-bolt button.
+Fill in the `DB_*` settings in `.env` (section 3), then create the database
+with its tables and demo data in one step:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE mulungushi_registrar CHARACTER SET utf8mb4;"
-mysql -u root -p mulungushi_registrar < database/schema.sql
-mysql -u root -p mulungushi_registrar < database/seed.sql
+npm run db:setup
 ```
 
-> `schema.sql` starts by dropping the old tables, so running it again (or over
-> the earlier version that had `claim_codes`) gives you a clean database. It
-> deletes all data in `mulungushi_registrar`.
+It creates the database if it does not exist, then loads `database/schema.sql`
+and `database/seed.sql`. (You can still run those two files by hand in MySQL
+Workbench with the lightning-bolt button.)
+
+> `db:setup` / `schema.sql` start by dropping the old tables, so they **delete
+> all data** in the database. Use them for a fresh start only.
+
+**Already have a database with accounts in it?** Do not run `db:setup`. Run
+
+```bash
+npm run db:migrate
+```
+
+instead. It applies only the changes in `database/migrations/` that your
+database has not had yet, and keeps your data. Open sign-up codes are cancelled
+by the update, so anyone halfway through sign-up just asks for a new code.
 
 ## 3. Fill in `.env`
 
@@ -92,6 +106,12 @@ production. SMS through Twilio can be added on top: `CODE_DELIVERY=email,sms`.
 The server checks these settings when it starts and stops with a clear message
 if something is missing (no JWT secret, SMTP not filled in, and so on).
 
+**Rate limits.** Per network address, every 15 minutes: 20 code requests, 30
+code checks, 30 sign-ins. A phone connected over USB (`adb reverse`) or an
+emulator reaches the server as `127.0.0.1`, so all of them share one budget. If
+you hit `RATE_LIMITED` while testing, raise `RATE_LIMIT_CODE_REQUESTS`,
+`RATE_LIMIT_CODE_CHECKS` or `RATE_LIMIT_LOGINS` in `.env` and restart.
+
 ## 4. Demo logins and the staff list
 
 ```bash
@@ -116,7 +136,8 @@ Demo data in `seed.sql` (all fictitious):
 
 | Who | Use for |
 |---|---|
-| Students `202301001` – `202301018`, NRC `700001/10/1` … `700018/10/1`, birth dates listed in `seed.sql` | Student sign-up. E.g. `202301001`, `700001/10/1`, `2003-04-12` |
+| Students `202301001` – `202301018`, NRC `700001/10/1` … `700018/10/1`, birth dates listed in `seed.sql` | Student sign-up as a roster student. E.g. `202301001`, `700001/10/1`, `2003-04-12` |
+| Any new 9-digit number and an unused NRC (e.g. `202399001`, `799001/10/1`) | Student self sign-up (not on the roster) |
 | Lecturer `m.chilufya@mulungushi.edu.zm`, `EMP-1002` | Lecturer sign-up (on the staff list, no account yet) |
 | Group G01 | Holds 14 of 15, so "racing for the last seat" can be shown at once |
 
@@ -134,8 +155,10 @@ Verification codes are sent by: email (SMTP smtp.gmail.com:465)
 Check it is alive: open `http://localhost:3000/health`.
 
 **From the Android emulator** use `http://10.0.2.2:3000/api/` — `10.0.2.2` is
-how the emulator reaches your laptop. A real phone on the same Wi-Fi uses your
-laptop's IP address instead. Use HTTPS on a real host for the final submission.
+how the emulator reaches your laptop. **A phone on a USB cable** uses
+`http://127.0.0.1:3000/api/` after `adb reverse tcp:3000 tcp:3000` (run it again
+each time you replug the phone). A phone on the same Wi-Fi uses your laptop's IP
+address instead. Use HTTPS on a real host for the final submission.
 
 ## 6. Tests
 
@@ -179,7 +202,11 @@ database/
   seed-accounts.js         demo lecturer login (needs bcrypt, so it is .js)
   add-staff.js             npm run staff:add
   ER_DIAGRAM.md            the tables as a diagram
-scripts/email-test.js      npm run email:test
+  migrations/              changes for an existing database (npm run db:migrate)
+scripts/
+  db-setup.js              npm run db:setup   (fresh database: schema + seed)
+  db-migrate.js            npm run db:migrate (update in place, keeps data)
+  email-test.js            npm run email:test
 tests/                     Jest + Supertest; TEST_CASES.md explains each one
 API_CONTRACT.md            every endpoint with real request/response examples
 ```
@@ -191,14 +218,23 @@ API_CONTRACT.md            every endpoint with real request/response examples
 Every sign-up is three calls (the Android app's `AuthService` has the same three
 steps):
 
-1. **request** — the server checks the person is on the list (student number +
-   NRC + date of birth match a roster row, or email + employee ID match the
-   staff list). If so it creates a code and **emails it with Nodemailer**. The
+1. **request** — the server checks the details. A **student number already on
+   the roster** must come with that row's NRC and date of birth. A **new student
+   number** is accepted as long as the NRC is not someone else's; nothing is
+   written to `students` yet, the details wait with the code. A **lecturer's**
+   email + employee ID must be on the staff list. If all is well it creates a
+   code and **emails it with Nodemailer**. The
    reply only says *"sent to c\*\*\*@example.com"*; the code is never in any
    HTTP response, so the only way to get it is to read that mailbox.
 2. **verify** — the person types the code.
 3. **complete** — they choose a password; the account is created and they are
-   signed in.
+   signed in. For a new student this is also the moment their student record
+   is created (with the programme they pick, no group yet), in the same
+   database transaction as the account. If two people race for the same new
+   number, one gets it and the other is told `ALREADY_REGISTERED`.
+
+Abandoned sign-ups leave nothing in `students`, so a typo in someone else's
+number does not block its real owner.
 
 The rules, all enforced in the database rather than trusted to the app:
 
@@ -213,8 +249,8 @@ The rules, all enforced in the database rather than trusted to the app:
 - if the email cannot be sent, the code is deleted and the app is told
   `DELIVERY_FAILED`, so nothing half-sent is left behind
 
-The answers do not leak who is registered: a wrong NRC and an unknown student
-number get the same `NOT_ON_ROSTER` reply, and *"forgot password"* always says
+The answers do not leak who is registered: a wrong NRC, a wrong birth date and
+an NRC that belongs to another student all get the same `NOT_ON_ROSTER` reply, and *"forgot password"* always says
 "sent", whether or not the email has an account.
 
 ### Signing in

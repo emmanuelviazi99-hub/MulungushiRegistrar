@@ -45,7 +45,7 @@ function hashCode({ purpose, email, code }) {
  * Creates a fresh code, invalidating any earlier one for the same email+purpose.
  * Returns the plain code ONCE, for the caller to hand to the delivery service.
  */
-async function issue({ purpose, email, studentId = null, staffId = null, accountId = null, phone = null }) {
+async function issue({ purpose, email, studentId = null, staffId = null, accountId = null, phone = null, newStudent = null }) {
   const [recent] = await pool.query(
     `SELECT TIMESTAMPDIFF(SECOND, created_at, NOW(3)) AS age
        FROM verification_codes WHERE email = ? AND purpose = ?
@@ -67,9 +67,10 @@ async function issue({ purpose, email, studentId = null, staffId = null, account
     );
     const [result] = await conn.query(
       `INSERT INTO verification_codes
-         (purpose, email, code_hash, student_id, staff_id, account_id, phone, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(3), INTERVAL ? SECOND))`,
-      [purpose, email, hashCode({ purpose, email, code }), studentId, staffId, accountId, phone, CODE_TTL_SECONDS]
+         (purpose, email, code_hash, student_id, staff_id, account_id, new_student, phone, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(3), INTERVAL ? SECOND))`,
+      [purpose, email, hashCode({ purpose, email, code }), studentId, staffId, accountId,
+        newStudent ? JSON.stringify(newStudent) : null, phone, CODE_TTL_SECONDS]
     );
     return result.insertId;
   });
@@ -143,6 +144,17 @@ async function requireVerified({ purpose, email }) {
   return rows[0];
 }
 
+/**
+ * The details of a self sign-up waiting on this code row, or null when the code is
+ * for an existing roster row. (MySQL returns a JSON column already parsed, MariaDB
+ * returns it as text, so both are accepted.)
+ */
+function newStudentOf(row) {
+  const value = row && row.new_student;
+  if (value === null || value === undefined) return null;
+  return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
 /** Marks a code used up. Returns false if it was already used (so completion can only happen once). */
 async function consume(conn, codeId) {
   const [result] = await conn.query(
@@ -158,6 +170,7 @@ module.exports = {
   verify,
   requireVerified,
   consume,
+  newStudentOf,
   generateCode,
   CODE_TTL_SECONDS,
   MAX_ATTEMPTS,

@@ -1,6 +1,6 @@
 # Documented test cases
 
-Everything below except the last section is automated: `npm test` runs 87
+Everything below except the last section is automated: `npm test` runs 92
 tests in six files against a throwaway database rebuilt from `schema.sql` +
 `seed.sql`. The email tests run a real SMTP server inside the test, so they
 check the actual Nodemailer path without needing the internet.
@@ -11,7 +11,7 @@ exactly what Jest prints.
 
 | File | What it covers | Tests |
 |---|---|---|
-| `auth.test.js` | Student and lecturer sign-up with codes, code rules, password reset, login, lockout | 35 |
+| `auth.test.js` | Student and lecturer sign-up with codes (including self sign-up by a student not yet on the roster), code rules, password reset, login, lockout | 40 |
 | `email.test.js` | Codes really sent by email (Nodemailer → SMTP), delivery failure, startup checks | 6 |
 | `students.test.js` | Roster, NRC and birth date, who may see what, soft delete, retries, offline operations | 25 |
 | `capacity.test.js` | The 15-seat limit on every path, under simultaneous requests | 9 |
@@ -113,7 +113,12 @@ exactly what Jest prints.
 | Programme and group codes come from the database (adding G05 needs no code change) | `students.test.js › programme and group codes come from the database …` |
 | Two lecturers approving one request apply it once | `requests.test.js › two lecturers approving the same request at the same moment apply it exactly once` |
 | Requests cannot be approved through the wrong endpoint or by a student | `requests.test.js › the two kinds and the two roles stay separate › …` |
-| Per-address limits on code requests (10) and logins (30) per 15 minutes | `hardening.test.js` |
+| Per-address limits on code requests (20, adjustable in `.env`) and logins (30) per 15 minutes | `hardening.test.js` |
+| A student not on the roster can sign up alone; the student row appears only after the code is confirmed | `auth.test.js › self sign-up: a student who is not on the roster yet › signs up from the app alone …` |
+| An abandoned self sign-up leaves nothing behind; the number stays free | `auth.test.js › self sign-up … › an abandoned sign-up leaves nothing behind …` |
+| A new student must choose a programme; forgetting it does not use up the code | `auth.test.js › self sign-up … › a new student must choose a programme …` |
+| Two people racing for the same new number: exactly one account, the other gets `ALREADY_REGISTERED` | `auth.test.js › self sign-up … › two people racing to claim the same new number …` |
+| A roster number still needs its own NRC and birth date; a new number cannot reuse someone else's NRC | `auth.test.js › a number already on the roster needs its own NRC and birth date …` |
 
 ### The tests were checked against deliberately broken code
 
@@ -123,6 +128,8 @@ one test failed, which shows the tests really guard the rule:
 unlimited code attempts · old token surviving a password reset · no login
 lockout · completing sign-up without verifying · no 30-minute window ·
 reusing a used code · `NOT_ON_ROSTER` revealing which detail was wrong ·
+letting a new number reuse another student's NRC · creating the self
+sign-up student before the code is confirmed · skipping the roster NRC check ·
 creating a student into a group without the lock · removing every lock from the
 seat check · dropping the one-open-request key · approving without locking the
 request · skipping the name check on offline edits · deleting a student without

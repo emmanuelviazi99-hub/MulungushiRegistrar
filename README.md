@@ -13,7 +13,7 @@ mulungushi-registrar-backend/  the backend the app talks to (see its README.md)
 1. **Backend.** Follow `mulungushi-registrar-backend/README.md`:
    - `npm install`
    - copy `.env.example` to `.env` and fill in MySQL, `JWT_SECRET` and the Gmail SMTP settings
-   - load `schema.sql` and `seed.sql`
+   - `npm run db:setup` (fresh database), or `npm run db:migrate` if you already have one with data
    - `npm run seed:accounts`
    - `npm start`
 
@@ -21,17 +21,21 @@ mulungushi-registrar-backend/  the backend the app talks to (see its README.md)
 2. **Tell the app where the backend is**, in
    `app/src/main/java/zm/ac/mulungushi/registrar/ApiConfig.java`:
    - Android emulator on the same laptop: `http://10.0.2.2:3000/api`
+   - a phone on a USB cable: `http://127.0.0.1:3000/api`, then run
+     `adb reverse tcp:3000 tcp:3000` (again every time you replug)
    - a real phone on the same Wi-Fi: `http://<your laptop's IPv4 address>:3000/api`. Find
      it with `ipconfig`, and allow Node through Windows Firewall when asked.
 3. **Run the app** from Android Studio.
 
 ## Accounts
 
-- **Students** create their own account in the app. On "Create an account", choose **Student**,
-  enter the student number, date of birth and NRC exactly as the lecturer added them, plus an
-  email you can open. A code is emailed (valid 10 minutes, 5 tries). Type it in, then choose a
-  password.
-  Demo roster: `202301001`, born `2003-04-12`, NRC `700001/10/1` (more in `seed.sql`).
+- **Students** create their own account in the app: "Create an account" → **Student**, then
+  name, student number, NRC, date of birth and an email you can open. A code is emailed (valid
+  10 minutes, 5 tries). Type it in, pick your programme and a password.
+  - **Not on the roster yet?** Just sign up. Your student record is created when you confirm
+    the code (no lab group yet; a lecturer places you). Try e.g. `202399001`, NRC `799001/10/1`.
+  - **Already added by a lecturer?** Use the same number, NRC and date of birth they entered.
+    Demo roster: `202301001`, born `2003-04-12`, NRC `700001/10/1` (more in `seed.sql`).
 - **Lecturers** choose **Lecturer**: email + employee ID must be on the staff list. Add someone
   with `npm run staff:add -- --email … --employee-id … --name "…"`. Demo: `m.chilufya@mulungushi.edu.zm`, `EMP-1002`.
 - **Ready-made lecturer login** from `npm run seed:accounts`: `b.nyirenda@mulungushi.edu.zm`
