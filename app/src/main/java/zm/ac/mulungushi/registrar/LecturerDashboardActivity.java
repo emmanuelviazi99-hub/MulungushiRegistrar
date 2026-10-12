@@ -10,17 +10,17 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Ported from LecturerDashboard. The lecturer's Home tab: real counts from
- * StudentRepository, a group-occupancy bar per group, and quick actions
- * leading to Requests, Sync, the roster, or straight into Add student.
+ * Ported from LecturerDashboard. The lecturer's Home tab: counts from the
+ * server (reloaded each time the screen opens), a group-occupancy bar per
+ * group, and quick actions leading to Requests, Sync, the roster, or straight
+ * into Add student.
  *
- * "Conflicts" is always 0 here — conflict detection depends on the offline
- * sync queue the brief describes in Activity E, which isn't built yet.
+ * "Conflicts" still comes from the Sync screen's fixed demo conflict: conflict
+ * detection needs the offline sync queue (brief, Activity E), not built yet.
  */
 public class LecturerDashboardActivity extends AppCompatActivity implements EditStudentSheet.Listener {
 
-    private static final String LECTURER_NAME = "B. Nyirenda";
-    private static final String LECTURER_SHORT = "B. Nyirenda";
+    private boolean warned;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,7 +28,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         setContentView(R.layout.activity_lecturer_dashboard);
         ConnectivityBanner.attach(this);
 
-        RosterFormat.bindHomeAvatar(this, LECTURER_NAME, SignOutSheet.lecturerDetail(this));
+        RosterFormat.bindHomeAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
 
         findViewById(R.id.actionRequests).setOnClickListener(v ->
                 startActivity(new Intent(this, RequestsActivity.class)));
@@ -47,6 +47,15 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
     protected void onResume() {
         super.onResume();
         render();
+        // counts, groups and open requests as the server has them now
+        RosterApi.get().loadRoster(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, warned);
+                warned = true;
+            }
+            render();
+        });
     }
 
     @Override
@@ -57,7 +66,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
 
     private void render() {
         ((TextView) findViewById(R.id.textWelcome)).setText(
-                getString(R.string.welcome_lecturer_fmt, LECTURER_SHORT));
+                getString(R.string.welcome_lecturer_fmt, RosterUi.lecturerName()));
 
         StudentRepository repo = StudentRepository.getInstance();
         int activeCount = repo.getActive().size();

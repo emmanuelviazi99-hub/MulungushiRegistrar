@@ -12,5 +12,6 @@ public class RegistrarApp extends Application {
     public void onCreate() {
         super.onCreate();
         Session.init(this);
+        Notices.init(this);
     }
 }

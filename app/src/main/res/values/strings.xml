@@ -337,4 +337,14 @@
     <string name="error_delivery_failed">We couldn\'t send the email just now. Check the address and try again.</string>
     <string name="error_rate_limited">Too many attempts from this network. Wait a few minutes and try again.</string>
     <string name="error_server">Something went wrong on the server. Try again shortly.</string>
+    <!-- Roster, groups and requests on the server -->
+    <string name="error_version_conflict">Someone else changed this record a moment ago. The latest version is shown now. Check it and save again.</string>
+    <string name="error_student_gone">That student was removed in the meantime.</string>
+    <string name="error_request_gone">That request was already answered or withdrawn. The list is up to date now.</string>
+    <string name="error_signed_out">Your sign-in has expired. Please sign in again.</string>
+    <string name="action_saving">Saving…</string>
+    <string name="roster_loading">Loading the roster…</string>
+    <string name="error_student_nrc_empty">Enter the student\'s NRC.</string>
+    <string name="error_student_dob_empty">Choose the student\'s date of birth.</string>
+    <string name="add_student_identity_note">The student will type this same number, NRC and date of birth to create their account.</string>
 </resources>

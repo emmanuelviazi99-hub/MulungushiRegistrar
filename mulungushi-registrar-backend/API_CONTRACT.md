@@ -37,15 +37,18 @@ The examples below were captured from the running server.
 | GET | `/students` | lecturer | Search, filter, page through the roster |
 | POST | `/students` | lecturer | Add a student to the roster |
 | GET | `/students/:id` | lecturer | One student, full record |
-| PUT | `/students/:id` | lecturer | Correct name, programme, NRC, birth date |
+| PUT | `/students/:id` | lecturer | Save the roster sheet: name, programme, NRC, birth date, number and group in one go |
 | DELETE | `/students/:id` | lecturer | Soft delete |
 | POST | `/students/:id/group` | lecturer | Assign or move to a group (15-seat safe) |
 | POST | `/students/mutate` | signed in | Replay an offline change (CREATE / EDIT / DELETE / TRANSFER) |
 | GET | `/groups` | signed in | Members per group |
+| GET | `/groups/mine` | student | My group and who is in it |
 | POST | `/group-requests` | student | Ask to change group |
 | GET | `/group-requests` | lecturer | The queue |
 | PUT | `/group-requests/:id/approve` | lecturer | Approve (re-checks the 15-seat limit) |
 | PUT | `/group-requests/:id/decline` | lecturer | Decline |
+| GET | `/my-requests` | student | My latest group request and number correction |
+| DELETE | `/my-requests/group` or `/my-requests/number` | student | Withdraw my open request |
 | POST | `/number-correction-requests` | student | Ask to correct the student number |
 | GET | `/number-correction-requests` | lecturer | The queue |
 | PUT | `/number-correction-requests/:id/approve` | lecturer | Approve |
@@ -274,10 +277,32 @@ students, whose number and NRC stay reserved), 409 `GROUP_FULL`, 400
 ### `GET /students/:id` (lecturer) → full record, or 404 `STUDENT_NOT_FOUND`
 
 ### `PUT /students/:id` (lecturer)
+The lecturer's **Save** on the roster sheet. Send any of these fields; they are
+all saved in one transaction, so either everything changes or nothing does.
+
 ```json
-{ "fullName": "Ngosa M. Kabwe", "nrc": "700050/10/2", "dateOfBirth": "2003-05-18", "version": 1 }  // any of these
+{ "fullName": "Innocent Mbewe", "programmeCode": "IT", "groupCode": "G02",
+  "studentNumber": "202301018", "nrc": "700018/10/1", "dateOfBirth": "2002-10-15", "version": 2 }
+
+// 200
+{ "success": true, "student": {
+    "studentId": "811a1fa2-c62e-11f1-951a-02fc00000001", "studentNumber": "202301018", "fullName": "Innocent Mbewe",
+    "nrcMasked": "70****/**/1", "nrc": "700018/10/1", "dateOfBirth": "2002-10-15",
+    "programmeCode": "IT", "groupCode": "G02", "active": true, "version": 3,
+    "createdAt": "2026-10-12T09:17:26.195Z", "updatedAt": "2026-10-12T09:17:26.299Z" } }
 ```
-409 `VERSION_CONFLICT` if `version` no longer matches; 409 `DUPLICATE_NRC`.
+
+- `groupCode` may be `UNASSIGNED`. The 15-seat limit is checked with the same
+  lock as every other path into a group.
+- If the save does exactly what the student's open request asked for (the
+  group they asked for, or the number they asked for), that request is marked
+  `APPROVED` too, so it leaves the queue and the student is told.
+- Errors (nothing is saved): 409 `VERSION_CONFLICT` (someone saved since you
+  loaded it), 409 `GROUP_FULL`, 409 `DUPLICATE_STUDENT_NUMBER`, 409
+  `DUPLICATE_NRC`, 404 `STUDENT_NOT_FOUND`, 422 `VALIDATION_ERROR`.
+
+A student's own `PUT /students/me` ignores `studentNumber`, `groupCode`, `nrc`
+and `dateOfBirth`: those change only through a lecturer or an approved request.
 
 ### `DELETE /students/:id` (lecturer)
 `200 { "success": true, "message": "Student soft-deleted." }`. Frees the seat
@@ -327,6 +352,17 @@ answer is 409 `VERSION_CONFLICT`, for the app to show as a conflict.
   { "groupCode": "G02", "capacity": 15, "activeCount": 2, "full": false } ] }
 ```
 
+### `GET /groups/mine` (student)
+```json
+// 200, in a group (names and numbers only, no NRCs or emails)
+{ "success": true, "groupCode": "G02", "capacity": 15, "members": [
+  { "fullName": "Grace Lungu", "studentNumber": "202301015" },
+  { "fullName": "Innocent Mbewe", "studentNumber": "202301018" } ] }
+
+// 200, not in a group yet
+{ "success": true, "groupCode": null, "capacity": null, "members": [] }
+```
+
 ---
 
 ## Change requests
@@ -346,8 +382,28 @@ of each kind at a time (409 `REQUEST_ALREADY_PENDING`).
 // 201 { "success": true, "requestId": 2, "status": "PENDING" }
 ```
 
+### `GET /my-requests` (student)
+The latest request of each kind, whatever its status, or `null`. The app uses
+it for "Pending" labels and the one-time "approved / declined" notice.
+
+```json
+{ "success": true,
+  "group": { "requestId": 1, "kind": "GROUP", "studentId": "876dc138-…", "studentName": "Innocent Mbewe",
+             "studentNumber": "202301018", "fromGroupCode": null, "toGroupCode": "G02",
+             "reason": "Clash with my CS lab", "status": "PENDING",
+             "requestedAt": "2026-10-12T09:17:36.916Z", "resolvedAt": null },
+  "number": null }
+```
+
+### `DELETE /my-requests/group` and `DELETE /my-requests/number` (student)
+Withdraws your open request of that kind; it is removed, and you may ask again.
+`200 { "success": true, "status": "CANCELLED" }`. 404 `REQUEST_NOT_FOUND` if
+there is no open one (an answered request can never be withdrawn).
+
 ### `GET /group-requests?status=PENDING` and `GET /number-correction-requests?status=PENDING` (lecturer)
-`status` is `PENDING` (default), `APPROVED` or `DECLINED`. Oldest first.
+`status` is `PENDING` (default, oldest first), `APPROVED`, `DECLINED`, or
+`ANSWERED` (approved and declined together, newest first: the app's history
+list).
 
 ```json
 { "success": true, "requests": [

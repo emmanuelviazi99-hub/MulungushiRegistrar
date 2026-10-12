@@ -19,7 +19,7 @@ import java.util.Locale;
 
 public class LecturerRosterActivity extends AppCompatActivity implements EditStudentSheet.Listener {
 
-    private static final String LECTURER_NAME = "B. Nyirenda";
+    private boolean warned;
 
     private StudentAdapter adapter;
     private TextView textRecordCount, textResultCount, buttonFilterProgramme, buttonFilterGroup, buttonClearFilters;
@@ -80,7 +80,7 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
             getWindow().getDecorView().post(() ->
                     EditStudentSheet.forEdit(reviewId, reviewNumber).show(getSupportFragmentManager(), this));
         }
-        RosterFormat.bindHomeAvatar(this, LECTURER_NAME, SignOutSheet.lecturerDetail(this));
+        RosterFormat.bindHomeAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
         BottomNav.bindLecturer(this, BottomNav.MIDDLE);
 
         refresh();
@@ -89,7 +89,20 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
     @Override
     protected void onResume() {
         super.onResume();
-        refresh(); // picks up anything changed by the sheet
+        refresh();
+        reload();
+    }
+
+    /** Fetches the roster from the server, then shows it. */
+    private void reload() {
+        RosterApi.get().loadRoster(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, warned);
+                warned = true;
+            }
+            refresh();
+        });
     }
 
     private void refresh() {
@@ -120,7 +133,8 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
 
         if (filtered.isEmpty()) {
             emptyState.setVisibility(View.VISIBLE);
-            textEmptyTitle.setText(active.isEmpty() ? R.string.roster_empty_title : R.string.roster_empty_filtered);
+            textEmptyTitle.setText(!repo.isRosterLoaded() ? R.string.roster_loading
+                    : active.isEmpty() ? R.string.roster_empty_title : R.string.roster_empty_filtered);
         } else {
             emptyState.setVisibility(View.GONE);
         }
@@ -270,7 +284,7 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
             return;
         }
         Feedback.show(this, toastMessage);
-        refresh();
+        refresh(); // the sheet saved on the server and reloaded the roster already
     }
 
     private void notBuilt() {

@@ -103,13 +103,15 @@ const validateCreateStudent = [
   groupRule().optional({ nullable: true }),
 ];
 
-// nrc / dateOfBirth are accepted here for LECTURER corrections only: a student's
-// own PUT /students/me ignores them (see studentService.updateStudent).
+// nrc / dateOfBirth / studentNumber / groupCode are accepted here for LECTURER
+// edits only: a student's own PUT /students/me ignores them (see student.controller).
 const validateUpdateStudent = [
   nameRule().optional(),
   programmeRule().optional(),
   nrcRule().optional(),
   dobRule().optional(),
+  studentNumberRule().optional(),
+  groupRule().optional(),
   body('version').optional().isInt({ min: 1 }).withMessage('must be a positive integer'),
 ];
 

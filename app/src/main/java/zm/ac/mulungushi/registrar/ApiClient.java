@@ -68,6 +68,14 @@ final class ApiClient {
         return send("GET", path, null, token);
     }
 
+    static Response put(String path, JSONObject json, String token) throws IOException, JSONException {
+        return send("PUT", path, json == null ? new JSONObject() : json, token);
+    }
+
+    static Response delete(String path, String token) throws IOException, JSONException {
+        return send("DELETE", path, null, token);
+    }
+
     private static Response send(String method, String path, JSONObject json, String token)
             throws IOException, JSONException {
         HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + path).openConnection();

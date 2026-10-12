@@ -151,4 +151,25 @@ async function getGroupTotals() {
   return rows;
 }
 
-module.exports = { assignStudentToGroup, moveStudent, reserveSeat, getGroupTotals, resolveGroupId };
+/**
+ * The members of a student's own lab group: names and numbers only (no NRC,
+ * no birth date), for the student's "My group" screen.
+ * @returns { groupCode|null, capacity|null, members: [{ full_name, student_number }] }
+ */
+async function membersOfStudentsGroup(studentId) {
+  const [[me]] = await pool.query(
+    `SELECT g.group_id, g.group_code, g.capacity FROM students s
+       LEFT JOIN lab_groups g ON g.group_id = s.group_id
+      WHERE s.student_id = ? AND s.active = 1`,
+    [studentId]
+  );
+  if (!me) throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Your profile could not be found.');
+  if (!me.group_id) return { groupCode: null, capacity: null, members: [] };
+  const [members] = await pool.query(
+    'SELECT full_name, student_number FROM students WHERE group_id = ? AND active = 1 ORDER BY full_name',
+    [me.group_id]
+  );
+  return { groupCode: me.group_code, capacity: me.capacity, members };
+}
+
+module.exports = { membersOfStudentsGroup, assignStudentToGroup, moveStudent, reserveSeat, getGroupTotals, resolveGroupId };

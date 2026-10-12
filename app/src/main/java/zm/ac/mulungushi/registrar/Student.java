@@ -1,26 +1,26 @@
 package zm.ac.mulungushi.registrar;
 
 /**
- * One student record. Mirrors the {id, name, number, programme, group, status}
- * objects in the prototype. "active" stands in for status === 'active';
- * a soft-deleted record keeps active = false instead of being removed,
- * so its number stays reserved.
+ * One student record, as the server reported it (see RosterApi.studentFrom).
+ * Group "Unassigned" stands for the server's groupCode null.
  */
 public class Student {
 
-    public String id;
+    public String id;        // the server's studentId (UUID)
     public String name;
     public String number;
     public String programme; // CS, IT or DS
     public String group;     // G01..G04 or Unassigned
     public boolean active;
-    /** Contact details collected at registration. Null for records added by a lecturer or seeded before this existed. */
+    /** The server's version of this record; sent back on Save so a newer change is never overwritten. */
+    public int version;
     public String email;
     public String phone; // +260XXXXXXXXX
-    public String nrc;   // 123456/10/1
-    /** Group this student has asked to move to, or null. Stands in for the prototype's groupRequest until the sync queue exists. */
+    public String nrc;   // 123456/10/1 (lists carry only a masked one)
+    public String dateOfBirth;
+    /** Open group-change request: the group asked for, or null. */
     public String pendingGroup;
-    /** Number correction this student has requested, or null. Stands in for the prototype's numberRequest. */
+    /** Open number-correction request: the number asked for, or null. */
     public String pendingNumber;
     /** When each open request was made, e.g. "4 Oct", and the optional reason for a number correction. */
     public String pendingGroupOn;
@@ -29,10 +29,14 @@ public class Student {
     /** Order the requests came in, so the lecturer handles oldest first. */
     public int pendingGroupSeq;
     public int pendingNumberSeq;
-    /** Set when a lecturer answers a request: "approved" or "declined". Shown to the student on their next visit, then cleared. */
+    /** The server's id of each open request, for approve / decline. */
+    public int pendingGroupRequestId;
+    public int pendingNumberRequestId;
+    /** Set when a lecturer has answered a request the student has not been told about: "approved" or "declined". */
     public String noticeKind;
     /** "group" or "number" - which request the notice is about. */
     public String noticeSubject;
+    public int noticeRequestId;
 
     public Student(String id, String name, String number, String programme, String group, boolean active) {
         this.id = id;
@@ -46,9 +50,11 @@ public class Student {
     /** Shallow copy, used so an open edit sheet never mutates the stored record until Save. */
     public Student copy() {
         Student c = new Student(id, name, number, programme, group, active);
+        c.version = version;
         c.email = email;
         c.phone = phone;
         c.nrc = nrc;
+        c.dateOfBirth = dateOfBirth;
         c.pendingGroup = pendingGroup;
         c.pendingNumber = pendingNumber;
         c.pendingGroupOn = pendingGroupOn;
@@ -56,8 +62,11 @@ public class Student {
         c.pendingNumberReason = pendingNumberReason;
         c.pendingGroupSeq = pendingGroupSeq;
         c.pendingNumberSeq = pendingNumberSeq;
+        c.pendingGroupRequestId = pendingGroupRequestId;
+        c.pendingNumberRequestId = pendingNumberRequestId;
         c.noticeKind = noticeKind;
         c.noticeSubject = noticeSubject;
+        c.noticeRequestId = noticeRequestId;
         return c;
     }
 }

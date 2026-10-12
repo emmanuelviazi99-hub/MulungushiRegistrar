@@ -47,4 +47,15 @@ async function listTotals(req, res) {
   });
 }
 
-module.exports = { assignGroup, listTotals };
+// GET /api/groups/mine (student) — my group and its members (names and numbers only)
+async function listMine(req, res) {
+  const mine = await groupService.membersOfStudentsGroup(req.user.studentId);
+  res.json({
+    success: true,
+    groupCode: mine.groupCode,
+    capacity: mine.capacity,
+    members: mine.members.map((m) => ({ fullName: m.full_name, studentNumber: m.student_number })),
+  });
+}
+
+module.exports = { assignGroup, listTotals, listMine };

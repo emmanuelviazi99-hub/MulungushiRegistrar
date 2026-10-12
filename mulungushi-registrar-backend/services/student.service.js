@@ -7,7 +7,9 @@
 //   createStudent                lecturer adds a student (POST /students, offline CREATE)
 //   insertStudent                the same insert inside a caller's transaction (self sign-up)
 //   updateStudent                name / programme, and (lecturer only) NRC / birth date
-//                                (PUT /students/:id, PUT /students/me, offline EDIT)
+//                                (PUT /students/me, offline EDIT)
+//   saveByLecturer               the roster edit sheet: fields + number + group in one
+//                                transaction (PUT /students/:id)
 //   deleteStudent                soft delete (DELETE /students/:id, offline DELETE)
 //
 // Before this file existed the same SQL was written out three times (the REST
@@ -241,6 +243,117 @@ async function updateStudent(studentId, changes = {}, { allowIdentityFields = fa
 }
 
 /**
+ * The lecturer's "Save" on the roster edit sheet: name, programme, NRC, birth
+ * date, the student NUMBER and the lab GROUP, all in ONE transaction, so a
+ * failure on any part (GROUP_FULL, a taken number, a version conflict) leaves
+ * the record exactly as it was.
+ *
+ * A lecturer may correct a number directly (they can already approve a
+ * student's number-correction request). If the student had an open request
+ * asking for exactly this number, or for exactly this group, that request is
+ * marked APPROVED in the same transaction, so the Requests screen and the
+ * student's notice stay truthful.
+ *
+ * @param changes { fullName?, programmeCode?, nrc?, dateOfBirth?, studentNumber?, groupCode? }
+ * @param options { expectedVersion?, lecturerAccountId }
+ * @returns the updated student (with codes)
+ */
+async function saveByLecturer(studentId, changes = {}, { expectedVersion, lecturerAccountId = null } = {}) {
+  const sets = [];
+  const values = [];
+
+  if (changes.fullName !== undefined) {
+    const fullName = String(changes.fullName).trim();
+    if (!v.isValidName(fullName)) {
+      throw fail('fullName', 'must be 2-100 characters: letters, spaces, apostrophes, hyphens or full stops');
+    }
+    sets.push('full_name = ?');
+    values.push(fullName);
+  }
+  if (changes.programmeCode !== undefined) {
+    sets.push('programme_id = ?');
+    values.push(await programmeIdFor(pool, changes.programmeCode));
+  }
+  if (changes.nrc !== undefined) {
+    const nrc = v.normaliseNrc(changes.nrc);
+    if (!v.isValidNrc(nrc)) throw fail('nrc', 'must look like 123456/10/1');
+    sets.push('nrc = ?');
+    values.push(nrc);
+  }
+  if (changes.dateOfBirth !== undefined) {
+    if (!v.isValidDob(changes.dateOfBirth)) {
+      throw fail('dateOfBirth', 'must be a real date in the past, formatted YYYY-MM-DD');
+    }
+    sets.push('date_of_birth = ?');
+    values.push(changes.dateOfBirth);
+  }
+  let newNumber;
+  if (changes.studentNumber !== undefined) {
+    newNumber = String(changes.studentNumber).trim();
+    if (!v.isValidStudentNumber(newNumber)) throw fail('studentNumber', 'must be exactly 9 digits, no spaces');
+  }
+  const wantsGroup = changes.groupCode !== undefined;
+  if (sets.length === 0 && newNumber === undefined && !wantsGroup) {
+    throw new ApiError(422, 'VALIDATION_ERROR', 'Nothing to update.');
+  }
+
+  try {
+    await withTransaction(async (conn) => {
+      // Lock the student row first (same lock order as group.service: student, then group).
+      const [[current]] = await conn.query('SELECT * FROM students WHERE student_id = ? FOR UPDATE', [studentId]);
+      if (!current || !current.active) throw new ApiError(404, 'STUDENT_NOT_FOUND', NOT_FOUND_MESSAGE);
+      if (expectedVersion !== undefined && expectedVersion !== null && current.version !== Number(expectedVersion)) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'This record changed since you last read it. Reload and retry.');
+      }
+
+      const numberChanged = newNumber !== undefined && newNumber !== current.student_number;
+      if (numberChanged) {
+        sets.push('student_number = ?');
+        values.push(newNumber);
+      }
+      if (sets.length > 0) {
+        await conn.query(`UPDATE students SET ${sets.join(', ')}, version = version + 1 WHERE student_id = ?`, [
+          ...values,
+          studentId,
+        ]);
+      }
+
+      let groupChanged = false;
+      if (wantsGroup) {
+        const target = await groupService.resolveGroupId(conn, changes.groupCode);
+        const targetId = target ? target.group_id : null;
+        if (targetId !== current.group_id) {
+          await groupService.moveStudent(conn, { studentId, groupCode: changes.groupCode });
+          groupChanged = true;
+        }
+      }
+
+      // An open request that asked for exactly what the lecturer just did is now answered.
+      if (numberChanged) {
+        await conn.query(
+          `UPDATE change_requests SET status = 'APPROVED', resolved_at = NOW(3), resolved_by = ?
+            WHERE student_id = ? AND kind = 'NUMBER' AND status = 'PENDING' AND new_number = ?`,
+          [lecturerAccountId, studentId, newNumber]
+        );
+      }
+      if (groupChanged) {
+        await conn.query(
+          `UPDATE change_requests r
+              JOIN students s ON s.student_id = r.student_id
+              SET r.status = 'APPROVED', r.resolved_at = NOW(3), r.resolved_by = ?
+            WHERE r.student_id = ? AND r.kind = 'GROUP' AND r.status = 'PENDING'
+              AND r.to_group_id <=> s.group_id`,
+          [lecturerAccountId, studentId]
+        );
+      }
+    });
+  } catch (err) {
+    throw translateDuplicate(err); // DUPLICATE_STUDENT_NUMBER / DUPLICATE_NRC
+  }
+  return getStudent(studentId);
+}
+
+/**
  * Soft delete. Setting deleted_at is all it takes: `active` is computed from it
  * by the database. The seat is released (group_id = NULL), the student number
  * and NRC stay reserved, and the student's login is disabled — all in one
@@ -268,6 +381,7 @@ module.exports = {
   createStudent,
   insertStudent,
   updateStudent,
+  saveByLecturer,
   deleteStudent,
   translateDuplicate,
 };

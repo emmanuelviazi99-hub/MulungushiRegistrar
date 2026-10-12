@@ -53,6 +53,7 @@ public final class ApiAuthService implements AuthService {
     public void signOut() {
         // Tokens are not stored on the server, so forgetting ours is all it takes.
         Session.clear();
+        StudentRepository.reset(); // the next person on this phone must not see this one's data
     }
 
     // ---------------------------------------------------------------- student sign-up

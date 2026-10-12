@@ -1,7 +1,7 @@
 # Documented test cases
 
-Everything below except the last section is automated: `npm test` runs 92
-tests in six files against a throwaway database rebuilt from `schema.sql` +
+Everything below except the last section is automated: `npm test` runs 106
+tests in seven files against a throwaway database rebuilt from `schema.sql` +
 `seed.sql`. The email tests run a real SMTP server inside the test, so they
 check the actual Nodemailer path without needing the internet.
 
@@ -17,6 +17,7 @@ exactly what Jest prints.
 | `capacity.test.js` | The 15-seat limit on every path, under simultaneous requests | 9 |
 | `requests.test.js` | Group-change and number-correction requests | 10 |
 | `hardening.test.js` | Per-address rate limits | 2 |
+| `app-screens.test.js` | What the app's roster and request screens use: the lecturer's one-step save, a student's own requests, the Answered history, my group | 14 |
 
 ---
 
@@ -114,6 +115,12 @@ exactly what Jest prints.
 | Two lecturers approving one request apply it once | `requests.test.js › two lecturers approving the same request at the same moment apply it exactly once` |
 | Requests cannot be approved through the wrong endpoint or by a student | `requests.test.js › the two kinds and the two roles stay separate › …` |
 | Per-address limits on code requests (20, adjustable in `.env`) and logins (30) per 15 minutes | `hardening.test.js` |
+| A group the lecturer assigns is what the student sees after signing in again (the bug reported on the phone) | `app-screens.test.js › the lecturer assigns a group and the student sees it › …` |
+| The lecturer's save (name, programme, number, group) is all-or-nothing: a full group or a taken number changes nothing | `app-screens.test.js › PUT /students/:id … › a full group refuses the WHOLE save …`; `… a number someone else has is refused …` |
+| Two lecturers editing the same student: the second save is refused, not silently overwriting | `app-screens.test.js › … › an out-of-date version is refused …` |
+| A lecturer save that does what the student asked for answers their request as approved | `app-screens.test.js › … › doing exactly what an open request asked for …` |
+| A student can withdraw only their own open request; answered ones stay | `app-screens.test.js › a student's own requests › …` |
+| A student sees only names and numbers of their own group's members | `app-screens.test.js › GET /groups/mine › …` |
 | A student not on the roster can sign up alone; the student row appears only after the code is confirmed | `auth.test.js › self sign-up: a student who is not on the roster yet › signs up from the app alone …` |
 | An abandoned self sign-up leaves nothing behind; the number stays free | `auth.test.js › self sign-up … › an abandoned sign-up leaves nothing behind …` |
 | A new student must choose a programme; forgetting it does not use up the code | `auth.test.js › self sign-up … › a new student must choose a programme …` |
@@ -128,7 +135,9 @@ one test failed, which shows the tests really guard the rule:
 unlimited code attempts · old token surviving a password reset · no login
 lockout · completing sign-up without verifying · no 30-minute window ·
 reusing a used code · `NOT_ON_ROSTER` revealing which detail was wrong ·
-letting a new number reuse another student's NRC · creating the self
+letting a new number reuse another student's NRC · ignoring the group in the
+lecturer's save · saving the lecturer's changes outside one transaction ·
+letting a student erase an answered request · creating the self
 sign-up student before the code is confirmed · skipping the roster NRC check ·
 creating a student into a group without the lock · removing every lock from the
 seat check · dropping the one-open-request key · approving without locking the

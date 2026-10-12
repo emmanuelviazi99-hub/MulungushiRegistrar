@@ -13,6 +13,10 @@ const {
   handleValidation,
 } = require('../middleware/validation');
 
+// --- A student's own requests ------------------------------------------------
+router.get('/my-requests', requireAuth, requireRole('STUDENT'), asyncHandler(requestController.listMine));
+router.delete('/my-requests/:kind', requireAuth, requireRole('STUDENT'), asyncHandler(requestController.cancelMine));
+
 // --- Group-change requests --------------------------------------------------
 router.post(
   '/group-requests',

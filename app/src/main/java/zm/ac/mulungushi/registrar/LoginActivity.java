@@ -160,12 +160,12 @@ public class LoginActivity extends AppCompatActivity {
     private void onSignedIn(LoginViewModel.Role role) {
         if (role == null) return;
         vm.consumeSignedIn();
+        // start from what the server says for this account, never a previous sign-in's data
+        StudentRepository.reset();
         Intent intent;
         if (role == LoginViewModel.Role.LECTURER) {
             intent = new Intent(this, LecturerDashboardActivity.class);
         } else {
-            // the server's record of this student (the sign-in may have used an email, not the number)
-            StudentRepository.getInstance().putSignedIn(Session.toStudent());
             intent = new Intent(this, StudentHomeActivity.class);
             intent.putExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER, Session.studentNumber());
         }

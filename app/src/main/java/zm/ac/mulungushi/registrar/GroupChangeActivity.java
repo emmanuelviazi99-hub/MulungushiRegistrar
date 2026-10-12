@@ -22,6 +22,7 @@ public class GroupChangeActivity extends AppCompatActivity {
 
     private Student student;
     private String choice;
+    private boolean busy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,9 +33,8 @@ public class GroupChangeActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.request_group_change_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
-        if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
-        student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        student = RosterUi.meOrSignIn(this);
+        if (student == null) return;
         RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
         BottomNav.bindStudent(this, BottomNav.HOME, student.number);
 
@@ -45,7 +45,18 @@ public class GroupChangeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (student == null) return;
         render();
+        // group totals and any open request as the server has them now
+        RosterApi.get().loadMine(outcome -> {
+            if (isFinishing() || isDestroyed() || busy) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, false);
+                return;
+            }
+            student = StudentRepository.getInstance().me();
+            render();
+        });
     }
 
     private void render() {
@@ -68,9 +79,22 @@ public class GroupChangeActivity extends AppCompatActivity {
             if (assigned) note += " " + getString(R.string.group_stay_fmt, student.group);
             ((TextView) findViewById(R.id.textRequestedNote)).setText(note);
             findViewById(R.id.buttonCancelRequest).setOnClickListener(v -> {
-                StudentRepository.getInstance().cancelGroupChange(student.id);
-                Feedback.postForNext(getString(R.string.toast_request_cancelled_dot));
-                finish();
+                if (busy) return;
+                busy = true;
+                v.setEnabled(false);
+                RosterApi.get().cancelGroupChange(outcome -> {
+                    busy = false;
+                    v.setEnabled(true);
+                    if (isFinishing() || isDestroyed()) return;
+                    if (outcome.ok || outcome.is("REQUEST_NOT_FOUND")) {
+                        // REQUEST_NOT_FOUND: the lecturer answered it first; home shows the answer
+                        Feedback.postForNext(getString(outcome.ok
+                                ? R.string.toast_request_cancelled_dot : R.string.error_request_gone));
+                        finish();
+                    } else {
+                        RosterUi.report(this, outcome);
+                    }
+                });
             });
         } else {
             buildOptions();
@@ -180,10 +204,25 @@ public class GroupChangeActivity extends AppCompatActivity {
             submit.setTextColor(getResources().getColor(R.color.white));
             submit.setText(getString(R.string.request_group_fmt, choice));
             submit.setOnClickListener(v -> {
-                StudentRepository.getInstance().requestGroupChange(student.id, choice);
-                Feedback.postForNext(getString(R.string.toast_request_sent_pending));
-                Notifier.askSoon = true;
-                finish();
+                if (busy) return;
+                busy = true;
+                submit.setEnabled(false);
+                submit.setText(R.string.action_saving);
+                RosterApi.get().requestGroupChange(choice, outcome -> {
+                    busy = false;
+                    if (isFinishing() || isDestroyed()) return;
+                    if (outcome.ok) {
+                        Feedback.postForNext(getString(R.string.toast_request_sent_pending));
+                        Notifier.askSoon = true;
+                        finish();
+                        return;
+                    }
+                    if (RosterUi.signedOut(this, outcome)) return;
+                    student = StudentRepository.getInstance().me();
+                    render(); // e.g. a request was already open: show it
+                    error.setText(RosterUi.message(this, outcome));
+                    error.setVisibility(View.VISIBLE);
+                });
             });
         }
     }

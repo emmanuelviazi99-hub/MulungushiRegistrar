@@ -1,342 +1,210 @@
 package zm.ac.mulungushi.registrar;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 /**
- * Holds the student list in memory for this stage of the build.
- * This is a stand-in for Room + Retrofit, which come later in the brief
- * (see ICT361_Handoff, section 8). Seed data is copied from the prototype's
- * initialStudents so the roster looks the same on first run.
+ * What the screens show: a copy of what the server last said. The server is the
+ * only place anything is changed (see RosterApi); after every change RosterApi
+ * reloads and hands the fresh answer to one of the apply...() methods below.
+ * Nothing here invents or edits data on its own, so the phone can never show a
+ * group, a request or a student that the server does not have.
  *
- * Not thread-safe on purpose: everything runs on the main thread for now.
- * When Room replaces this, reads/writes move to a background thread.
+ *   lecturer  the roster, group totals, open requests, answered history
+ *   student   their own record, group totals, their latest requests, their group's members
+ *
+ * Used on the main thread only (RosterApi applies answers on the main thread).
  */
 public class StudentRepository {
 
     public static final int CAPACITY = 15;
     public static final String[] PROGRAMMES = {"CS", "IT", "DS"};
-    public static final String[] GROUPS = {"G01", "G02", "G03", "G04"};
+    /** The lab groups. Replaced by the server's list (GET /groups) once it has been loaded. */
+    public static String[] GROUPS = {"G01", "G02", "G03", "G04"};
     public static final String UNASSIGNED = "Unassigned";
-    public static final String DEMO_NUMBER_FALLBACK = "202301045";
 
     private static StudentRepository instance;
 
-    private final List<Student> students = new ArrayList<>();
-
-    /** One answered request, kept so the lecturer's Requests screen can show an Answered history. */
+    /** One request, as the server reported it. */
     public static class RequestRecord {
         public static final String GROUP = "group";
         public static final String NUMBER = "number";
+        public static final String PENDING = "pending";
         public static final String APPROVED = "approved";
         public static final String DECLINED = "declined";
 
-        public int seq;
+        public int requestId;
         public String studentId;
         public String studentName;
         public String studentNumber;
         public String kind;        // group | number
-        public String from;
+        public String from;        // group code / Unassigned, or the old number
         public String to;
-        public String reason;      // number corrections only, may be null
-        public String requestedOn;
-        public String status;      // approved | declined
+        public String reason;      // may be null
+        public String requestedOn; // e.g. "4 Oct"
+        public String status;      // pending | approved | declined
+        public long resolvedAtMillis;
     }
 
-    /** The one demo sync conflict the prototype shows (Mutinta Banda). Resolving it clears the lecturer's Conflicts count. */
+    // ---- what the server last said ----
+    private final List<Student> roster = new ArrayList<>();          // lecturer
+    private final Map<String, Integer> groupCounts = new HashMap<>(); // both
+    private final List<RequestRecord> answered = new ArrayList<>();   // lecturer, newest first
+    private Student me;                                               // student
+    private final List<Student> myGroupMembers = new ArrayList<>();   // student
+    private boolean rosterLoaded;
+
+    /** The one demo sync conflict on the lecturer's Sync screen (the prototype's showcase, not server data). */
     private boolean conflictResolved = false;
     public boolean isConflictResolved() { return conflictResolved; }
     public void resolveConflict() { conflictResolved = true; }
     public int conflictCount() { return conflictResolved ? 0 : 1; }
 
-    /** Newest last; the screen reverses it. In memory only, like the rest of this stage. */
-    private final List<RequestRecord> answered = new ArrayList<>();
-    private int nextSeq = 10;
-
-    private StudentRepository() {
-        seed();
-    }
+    private StudentRepository() {}
 
     public static synchronized StudentRepository getInstance() {
         if (instance == null) instance = new StudentRepository();
         return instance;
     }
 
-    private void seed() {
-        Student chanda = new Student("s1", "Chanda Mwansa", "202301045", "CS", "G01", true);
-        chanda.pendingGroup = "G02"; // same starting state as the prototype: one open group-change request
-        chanda.pendingGroupOn = "12 Sep";
-        chanda.pendingGroupSeq = 4;
-        students.add(chanda);
-        students.add(new Student("s2", "Bwalya Phiri", "202301112", "IT", "G01", true));
-        Student mutinta = new Student("s3", "Mutinta Banda", "202301198", "DS", "G02", true);
-        mutinta.pendingNumber = "202301189";
-        mutinta.pendingNumberOn = "11 Sep";
-        mutinta.pendingNumberReason = "Two digits were swapped when I registered.";
-        mutinta.pendingNumberSeq = 3;
-        students.add(mutinta);
-        students.add(new Student("s4", "Natasha Zulu", "202301203", "CS", "G04", true));
-        Student kelvin = new Student("s5", "Kelvin Tembo", "202301256", "IT", "G02", true);
-        kelvin.pendingGroup = "G04";
-        kelvin.pendingGroupOn = "10 Sep";
-        kelvin.pendingGroupSeq = 2;
-        students.add(kelvin);
-        students.add(new Student("s6", "Bornface Sikaonga", "202301310", "CS", "G03", true));
-
-        // one request already answered, like the prototype's history
-        RequestRecord done = new RequestRecord();
-        done.seq = 1;
-        done.studentId = "s4";
-        done.studentName = "Natasha Zulu";
-        done.studentNumber = "202301203";
-        done.kind = RequestRecord.GROUP;
-        done.from = UNASSIGNED;
-        done.to = "G04";
-        done.requestedOn = "2 Sep";
-        done.status = RequestRecord.APPROVED;
-        answered.add(done);
+    /** Forget everything (sign-out), so the next person on this phone never sees it. */
+    public static synchronized void reset() {
+        instance = new StudentRepository();
+        GROUPS = new String[]{"G01", "G02", "G03", "G04"};
     }
 
-    /** Active records only, the way the roster and group counts read them. */
+    // =====================================================================
+    // reads
+    // =====================================================================
+
+    public boolean isRosterLoaded() { return rosterLoaded; }
+
+    /** The lecturer's roster (active students only; the server never lists deleted ones). */
     public List<Student> getActive() {
-        List<Student> out = new ArrayList<>();
-        for (Student s : students) if (s.active) out.add(s);
-        return out;
+        return new ArrayList<>(roster);
     }
 
+    /** Active members of a group: the server's total when known, else counted from the roster. */
     public int groupCount(String group) {
-        int n = 0;
-        for (Student s : students) if (s.active && group.equals(s.group)) n++;
-        return n;
+        Integer n = groupCounts.get(group);
+        if (n != null) return n;
+        int c = 0;
+        for (Student s : roster) if (group.equals(s.group)) c++;
+        return c;
     }
 
-    /**
-     * Numbers stay unique across removed records too (a soft-deleted number
-     * is still reserved), matching the prototype's owner lookup in EditSheet.
-     */
+    /** Someone else on the roster who already has this number, or null (the server re-checks on Save). */
     public Student findOwnerOfNumber(String number, String excludeId) {
-        for (Student s : students) {
+        for (Student s : roster) {
             if (s.number.equals(number) && !s.id.equals(excludeId)) return s;
         }
         return null;
     }
 
     public Student findById(String id) {
-        for (Student s : students) if (s.id.equals(id)) return s;
-        return null;
-    }
-
-    /** Looks a signed-in student up by number, or fabricates a demo record for a number not on the roster. */
-    public Student findOrCreateDemoStudent(String number) {
-        for (Student s : students) {
-            if (s.active && s.number.equals(number)) return s;
-        }
-        Student demo = new Student("demo-" + number, "Demo Student", number, "CS", UNASSIGNED, true);
-        students.add(demo);
-        return demo;
-    }
-
-    /** The active student registered with this email, or null. Case does not matter. */
-    public Student findByEmail(String email) {
-        if (email == null) return null;
-        String e = email.trim();
-        for (Student s : students) {
-            if (s.active && s.email != null && s.email.equalsIgnoreCase(e)) return s;
-        }
+        if (id == null) return null;
+        for (Student s : roster) if (id.equals(s.id)) return s;
         return null;
     }
 
     /**
-     * Puts the signed-in student's record from the server into the list, so the
-     * student's screens show their real name, number, programme and group: updates the
-     * entry with the same number, or adds one. Pending requests already on the phone
-     * are kept. Does nothing for null (a lecturer).
+     * The signed-in student: the server's latest answer, or (before that has
+     * arrived) the record saved at sign-in. Null for a lecturer.
      */
-    public Student putSignedIn(Student fromServer) {
-        if (fromServer == null) return null;
-        for (Student s : students) {
-            if (s.number.equals(fromServer.number)) {
-                s.name = fromServer.name;
-                s.programme = fromServer.programme;
-                s.group = fromServer.group;
-                s.email = fromServer.email;
-                s.phone = fromServer.phone;
-                s.nrc = fromServer.nrc;
-                s.active = true;
-                return s;
-            }
-        }
-        if (fromServer.id == null) fromServer.id = "s" + System.currentTimeMillis();
-        students.add(fromServer);
-        return fromServer;
+    public Student me() {
+        if (me == null) me = Session.toStudent();
+        return me;
     }
 
-    public void add(Student s) {
-        s.id = "s" + System.currentTimeMillis();
-        students.add(s);
+    public List<Student> myGroupMembers() {
+        return new ArrayList<>(myGroupMembers);
     }
 
-    public void update(Student updated) {
-        for (int i = 0; i < students.size(); i++) {
-            if (students.get(i).id.equals(updated.id)) {
-                students.set(i, updated);
-                return;
-            }
-        }
-    }
-
-    /** Soft delete: hide the record, keep the number reserved (see the brief's data-integrity rules). */
-    public void softDelete(String id) {
-        Student s = findById(id);
-        if (s != null) s.active = false;
-    }
-
-    // ---- Group change and number correction requests ----
-    // A student raises a request; only a lecturer can approve or decline it.
-    // Nothing changes on the record itself until then, matching the brief:
-    // "An offline request is Pending until confirmed."
-
+    /** Students with an open request, for the lecturer. */
     public List<Student> getPendingRequests() {
         List<Student> out = new ArrayList<>();
-        for (Student s : getActive()) if (s.pendingGroup != null || s.pendingNumber != null) out.add(s);
+        for (Student s : roster) if (s.pendingGroup != null || s.pendingNumber != null) out.add(s);
         return out;
     }
 
     public int pendingRequestCount() {
-        return getPendingRequests().size();
-    }
-
-    private static String today() {
-        return new SimpleDateFormat("d MMM", Locale.ENGLISH).format(new Date());
+        int n = 0;
+        for (Student s : roster) {
+            if (s.pendingGroup != null) n++;
+            if (s.pendingNumber != null) n++;
+        }
+        return n;
     }
 
     /** Answered requests, newest first. */
     public List<RequestRecord> getAnswered() {
-        List<RequestRecord> out = new ArrayList<>(answered);
-        java.util.Collections.reverse(out);
-        return out;
+        return new ArrayList<>(answered);
     }
 
-    private void log(Student s, String kind, String from, String to, String reason, String on, String status) {
-        RequestRecord r = new RequestRecord();
-        r.seq = nextSeq++;
-        r.studentId = s.id;
-        r.studentName = s.name;
-        r.studentNumber = s.number;
-        r.kind = kind;
-        r.from = from;
-        r.to = to;
-        r.reason = reason;
-        r.requestedOn = on == null ? today() : on;
-        r.status = status;
-        answered.add(r);
+    // =====================================================================
+    // apply the server's answers (called by RosterApi on the main thread)
+    // =====================================================================
+
+    void applyGroups(List<String> codes, Map<String, Integer> counts) {
+        if (codes != null && !codes.isEmpty()) GROUPS = codes.toArray(new String[0]);
+        groupCounts.clear();
+        if (counts != null) groupCounts.putAll(counts);
     }
 
-    public void requestGroupChange(String studentId, String toGroup) {
-        Student s = findById(studentId);
-        if (s != null) {
-            s.pendingGroup = toGroup;
-            s.pendingGroupOn = today();
-            s.pendingGroupSeq = nextSeq++;
+    /** Lecturer: the whole roster plus the open requests, from one reload. */
+    void applyRoster(List<Student> students, List<RequestRecord> pending) {
+        roster.clear();
+        roster.addAll(students);
+        for (RequestRecord r : pending) {
+            Student s = findById(r.studentId);
+            if (s == null) continue;
+            attachPending(s, r);
         }
+        rosterLoaded = true;
     }
 
-    public void cancelGroupChange(String studentId) {
-        Student s = findById(studentId);
-        if (s != null) {
-            s.pendingGroup = null;
-            s.pendingGroupOn = null;
+    void applyAnswered(List<RequestRecord> records) {
+        answered.clear();
+        answered.addAll(records);
+        Collections.sort(answered, (a, b) -> Long.compare(b.resolvedAtMillis, a.resolvedAtMillis));
+    }
+
+    /**
+     * Student: their record, their latest request of each kind and their group's
+     * members. An answered request they have not been told about yet becomes the
+     * notice the home screen shows once.
+     */
+    void applyMine(Student self, RequestRecord latestGroup, RequestRecord latestNumber, List<Student> members) {
+        for (RequestRecord r : new RequestRecord[]{latestGroup, latestNumber}) {
+            if (r == null) continue;
+            if (RequestRecord.PENDING.equals(r.status)) {
+                attachPending(self, r);
+            } else if (self.noticeKind == null && Notices.isNew(self.id, r)) {
+                self.noticeKind = r.status;    // approved | declined
+                self.noticeSubject = r.kind;   // group | number
+                self.noticeRequestId = r.requestId;
+            }
         }
+        me = self;
+        myGroupMembers.clear();
+        if (members != null) myGroupMembers.addAll(members);
     }
 
-    public void requestNumberCorrection(String studentId, String toNumber) {
-        requestNumberCorrection(studentId, toNumber, null);
-    }
-
-    public void requestNumberCorrection(String studentId, String toNumber, String reason) {
-        Student s = findById(studentId);
-        if (s != null) {
-            s.pendingNumber = toNumber;
-            s.pendingNumberOn = today();
-            s.pendingNumberSeq = nextSeq++;
-            s.pendingNumberReason = (reason == null || reason.trim().isEmpty()) ? null : reason.trim();
-        }
-    }
-
-    /** The lecturer saved the corrected number from the roster sheet: log it as approved and clear the request. */
-    public void resolveNumberRequest(String studentId, String fromNumber) {
-        Student s = findById(studentId);
-        if (s == null || s.pendingNumber == null) return;
-        log(s, RequestRecord.NUMBER, fromNumber, s.pendingNumber, s.pendingNumberReason, s.pendingNumberOn, RequestRecord.APPROVED);
-        s.pendingNumber = null;
-        s.pendingNumberOn = null;
-        s.pendingNumberReason = null;
-        s.noticeKind = "approved";
-        s.noticeSubject = "number";
-    }
-
-    public void cancelNumberCorrection(String studentId) {
-        Student s = findById(studentId);
-        if (s != null) {
-            s.pendingNumber = null;
-            s.pendingNumberOn = null;
-            s.pendingNumberReason = null;
-        }
-    }
-
-    /** Lecturer approves a pending group move. Fails if the target group filled up in the meantime. */
-    public boolean approveGroupChange(String studentId) {
-        Student s = findById(studentId);
-        if (s == null || s.pendingGroup == null) return false;
-        if (!UNASSIGNED.equals(s.pendingGroup) && groupCount(s.pendingGroup) >= CAPACITY) return false;
-        log(s, RequestRecord.GROUP, s.group, s.pendingGroup, null, s.pendingGroupOn, RequestRecord.APPROVED);
-        s.group = s.pendingGroup;
-        s.pendingGroup = null;
-        s.pendingGroupOn = null;
-        s.noticeKind = "approved";
-        s.noticeSubject = "group";
-        return true;
-    }
-
-    public void declineGroupChange(String studentId) {
-        Student s = findById(studentId);
-        if (s != null && s.pendingGroup != null) {
-            log(s, RequestRecord.GROUP, s.group, s.pendingGroup, null, s.pendingGroupOn, RequestRecord.DECLINED);
-        }
-        cancelGroupChange(studentId);
-        if (s != null) {
-            s.noticeKind = "declined";
-            s.noticeSubject = "group";
-        }
-    }
-
-    /** Lecturer approves a pending number correction. Fails if another record already owns that number. */
-    public boolean approveNumberCorrection(String studentId) {
-        Student s = findById(studentId);
-        if (s == null || s.pendingNumber == null) return false;
-        if (findOwnerOfNumber(s.pendingNumber, s.id) != null) return false;
-        log(s, RequestRecord.NUMBER, s.number, s.pendingNumber, s.pendingNumberReason, s.pendingNumberOn, RequestRecord.APPROVED);
-        s.number = s.pendingNumber;
-        s.pendingNumber = null;
-        s.pendingNumberOn = null;
-        s.pendingNumberReason = null;
-        s.noticeKind = "approved";
-        s.noticeSubject = "number";
-        return true;
-    }
-
-    public void declineNumberCorrection(String studentId) {
-        Student s = findById(studentId);
-        if (s != null && s.pendingNumber != null) {
-            log(s, RequestRecord.NUMBER, s.number, s.pendingNumber, s.pendingNumberReason, s.pendingNumberOn, RequestRecord.DECLINED);
-        }
-        cancelNumberCorrection(studentId);
-        if (s != null) {
-            s.noticeKind = "declined";
-            s.noticeSubject = "number";
+    private static void attachPending(Student s, RequestRecord r) {
+        if (RequestRecord.GROUP.equals(r.kind)) {
+            s.pendingGroup = r.to;
+            s.pendingGroupOn = r.requestedOn;
+            s.pendingGroupSeq = r.requestId;
+            s.pendingGroupRequestId = r.requestId;
+        } else {
+            s.pendingNumber = r.to;
+            s.pendingNumberOn = r.requestedOn;
+            s.pendingNumberReason = r.reason;
+            s.pendingNumberSeq = r.requestId;
+            s.pendingNumberRequestId = r.requestId;
         }
     }
 }

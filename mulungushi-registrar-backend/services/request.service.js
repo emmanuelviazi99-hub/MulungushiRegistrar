@@ -73,13 +73,55 @@ async function createRequest(kind, studentId, details) {
   return result.insertId;
 }
 
-/** The lecturer's queue for one kind, oldest first. */
+/**
+ * The lecturer's list for one kind. PENDING (the queue) is oldest first.
+ * ANSWERED is every approved or declined request, newest first (the history
+ * tab), capped at the latest 200.
+ */
 async function listRequests(kind, status = 'PENDING') {
+  const wanted = String(status).toUpperCase();
+  if (wanted === 'ANSWERED') {
+    const [rows] = await pool.query(
+      `${REQUEST_VIEW_SQL} WHERE r.kind = ? AND r.status <> 'PENDING' ORDER BY r.resolved_at DESC, r.request_id DESC LIMIT 200`,
+      [kind]
+    );
+    return rows;
+  }
   const [rows] = await pool.query(`${REQUEST_VIEW_SQL} WHERE r.kind = ? AND r.status = ? ORDER BY r.requested_at ASC`, [
     kind,
-    String(status).toUpperCase(),
+    wanted,
   ]);
   return rows;
+}
+
+/**
+ * A student's own latest request of each kind (pending or answered), so the
+ * app can show "Pending" or tell them it was approved / declined.
+ * @returns { GROUP: row|null, NUMBER: row|null }
+ */
+async function latestForStudent(studentId) {
+  const [rows] = await pool.query(
+    `${REQUEST_VIEW_SQL}
+      WHERE r.request_id IN (SELECT MAX(request_id) FROM change_requests WHERE student_id = ? GROUP BY kind)`,
+    [studentId]
+  );
+  const out = { GROUP: null, NUMBER: null };
+  for (const row of rows) out[row.kind] = row;
+  return out;
+}
+
+/**
+ * A student withdraws their own open request before a lecturer answers it.
+ * The row is removed (a withdrawn request is not history worth keeping), which
+ * also frees the "one open request per kind" slot. Only PENDING rows of this
+ * student can be removed, so an answered request can never be erased.
+ */
+async function cancelOwn(kind, studentId) {
+  const [result] = await pool.query(
+    "DELETE FROM change_requests WHERE student_id = ? AND kind = ? AND status = 'PENDING'",
+    [studentId, kind]
+  );
+  if (result.affectedRows === 0) throw new ApiError(404, 'REQUEST_NOT_FOUND', 'You have no open request of that kind.');
 }
 
 /**
@@ -130,4 +172,4 @@ async function decline(kind, requestId, lecturerAccountId) {
   if (result.affectedRows === 0) throw notFound();
 }
 
-module.exports = { createRequest, listRequests, approve, decline, KINDS };
+module.exports = { createRequest, listRequests, latestForStudent, cancelOwn, approve, decline, KINDS };

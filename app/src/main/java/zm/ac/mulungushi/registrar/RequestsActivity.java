@@ -19,14 +19,17 @@ import java.util.List;
 
 /**
  * Ported from RequestsScreen: Pending / Answered tabs, oldest request first
- * under Pending, newest first under Answered. Group moves are approved right
- * here (capacity is re-checked at that moment). A number correction opens the
- * roster record with the number filled in, and nothing changes until the
- * lecturer saves it, like the prototype's Review button.
+ * under Pending, newest first under Answered, all from the server. Group moves
+ * are approved right here (the server re-checks the 15-seat limit at that
+ * moment). A number correction opens the roster record with the number filled
+ * in; saving it there approves the request on the server, like the prototype's
+ * Review button.
  */
 public class RequestsActivity extends AppCompatActivity {
 
     private boolean showAnswered = false;
+    private boolean busy;
+    private boolean warned;
 
     /** One pending request, group move or number correction. */
     private static final class Item {
@@ -48,11 +51,15 @@ public class RequestsActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.requests_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-        RosterFormat.bindAvatar(this, "B. Nyirenda", SignOutSheet.lecturerDetail(this));
+        RosterFormat.bindAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
         BottomNav.bindLecturer(this, BottomNav.HOME);
 
         findViewById(R.id.tabPending).setOnClickListener(v -> { showAnswered = false; render(); });
-        findViewById(R.id.tabAnswered).setOnClickListener(v -> { showAnswered = true; render(); });
+        findViewById(R.id.tabAnswered).setOnClickListener(v -> {
+            showAnswered = true;
+            render();
+            loadAnswered();
+        });
 
         render();
         RosterFormat.stagger(this);
@@ -63,6 +70,42 @@ public class RequestsActivity extends AppCompatActivity {
         super.onResume();
         render();
         Feedback.showPending(this);
+        RosterApi.get().loadRoster(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, warned);
+                warned = true;
+            }
+            render();
+        });
+        if (showAnswered) loadAnswered();
+    }
+
+    private void loadAnswered() {
+        RosterApi.get().loadAnswered(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) RosterUi.refreshFailed(this, outcome, false);
+            render();
+        });
+    }
+
+    /** After approve / decline: the list was reloaded from the server by RosterApi. */
+    private void answered(RosterApi.Outcome outcome, int okToast, TextView error) {
+        busy = false;
+        if (isFinishing() || isDestroyed()) return;
+        if (outcome.ok) {
+            Feedback.show(this, okToast);
+            render();
+            return;
+        }
+        if (RosterUi.signedOut(this, outcome)) return;
+        if (outcome.is("GROUP_FULL")) {
+            error.setText(R.string.toast_group_full_decline);
+            error.setVisibility(View.VISIBLE);
+            return;
+        }
+        Feedback.show(this, RosterUi.message(this, outcome));
+        render();
     }
 
     private void styleTab(TextView tab, boolean active) {
@@ -274,10 +317,11 @@ public class RequestsActivity extends AppCompatActivity {
         LinearLayout.LayoutParams declineLp = new LinearLayout.LayoutParams(0, dp(48), 1f);
         declineLp.setMarginEnd(dp(5));
         decline.setOnClickListener(v -> {
-            if (isGroup) repo.declineGroupChange(s.id);
-            else repo.declineNumberCorrection(s.id);
-            Feedback.show(this, R.string.toast_request_declined);
-            render();
+            if (busy) return;
+            busy = true;
+            String kind = isGroup ? StudentRepository.RequestRecord.GROUP : StudentRepository.RequestRecord.NUMBER;
+            int requestId = isGroup ? s.pendingGroupRequestId : s.pendingNumberRequestId;
+            RosterApi.get().decline(kind, requestId, outcome -> answered(outcome, R.string.toast_request_declined, error));
         });
         buttons.addView(decline, declineLp);
 
@@ -292,13 +336,11 @@ public class RequestsActivity extends AppCompatActivity {
                         .putExtra(LecturerRosterActivity.EXTRA_REVIEW_NUMBER, s.pendingNumber));
                 return;
             }
-            if (repo.approveGroupChange(s.id)) {
-                Feedback.show(this, R.string.toast_request_approved);
-                render();
-            } else {
-                error.setText(R.string.toast_group_full_decline);
-                error.setVisibility(View.VISIBLE);
-            }
+            if (busy) return;
+            busy = true;
+            error.setVisibility(View.GONE);
+            RosterApi.get().approve(StudentRepository.RequestRecord.GROUP, s.pendingGroupRequestId,
+                    outcome -> answered(outcome, R.string.toast_request_approved, error));
         });
         buttons.addView(approve, approveLp);
 

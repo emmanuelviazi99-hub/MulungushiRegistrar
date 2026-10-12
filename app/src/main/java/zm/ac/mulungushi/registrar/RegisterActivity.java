@@ -422,12 +422,11 @@ public class RegisterActivity extends AppCompatActivity {
     /** The account exists and Session holds it: open the right home screen. */
     private void openHome() {
         Toast.makeText(this, R.string.toast_registered, Toast.LENGTH_SHORT).show();
+        StudentRepository.reset(); // start from what the server says for this account
         Intent intent;
         if (Session.isLecturer()) {
             intent = new Intent(this, LecturerDashboardActivity.class);
         } else {
-            // the server's record of this student, so the home screen shows real data
-            StudentRepository.getInstance().putSignedIn(Session.toStudent());
             intent = new Intent(this, StudentHomeActivity.class);
             intent.putExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER, Session.studentNumber());
         }

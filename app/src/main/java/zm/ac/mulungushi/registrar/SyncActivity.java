@@ -49,7 +49,7 @@ public class SyncActivity extends AppCompatActivity {
 
         String role = getIntent().getStringExtra(EXTRA_ROLE);
         if (ROLE_LECTURER.equals(role)) {
-            RosterFormat.bindAvatar(this, "B. Nyirenda", SignOutSheet.lecturerDetail(this));
+            RosterFormat.bindAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
             BottomNav.bindLecturer(this, BottomNav.SYNC);
             renderLecturer();
         } else {
@@ -101,9 +101,8 @@ public class SyncActivity extends AppCompatActivity {
     // ---------- student ----------
 
     private void renderStudent() {
-        String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
-        if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
-        Student student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        Student student = RosterUi.meOrSignIn(this);
+        if (student == null) return;
         RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
         BottomNav.bindStudent(this, BottomNav.SYNC, student.number);
 
@@ -122,7 +121,7 @@ public class SyncActivity extends AppCompatActivity {
                     getString(R.string.sync_number_note, on, student.number), R.string.pill_pending_short, PENDING, 12));
             waiting++;
         }
-        // Name/programme edits apply straight away in this build, so this row is always Synced.
+        // Name/programme edits are saved on the server straight away, so this row is always Synced.
         content.addView(statusCard(getString(R.string.name_programme_edit_title),
                 getString(R.string.sync_edit_synced_note), R.string.pill_synced, SYNCED, 16));
 

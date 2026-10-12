@@ -29,6 +29,12 @@ import java.util.List;
  * validate name and number as the user types, block Save while the chosen
  * group is full, and show a plain-language error if the number is already
  * taken by someone else's active or removed record.
+ *
+ * Save goes to the server (RosterApi): adding needs the NRC and date of birth
+ * the student will later type to sign up; editing sends name, programme, number
+ * and group together, so either all of it is saved or none. The server has the
+ * last word on every rule (a group that filled up a moment ago, a number taken
+ * on another phone), and its answer is shown on the field it is about.
  */
 public class EditStudentSheet extends BottomSheetDialogFragment {
 
@@ -41,8 +47,9 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
 
     private Listener listener;
     private Student original; // null when adding a new student
-    private TextInputLayout layoutName, layoutNumber;
-    private TextInputEditText inputName, inputNumber;
+    private TextInputLayout layoutName, layoutNumber, layoutNrc, layoutDob;
+    private TextInputEditText inputName, inputNumber, inputNrc, inputDob;
+    private boolean busy;
     private Spinner spinnerProgramme, spinnerGroup;
     private TextView groupFullError, formError, numberNote, title;
     private Button buttonSave;
@@ -110,6 +117,13 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         buttonSave = view.findViewById(R.id.buttonSave);
         buttonDelete = view.findViewById(R.id.buttonDelete);
         View buttonCancel = view.findViewById(R.id.buttonCancel);
+        layoutNrc = view.findViewById(R.id.layoutNrc);
+        layoutDob = view.findViewById(R.id.layoutDob);
+        inputNrc = view.findViewById(R.id.inputNrc);
+        inputDob = view.findViewById(R.id.inputDob);
+        view.findViewById(R.id.identityBlock).setVisibility(original == null ? View.VISIBLE : View.GONE);
+        inputNrc.addTextChangedListener(new NrcTextWatcher(inputNrc));
+        inputDob.setOnClickListener(v -> pickDateOfBirth());
 
         title.setText(original == null ? R.string.sheet_title_add : R.string.sheet_title_edit);
         buttonSave.setText(original == null ? R.string.action_add_student : R.string.action_save_changes);
@@ -145,6 +159,25 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         });
 
         renderLive();
+    }
+
+    private void pickDateOfBirth() {
+        java.util.Calendar start = java.util.Calendar.getInstance();
+        String current = text(inputDob);
+        if (ContactValidator.checkDateOfBirth(current, java.util.Calendar.getInstance()) == ContactValidator.DobResult.OK) {
+            start.set(Integer.parseInt(current.substring(0, 4)), Integer.parseInt(current.substring(5, 7)) - 1,
+                    Integer.parseInt(current.substring(8, 10)));
+        } else {
+            start.add(java.util.Calendar.YEAR, -20); // a typical student's age, so fewer taps to scroll
+        }
+        android.app.DatePickerDialog dialog = new android.app.DatePickerDialog(requireContext(), (picker, year, month, day) -> {
+            inputDob.setText(ContactValidator.isoDate(year, month + 1, day));
+            layoutDob.setError(null);
+        }, start.get(java.util.Calendar.YEAR), start.get(java.util.Calendar.MONTH), start.get(java.util.Calendar.DAY_OF_MONTH));
+        java.util.Calendar yesterday = java.util.Calendar.getInstance();
+        yesterday.add(java.util.Calendar.DAY_OF_MONTH, -1);
+        dialog.getDatePicker().setMaxDate(yesterday.getTimeInMillis());
+        dialog.show();
     }
 
     private void setUpSpinners() {
@@ -239,33 +272,84 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
             layoutNumber.setError(StudentValidator.isOk(numberResult) ? null : numberError(numberResult, number));
         }
 
-        if (!StudentValidator.isOk(nameResult) || !StudentValidator.isOk(numberResult) || owner != null || capacityFull) {
+        // adding: the NRC and birth date the student will type to sign up
+        String nrc = text(inputNrc).trim();
+        String dob = text(inputDob).trim();
+        boolean identityOk = true;
+        if (original == null) {
+            ContactValidator.NrcResult nrcResult = ContactValidator.checkNrc(nrc);
+            layoutNrc.setError(ContactValidator.isOk(nrcResult) ? null : getString(
+                    nrcResult == ContactValidator.NrcResult.EMPTY ? R.string.error_student_nrc_empty : R.string.error_nrc_invalid));
+            ContactValidator.DobResult dobResult = ContactValidator.checkDateOfBirth(dob, java.util.Calendar.getInstance());
+            layoutDob.setError(ContactValidator.isOk(dobResult) ? null : getString(
+                    dobResult == ContactValidator.DobResult.EMPTY ? R.string.error_student_dob_empty : R.string.error_dob_invalid));
+            identityOk = ContactValidator.isOk(nrcResult) && ContactValidator.isOk(dobResult);
+        }
+
+        if (!StudentValidator.isOk(nameResult) || !StudentValidator.isOk(numberResult) || owner != null || capacityFull
+                || !identityOk || busy) {
             return;
         }
 
         formError.setVisibility(View.GONE);
-        StudentRepository repo = StudentRepository.getInstance();
+        setBusy(true);
         if (original == null) {
-            Student s = new Student(null, name, number, programme, group, true);
-            repo.add(s);
-            finishWith(getString(R.string.toast_student_added));
+            RosterApi.get().addStudent(name, number, nrc, dob, programme, group,
+                    outcome -> onAnswer(outcome, getString(R.string.toast_student_added)));
         } else {
             boolean numberChanged = !original.number.equals(number);
-            Student updated = new Student(original.id, name, number, programme, group, true);
-            updated.pendingGroup = original.pendingGroup;
-            updated.pendingGroupOn = original.pendingGroupOn;
-            updated.pendingGroupSeq = original.pendingGroupSeq;
-            updated.pendingNumber = original.pendingNumber;
-            updated.pendingNumberOn = original.pendingNumberOn;
-            updated.pendingNumberReason = original.pendingNumberReason;
-            updated.pendingNumberSeq = original.pendingNumberSeq;
-            updated.noticeKind = original.noticeKind;
-            updated.noticeSubject = original.noticeSubject;
-            repo.update(updated);
-            if (numberChanged && original.pendingNumber != null && original.pendingNumber.equals(number)) {
-                repo.resolveNumberRequest(original.id, original.number);
+            RosterApi.get().saveStudent(original, name, number, programme, group,
+                    outcome -> onAnswer(outcome, getString(numberChanged ? R.string.toast_number_corrected : R.string.toast_changes_saved)));
+        }
+    }
+
+    private void setBusy(boolean on) {
+        busy = on;
+        buttonSave.setEnabled(!on);
+        buttonDelete.setEnabled(!on);
+        if (on) {
+            buttonSave.setText(R.string.action_saving);
+        } else {
+            buttonSave.setText(original == null ? R.string.action_add_student : R.string.action_save_changes);
+        }
+    }
+
+    /** The server answered Save (the roster has already been reloaded either way). */
+    private void onAnswer(RosterApi.Outcome outcome, String okMessage) {
+        if (!isAdded()) return;
+        setBusy(false);
+        if (outcome.ok) {
+            finishWith(okMessage);
+            return;
+        }
+        if (getActivity() != null && RosterUi.signedOut(getActivity(), outcome)) return;
+        String message = RosterUi.message(requireActivity(), outcome);
+        switch (outcome.error) {
+            case "DUPLICATE_STUDENT_NUMBER":
+                layoutNumber.setError(message);
+                break;
+            case "DUPLICATE_NRC":
+                layoutNrc.setError(message);
+                break;
+            case "GROUP_FULL": {
+                // the group filled up on another phone: show the fresh counts, keep the choice, say why
+                String chosen = selectedGroup();
+                setUpSpinners();
+                setGroupSelection(chosen);
+                renderLive();
+                groupFullError.setText(message);
+                groupFullError.setVisibility(View.VISIBLE);
+                break;
             }
-            finishWith(getString(numberChanged ? R.string.toast_number_corrected : R.string.toast_changes_saved));
+            case "VERSION_CONFLICT":
+            case "STUDENT_NOT_FOUND":
+                // someone else changed or removed it: close, the roster behind now shows the latest
+                if (listener != null) listener.onSaved(message);
+                dismiss();
+                return;
+            default:
+                formError.setText(message);
+                formError.setVisibility(View.VISIBLE);
         }
     }
 
@@ -280,8 +364,10 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
                 .setMessage(getString(R.string.delete_message, s.group))
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton(R.string.action_remove, (d, w) -> {
-                    StudentRepository.getInstance().softDelete(s.id);
-                    finishWith(getString(R.string.toast_record_removed));
+                    if (busy) return;
+                    setBusy(true);
+                    RosterApi.get().deleteStudent(s.id,
+                            outcome -> onAnswer(outcome, getString(R.string.toast_record_removed)));
                 })
                 .show();
     }

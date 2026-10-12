@@ -44,12 +44,18 @@ mulungushi-registrar-backend/  the backend the app talks to (see its README.md)
 Sign-in, sign-up and forgotten password all go to the backend (`ApiAuthService`). If the
 backend cannot be reached the app says so; nobody is signed in.
 
-## What still runs on the phone only
+## What the app keeps on the phone
 
-The roster, group changes, number corrections and sync screens still use the in-memory
-`StudentRepository` (demo data). After sign-in, the signed-in student's real record from the
-server is copied into that list. Moving those screens to the backend's `/api/students`,
-`/api/groups` and request endpoints is the next step.
+Nothing that matters. The roster, lab groups, group-change requests and number
+corrections all live on the server (`RosterApi` in the app). Every screen loads
+fresh data when it opens, and every change is saved on the server first; the
+phone only keeps a copy of the last answer (`StudentRepository`) so a screen
+can still show something when the server can't be reached. So when a lecturer
+puts a student in a group, the student sees it the next time their screen
+loads, on any phone.
+
+The only fixed demo content left is the lecturer's **Sync status** screen,
+which shows the prototype's example rows (syncing, conflict, notices).
 
 ## Never commit
 

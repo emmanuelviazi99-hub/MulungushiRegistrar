@@ -18,8 +18,9 @@ What it does:
     the person chooses a password
 - Lecturers manage the roster and the four lab groups, with a hard **15-seat
   limit** that holds even when many phones act at the same moment.
-- Students ask for a group change or a student-number correction; a lecturer
-  approves or declines.
+- Students ask for a group change or a student-number correction (and can
+  withdraw it while it is open); a lecturer approves or declines, or simply
+  makes the change on the roster sheet, which answers the request too.
 - Offline changes from the app are replayed safely (`operationId`), never
   applied twice.
 

@@ -25,6 +25,7 @@ public class EditDetailsActivity extends AppCompatActivity {
     private TextInputLayout layoutName;
     private TextInputEditText inputName;
     private Spinner spinnerProgramme;
+    private boolean busy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,9 +36,8 @@ public class EditDetailsActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.card_edit_details_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
-        if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
-        student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        student = RosterUi.meOrSignIn(this);
+        if (student == null) return;
         RosterFormat.bindAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
         BottomNav.bindStudent(this, BottomNav.HOME, student.number);
         RosterFormat.stagger(this);
@@ -60,9 +60,16 @@ public class EditDetailsActivity extends AppCompatActivity {
         findViewById(R.id.buttonSave).setOnClickListener(v -> save());
         findViewById(R.id.buttonRequestCorrection).setOnClickListener(v -> showCorrectionDialog());
         findViewById(R.id.buttonCancelNumberRequest).setOnClickListener(v -> {
-            StudentRepository.getInstance().cancelNumberCorrection(student.id);
-            render();
-            Feedback.show(this, R.string.toast_request_cancelled_dot);
+            if (busy) return;
+            busy = true;
+            RosterApi.get().cancelNumberCorrection(outcome -> {
+                busy = false;
+                if (isFinishing() || isDestroyed()) return;
+                student = StudentRepository.getInstance().me();
+                render();
+                if (outcome.ok) Feedback.show(this, R.string.toast_request_cancelled_dot);
+                else RosterUi.report(this, outcome);
+            });
         });
 
         render();
@@ -71,7 +78,17 @@ public class EditDetailsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (student == null) return;
         render();
+        RosterApi.get().loadMine(outcome -> {
+            if (isFinishing() || isDestroyed() || busy) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, false);
+                return;
+            }
+            student = StudentRepository.getInstance().me();
+            render();
+        });
     }
 
     private void render() {
@@ -97,12 +114,21 @@ public class EditDetailsActivity extends AppCompatActivity {
         }
         layoutName.setError(null);
 
-        Student updated = student.copy();
-        updated.name = name;
-        updated.programme = programme;
-        StudentRepository.getInstance().update(updated);
-        Feedback.postForNext(getString(R.string.toast_changes_saved_dot));
-        finish();
+        if (busy) return;
+        busy = true;
+        android.widget.Button save = findViewById(R.id.buttonSave);
+        save.setEnabled(false);
+        RosterApi.get().updateMe(name, programme, outcome -> {
+            busy = false;
+            save.setEnabled(true);
+            if (isFinishing() || isDestroyed()) return;
+            if (outcome.ok) {
+                Feedback.postForNext(getString(R.string.toast_changes_saved_dot));
+                finish();
+            } else {
+                RosterUi.report(this, outcome);
+            }
+        });
     }
 
     private void showCorrectionDialog() {
@@ -137,14 +163,27 @@ public class EditDetailsActivity extends AppCompatActivity {
                 return;
             }
             numberLayout.setError(null);
-            StudentRepository.getInstance().requestNumberCorrection(student.id, value, reason);
-            dialog.dismiss();
-            render();
-            Feedback.show(this, R.string.toast_request_sent_pending);
-            if (Notifier.ASK.equals(Notifier.pref)) {
-                new android.os.Handler(android.os.Looper.getMainLooper())
-                        .postDelayed(() -> Notifier.showSheet(this), 1200);
-            }
+            if (busy) return;
+            busy = true;
+            v.setEnabled(false);
+            RosterApi.get().requestNumberCorrection(value, reason, outcome -> {
+                busy = false;
+                v.setEnabled(true);
+                if (isFinishing() || isDestroyed()) return;
+                student = StudentRepository.getInstance().me();
+                render();
+                if (!outcome.ok) {
+                    if (RosterUi.signedOut(this, outcome)) return;
+                    numberLayout.setError(RosterUi.message(this, outcome));
+                    return;
+                }
+                dialog.dismiss();
+                Feedback.show(this, R.string.toast_request_sent_pending);
+                if (Notifier.ASK.equals(Notifier.pref)) {
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(() -> Notifier.showSheet(this), 1200);
+                }
+            });
         });
         numberInput.addTextChangedListener(new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}

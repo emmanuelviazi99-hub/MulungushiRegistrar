@@ -56,15 +56,18 @@ async function create(req, res) {
   reply(res, await studentService.getStudent(studentId), 201);
 }
 
-// PUT /api/students/:id — a lecturer may also correct a mistyped NRC or birth date.
+// PUT /api/students/:id — the lecturer's Save on the roster edit sheet. Besides
+// name and programme, a lecturer may correct the NRC, birth date and student
+// number, and move the student to another group (groupCode, "UNASSIGNED" allowed),
+// all in one transaction (see studentService.saveByLecturer).
 async function update(req, res) {
-  const { fullName, programmeCode, nrc, dateOfBirth, version } = req.body;
+  const { fullName, programmeCode, nrc, dateOfBirth, studentNumber, groupCode, version } = req.body;
   reply(
     res,
-    await studentService.updateStudent(
+    await studentService.saveByLecturer(
       req.params.id,
-      { fullName, programmeCode, nrc, dateOfBirth },
-      { allowIdentityFields: true, expectedVersion: version }
+      { fullName, programmeCode, nrc, dateOfBirth, studentNumber, groupCode },
+      { expectedVersion: version, lecturerAccountId: req.user.accountId }
     )
   );
 }

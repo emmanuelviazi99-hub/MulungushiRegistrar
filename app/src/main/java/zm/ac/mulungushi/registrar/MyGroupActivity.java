@@ -22,14 +22,23 @@ public class MyGroupActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.my_group_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        String number = getIntent().getStringExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER);
-        if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
-        Student self = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        Student self = RosterUi.meOrSignIn(this);
+        if (self == null) return;
         RosterFormat.bindAvatar(this, self.name, SignOutSheet.studentDetail(this, self.number));
         RosterFormat.hideBack(this);
         BottomNav.bindStudent(this, BottomNav.MIDDLE, self.number);
         render(self);
         RosterFormat.stagger(this);
+
+        // the group and its members as the server has them now
+        RosterApi.get().loadMine(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, false);
+                return;
+            }
+            render(StudentRepository.getInstance().me());
+        });
     }
 
     private void render(Student self) {
@@ -48,13 +57,10 @@ public class MyGroupActivity extends AppCompatActivity {
         LinearLayout list = findViewById(R.id.membersList);
         list.removeAllViews();
 
-        if (!assigned) {
-            findViewById(R.id.textUnassignedNote).setVisibility(View.VISIBLE);
-        }
+        findViewById(R.id.textUnassignedNote).setVisibility(assigned ? View.GONE : View.VISIBLE);
 
-        List<Student> mates = repo.getActive();
-        List<Student> members = new java.util.ArrayList<>();
-        for (Student s : mates) if (self.group.equals(s.group)) members.add(s);
+        // names and numbers of the student's own group, from GET /groups/mine
+        List<Student> members = assigned ? repo.myGroupMembers() : new java.util.ArrayList<>();
         int shown = members.size();
         for (int i = 0; i < members.size(); i++) {
             list.addView(buildRow(members.get(i), i < members.size() - 1));

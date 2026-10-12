@@ -13,6 +13,7 @@ public class StudentHomeActivity extends AppCompatActivity {
     public static final String EXTRA_STUDENT_NUMBER = "student_number";
 
     private Student student;
+    private boolean warned;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,9 +21,8 @@ public class StudentHomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_student_home);
         ConnectivityBanner.attach(this);
 
-        String number = getIntent().getStringExtra(EXTRA_STUDENT_NUMBER);
-        if (number == null) number = StudentRepository.DEMO_NUMBER_FALLBACK;
-        student = StudentRepository.getInstance().findOrCreateDemoStudent(number);
+        student = RosterUi.meOrSignIn(this);
+        if (student == null) return;
 
         findViewById(R.id.cardGroupChange).setOnClickListener(v -> openGroupChange());
         findViewById(R.id.cardEditDetails).setOnClickListener(v -> openEditDetails());
@@ -37,12 +37,21 @@ public class StudentHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (student == null) return;
         render();
-        if (student.noticeKind != null) {
-            deliverNotice();
-        } else {
-            Feedback.showPending(this);
-        }
+        Feedback.showPending(this);
+        // what the server says now: group, open requests, answers from the lecturer
+        RosterApi.get().loadMine(outcome -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (!outcome.ok) {
+                RosterUi.refreshFailed(this, outcome, warned);
+                warned = true;
+                return;
+            }
+            student = StudentRepository.getInstance().me();
+            render();
+            if (student.noticeKind != null) deliverNotice();
+        });
         if (Notifier.askSoon) {
             Notifier.askSoon = false;
             if (Notifier.ASK.equals(Notifier.pref)) {
@@ -60,6 +69,7 @@ public class StudentHomeActivity extends AppCompatActivity {
                 ? (approved ? R.string.notice_group_approved : R.string.notice_group_declined)
                 : (approved ? R.string.notice_number_approved : R.string.notice_number_declined);
         String message = getString(res);
+        Notices.markSeen(student.id, student.noticeSubject, student.noticeRequestId);
         student.noticeKind = null;
         student.noticeSubject = null;
         Notifier.alert(this, message);

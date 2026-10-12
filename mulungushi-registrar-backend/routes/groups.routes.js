@@ -12,4 +12,7 @@ const { requireRole } = require('../middleware/role');
 // their profile screen; a lecturer sees totals on the dashboard.
 router.get('/', requireAuth, requireRole('STUDENT', 'LECTURER'), asyncHandler(groupController.listTotals));
 
+// A student's own group and who is in it (names and numbers only).
+router.get('/mine', requireAuth, requireRole('STUDENT'), asyncHandler(groupController.listMine));
+
 module.exports = router;
