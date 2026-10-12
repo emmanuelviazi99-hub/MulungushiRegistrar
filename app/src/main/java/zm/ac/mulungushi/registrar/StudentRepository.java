@@ -67,7 +67,6 @@ public class StudentRepository {
 
     private void seed() {
         Student chanda = new Student("s1", "Chanda Mwansa", "202301045", "CS", "G01", true);
-        chanda.email = DemoAccounts.STUDENT_EMAIL; // so Forgot password works for the demo student
         chanda.pendingGroup = "G02"; // same starting state as the prototype: one open group-change request
         chanda.pendingGroupOn = "12 Sep";
         chanda.pendingGroupSeq = 4;
@@ -148,6 +147,31 @@ public class StudentRepository {
             if (s.active && s.email != null && s.email.equalsIgnoreCase(e)) return s;
         }
         return null;
+    }
+
+    /**
+     * Puts the signed-in student's record from the server into the list, so the
+     * student's screens show their real name, number, programme and group: updates the
+     * entry with the same number, or adds one. Pending requests already on the phone
+     * are kept. Does nothing for null (a lecturer).
+     */
+    public Student putSignedIn(Student fromServer) {
+        if (fromServer == null) return null;
+        for (Student s : students) {
+            if (s.number.equals(fromServer.number)) {
+                s.name = fromServer.name;
+                s.programme = fromServer.programme;
+                s.group = fromServer.group;
+                s.email = fromServer.email;
+                s.phone = fromServer.phone;
+                s.nrc = fromServer.nrc;
+                s.active = true;
+                return s;
+            }
+        }
+        if (fromServer.id == null) fromServer.id = "s" + System.currentTimeMillis();
+        students.add(fromServer);
+        return fromServer;
     }
 
     public void add(Student s) {

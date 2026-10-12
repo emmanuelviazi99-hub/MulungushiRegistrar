@@ -15,6 +15,8 @@ public final class ContactValidator {
     public enum NrcResult { EMPTY, INVALID, OK }
     public enum CodeResult { EMPTY, INVALID, OK }
     public enum PasswordResult { EMPTY, TOO_SHORT, OK }
+    public enum EmployeeIdResult { EMPTY, INVALID, OK }
+    public enum DobResult { EMPTY, INVALID, OK }
 
     public static final int MIN_PASSWORD = 8;
 
@@ -24,6 +26,9 @@ public final class ContactValidator {
     private static final Pattern PHONE = Pattern.compile("^\\+260\\d{9}$");
     /** 6 digits / 2 digits / 1 digit, e.g. 123456/10/1. */
     private static final Pattern NRC = Pattern.compile("^\\d{6}/\\d{2}/\\d$");
+    /** Same rule as the backend: a letter or digit, then 2 to 19 letters, digits or hyphens. */
+    private static final Pattern EMPLOYEE_ID = Pattern.compile("^[A-Z0-9][A-Z0-9\\-]{2,19}$");
+    private static final Pattern ISO_DATE = Pattern.compile("^(\\d{4})-(\\d{2})-(\\d{2})$");
     /** 6 to 14 letters, digits or hyphens, e.g. MU-7K4Q. */
     private static final Pattern CODE = Pattern.compile("^[A-Z0-9][A-Z0-9\\-]{4,13}$");
 
@@ -107,6 +112,53 @@ public final class ContactValidator {
         return CODE.matcher(t).matches() ? CodeResult.OK : CodeResult.INVALID;
     }
 
+    // ---- employee ID (lecturers) ----
+
+    /** Trim and upper case: " emp-1001 " becomes EMP-1001. */
+    public static String normaliseEmployeeId(String raw) {
+        return raw == null ? "" : raw.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    public static EmployeeIdResult checkEmployeeId(String raw) {
+        String t = normaliseEmployeeId(raw);
+        if (t.isEmpty()) return EmployeeIdResult.EMPTY;
+        return EMPLOYEE_ID.matcher(t).matches() ? EmployeeIdResult.OK : EmployeeIdResult.INVALID;
+    }
+
+    // ---- date of birth ----
+
+    /** Formats a picked date the way the backend expects: 2003-04-12. Month is 1-12. */
+    public static String isoDate(int year, int month, int day) {
+        return String.format(java.util.Locale.ROOT, "%04d-%02d-%02d", year, month, day);
+    }
+
+    /**
+     * A real calendar date (YYYY-MM-DD), before today and not more than 100 years ago.
+     * today is passed in so the rule can be tested; the screen passes Calendar.getInstance().
+     */
+    public static DobResult checkDateOfBirth(String raw, java.util.Calendar today) {
+        String t = raw == null ? "" : raw.trim();
+        if (t.isEmpty()) return DobResult.EMPTY;
+        java.util.regex.Matcher m = ISO_DATE.matcher(t);
+        if (!m.matches()) return DobResult.INVALID;
+        int y = Integer.parseInt(m.group(1)), mo = Integer.parseInt(m.group(2)), d = Integer.parseInt(m.group(3));
+        java.util.GregorianCalendar date = new java.util.GregorianCalendar();
+        date.setLenient(false);
+        date.clear();
+        date.set(y, mo - 1, d);
+        try {
+            date.getTimeInMillis(); // throws for 2003-02-30
+        } catch (IllegalArgumentException e) {
+            return DobResult.INVALID;
+        }
+        int ty = today.get(java.util.Calendar.YEAR);
+        int tm = today.get(java.util.Calendar.MONTH) + 1;
+        int td = today.get(java.util.Calendar.DAY_OF_MONTH);
+        boolean beforeToday = y < ty || (y == ty && (mo < tm || (mo == tm && d < td)));
+        if (!beforeToday || y < ty - 100) return DobResult.INVALID;
+        return DobResult.OK;
+    }
+
     // ---- password ----
 
     public static PasswordResult checkPassword(String raw) {
@@ -123,4 +175,6 @@ public final class ContactValidator {
     public static boolean isOk(NrcResult r) { return r == NrcResult.OK; }
     public static boolean isOk(CodeResult r) { return r == CodeResult.OK; }
     public static boolean isOk(PasswordResult r) { return r == PasswordResult.OK; }
+    public static boolean isOk(EmployeeIdResult r) { return r == EmployeeIdResult.OK; }
+    public static boolean isOk(DobResult r) { return r == DobResult.OK; }
 }

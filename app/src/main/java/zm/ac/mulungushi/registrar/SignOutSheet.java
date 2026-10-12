@@ -124,6 +124,7 @@ final class SignOutSheet {
         close.setOnClickListener(v -> dialog.dismiss());
         out.setOnClickListener(v -> {
             dialog.dismiss();
+            Auth.get().signOut(); // forget the token on this phone
             Intent i = new Intent(a, LoginActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             a.startActivity(i);
@@ -143,6 +144,7 @@ final class SignOutSheet {
     }
 
     static String lecturerDetail(Activity a) {
-        return a.getString(R.string.account_lecturer_fmt, DemoAccounts.LECTURER_EMAIL);
+        String email = Session.email();
+        return a.getString(R.string.account_lecturer_fmt, email == null ? "" : email);
     }
 }

@@ -3,7 +3,7 @@
 // Checks the Authorization header on every protected route:
 //   Authorization: Bearer <token>
 //
-// On success it attaches `req.user = { accountId, role, studentId }` so
+// On success it attaches `req.user = { accountId, role, studentId, staffId }` so
 // every controller downstream knows WHO is making the request and in WHAT
 // role — this is what section 20 of the brief/prompt means by "the backend
 // must check identity, role and ownership on every protected request".
@@ -34,7 +34,9 @@ const requireAuth = asyncHandler(async (req, res, next) => {
   }
 
   const [rows] = await pool.query(
-    'SELECT account_id, role, student_id, active FROM accounts WHERE account_id = ?',
+    `SELECT account_id, role, student_id, staff_id, active,
+            UNIX_TIMESTAMP(password_changed_at) AS password_changed
+       FROM accounts WHERE account_id = ?`,
     [payload.accountId]
   );
   const account = rows[0];
@@ -43,10 +45,18 @@ const requireAuth = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, 'UNAUTHORIZED', 'This account is no longer active.');
   }
 
+  // A password reset kills every token issued before it, so a stolen token
+  // stops working the moment the real owner resets their password. (Compared
+  // in whole seconds: a JWT's `iat` has no sub-second part.)
+  if (account.password_changed && payload.iat < Math.floor(account.password_changed)) {
+    throw new ApiError(401, 'UNAUTHORIZED', 'Your password was changed. Please sign in again.');
+  }
+
   req.user = {
     accountId: account.account_id,
     role: account.role,
     studentId: account.student_id, // null for lecturers
+    staffId: account.staff_id, // null for students
   };
 
   next();

@@ -79,23 +79,6 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <style name="Registrar.DemoKey" parent="">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minWidth">66dp</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">#B3FFFFFF</item>
-    </style>
-
-    <style name="Registrar.DemoValue" parent="">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">#CCFFFFFF</item>
-        <item name="android:fontFamily">monospace</item>
-    </style>
-
     <!-- Reused by the roster's Add/Edit student sheet for the two dropdowns -->
     <style name="Registrar.FieldLabel" parent="">
         <item name="android:layout_width">wrap_content</item>

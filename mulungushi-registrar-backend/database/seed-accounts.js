@@ -1,46 +1,57 @@
 // database/seed-accounts.js
 //
-// Why this is a .js file and not part of seed.sql:
-// passwords must be hashed with bcrypt, and bcrypt only exists on the
-// Node side (plain SQL has no bcrypt function). Run this AFTER
-// schema.sql and seed.sql have been applied:
+// Creates a ready-to-use demo LECTURER login so you can sign in immediately
+// after loading the database. (A password needs a bcrypt hash, which SQL
+// alone cannot make — that is why this is a script and not part of seed.sql.)
 //
-//   npm install
-//   mysql -u root -p mulungushi_registrar < database/schema.sql
-//   mysql -u root -p mulungushi_registrar < database/seed.sql
 //   npm run seed:accounts
 //
-// It is safe to re-run: it skips the account if the username already exists.
+// The lecturer is the staff-roster row for SEED_LECTURER_EMAIL (default:
+// b.nyirenda@mulungushi.edu.zm, employee ID EMP-1001). Everyone else — students
+// and the other lecturers — signs up through the verification-code flow.
 
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const pool = require('../config/database');
-
-const USERNAME = process.env.SEED_LECTURER_USERNAME || 'lecturer1';
-const PASSWORD = process.env.SEED_LECTURER_PASSWORD || 'Lecturer#2025';
-const BCRYPT_ROUNDS = 12;
+const { bcryptRounds } = require('../config/env');
 
 async function main() {
-  const [existing] = await pool.query('SELECT account_id FROM accounts WHERE username = ?', [USERNAME]);
-  if (existing.length > 0) {
-    console.log(`Account "${USERNAME}" already exists — nothing to do.`);
-    process.exit(0);
+  const email = (process.env.SEED_LECTURER_EMAIL || 'b.nyirenda@mulungushi.edu.zm').trim().toLowerCase();
+  const employeeId = (process.env.SEED_LECTURER_EMPLOYEE_ID || 'EMP-1001').trim().toUpperCase();
+  const name = process.env.SEED_LECTURER_NAME || 'Bwalya Nyirenda';
+  const password = process.env.SEED_LECTURER_PASSWORD;
+
+  if (!password || password.length < 8) {
+    console.error('Set SEED_LECTURER_PASSWORD (8+ characters) in .env first.');
+    process.exit(1);
   }
 
-  const passwordHash = await bcrypt.hash(PASSWORD, BCRYPT_ROUNDS);
-  await pool.query('INSERT INTO accounts (username, password_hash, role, student_id) VALUES (?, ?, ?, NULL)', [
-    USERNAME,
-    passwordHash,
-    'LECTURER',
-  ]);
+  // Make sure the staff-roster row exists (seed.sql normally created it already).
+  await pool.query(
+    `INSERT INTO staff_roster (employee_id, email, full_name) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)`,
+    [employeeId, email, name]
+  );
+  const [[staff]] = await pool.query('SELECT staff_id FROM staff_roster WHERE employee_id = ?', [employeeId]);
 
-  console.log('Lecturer account created:');
-  console.log(`  username: ${USERNAME}`);
-  console.log(`  password: ${PASSWORD}  (demo only — change this for anything beyond marking)`);
-  process.exit(0);
+  const [existing] = await pool.query('SELECT account_id FROM accounts WHERE staff_id = ?', [staff.staff_id]);
+  if (existing.length > 0) {
+    console.log(`A login for ${email} already exists — nothing to do.`);
+  } else {
+    const hash = await bcrypt.hash(password, bcryptRounds());
+    await pool.query("INSERT INTO accounts (email, password_hash, staff_id) VALUES (?, ?, ?)", [
+      email,
+      hash,
+      staff.staff_id,
+    ]);
+    console.log('Demo lecturer account created:');
+    console.log(`  sign in with: ${email}`);
+    console.log('  password:     the SEED_LECTURER_PASSWORD from your .env  (demo only - change it for anything real)');
+  }
+  await pool.end();
 }
 
 main().catch((err) => {
-  console.error('Seeding failed:', err);
+  console.error(err.message);
   process.exit(1);
 });

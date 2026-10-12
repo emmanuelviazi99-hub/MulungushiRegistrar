@@ -78,4 +78,29 @@ public class ContactValidatorTest {
         assertFalse(ContactValidator.passwordsMatch("abc12345", "abc12346"));
         assertFalse(ContactValidator.passwordsMatch(null, null));
     }
+
+    @Test
+    public void employeeId() {
+        assertEquals(ContactValidator.EmployeeIdResult.EMPTY, ContactValidator.checkEmployeeId("  "));
+        assertEquals(ContactValidator.EmployeeIdResult.OK, ContactValidator.checkEmployeeId("EMP-1001"));
+        assertEquals(ContactValidator.EmployeeIdResult.OK, ContactValidator.checkEmployeeId(" emp-1001 "));
+        assertEquals("EMP-1001", ContactValidator.normaliseEmployeeId(" emp-1001 "));
+        assertEquals(ContactValidator.EmployeeIdResult.INVALID, ContactValidator.checkEmployeeId("E"));
+        assertEquals(ContactValidator.EmployeeIdResult.INVALID, ContactValidator.checkEmployeeId("-EMP1001"));
+        assertEquals(ContactValidator.EmployeeIdResult.INVALID, ContactValidator.checkEmployeeId("EMP 1001"));
+    }
+
+    @Test
+    public void dateOfBirth() {
+        java.util.Calendar today = new java.util.GregorianCalendar(2026, java.util.Calendar.OCTOBER, 11);
+        assertEquals(ContactValidator.DobResult.EMPTY, ContactValidator.checkDateOfBirth("", today));
+        assertEquals(ContactValidator.DobResult.OK, ContactValidator.checkDateOfBirth("2003-04-12", today));
+        assertEquals(ContactValidator.DobResult.OK, ContactValidator.checkDateOfBirth("2026-10-10", today));
+        assertEquals(ContactValidator.DobResult.INVALID, ContactValidator.checkDateOfBirth("2026-10-11", today)); // today
+        assertEquals(ContactValidator.DobResult.INVALID, ContactValidator.checkDateOfBirth("2030-01-01", today)); // future
+        assertEquals(ContactValidator.DobResult.INVALID, ContactValidator.checkDateOfBirth("2003-02-30", today)); // no such day
+        assertEquals(ContactValidator.DobResult.INVALID, ContactValidator.checkDateOfBirth("12/04/2003", today)); // wrong format
+        assertEquals(ContactValidator.DobResult.INVALID, ContactValidator.checkDateOfBirth("1900-01-01", today)); // too long ago
+        assertEquals("2003-04-12", ContactValidator.isoDate(2003, 4, 12));
+    }
 }

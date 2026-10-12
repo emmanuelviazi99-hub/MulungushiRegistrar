@@ -22,6 +22,10 @@ const pool = mysql
     waitForConnections: true,
     queueLimit: 0,
     decimalNumbers: true,
+    // Return DATE columns (date_of_birth) as 'YYYY-MM-DD' strings. Without this
+    // mysql2 builds a JS Date at local midnight and JSON serialises it a day off
+    // in some time zones.
+    dateStrings: ['DATE'],
   })
   .promise();
 

@@ -37,14 +37,13 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private TextInputLayout layoutEmail, layoutCode, layoutPassword, layoutConfirm;
     private TextInputEditText inputEmail, inputCode, inputPassword, inputConfirm;
     private Button buttonProceed, buttonVerify, buttonUpdate, buttonBack2, buttonBack3;
-    private TextView textResend, textStepLabel, textCodeSub, textDemoNote, textFormError;
+    private TextView textResend, textStepLabel, textCodeSub, textFormError;
     private View progress, stepHeader;
     private final View[] dots = new View[3];
 
     private final ResendTimer resendTimer = new ResendTimer();
     private int step = 1;
     private boolean busy;
-    private boolean showDemo;
     private String email = "";
     private String verifiedCode = ""; // kept only in memory, only after the server accepted it
     private long resendEndsAt;
@@ -64,7 +63,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         });
 
         bindViews();
-        showDemo = getResources().getBoolean(R.bool.show_demo_hints);
 
         clearOnType(inputEmail, layoutEmail);
         clearOnType(inputCode, layoutCode);
@@ -136,13 +134,20 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         Auth.get().requestResetCode(email, result -> {
             if (isFinishing() || isDestroyed()) return;
             setBusy(false);
-            if (result.ok()) {
-                Toast.makeText(this, resend ? R.string.toast_code_resent : R.string.toast_code_sent, Toast.LENGTH_SHORT).show();
-                inputCode.setText("");
-                showStep(2);
-                startResendTimer(AuthService.RESEND_SECONDS);
-            } else {
-                showFormError(R.string.error_network);
+            switch (result.status) {
+                case OK:
+                    Toast.makeText(this, resend ? R.string.toast_code_resent : R.string.toast_code_sent, Toast.LENGTH_SHORT).show();
+                    inputCode.setText("");
+                    showStep(2);
+                    startResendTimer(AuthService.RESEND_SECONDS);
+                    break;
+                case INVALID_DETAILS:
+                    showStep(1);
+                    layoutEmail.setError(getString(R.string.error_email_invalid));
+                    inputEmail.requestFocus();
+                    break;
+                default:
+                    showProblem(result);
             }
         });
     }
@@ -180,8 +185,11 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                     layoutCode.setError(getString(R.string.error_code_locked));
                     enableResendNow();
                     break;
+                case INVALID_DETAILS:
+                    layoutCode.setError(getString(R.string.error_code_invalid));
+                    break;
                 default:
-                    showFormError(R.string.error_network);
+                    showProblem(result);
             }
         });
     }
@@ -248,13 +256,20 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                     break;
                 case NOT_VERIFIED:
                 case CODE_EXPIRED:
+                case BAD_CODE:
+                case TOO_MANY_TRIES:
+                    // the code stopped working (expired, or a newer one was asked for): get a new one
                     verifiedCode = "";
                     showStep(2);
-                    layoutCode.setError(getString(R.string.error_not_verified));
+                    layoutCode.setError(getString(R.string.error_code_expired));
                     enableResendNow();
                     break;
+                case INVALID_DETAILS:
+                    layoutPassword.setError(result.message != null ? result.message : getString(R.string.error_password_short));
+                    inputPassword.requestFocus();
+                    break;
                 default:
-                    showFormError(R.string.error_network);
+                    showProblem(result);
             }
         });
     }
@@ -301,9 +316,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
             textCodeSub.setText(getString(R.string.forgot_step2_sub_fmt,
                     ContactValidator.maskEmail(email), AuthService.CODE_VALID_MINUTES));
         }
-        boolean demoVisible = showDemo && (n == 1 || n == 2);
-        textDemoNote.setVisibility(demoVisible ? View.VISIBLE : View.GONE);
-        textDemoNote.setText(getString(R.string.demo_reset_note_fmt, DemoAccounts.STUDENT_EMAIL, DemoAccounts.CLAIM_CODE));
         hideFormError();
     }
 
@@ -320,6 +332,15 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private void showFormError(int resId) {
         textFormError.setText(resId);
         textFormError.setVisibility(View.VISIBLE);
+    }
+
+    /** Problems that are not about one field. */
+    private void showProblem(AuthService.Result result) {
+        switch (result.status) {
+            case RATE_LIMITED: showFormError(R.string.error_rate_limited); break;
+            case NETWORK_ERROR: showFormError(R.string.error_network); break;
+            default: showFormError(R.string.error_server);
+        }
     }
 
     private void hideFormError() {
@@ -370,7 +391,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         textResend = findViewById(R.id.textResend);
         textStepLabel = findViewById(R.id.textStepLabel);
         textCodeSub = findViewById(R.id.textCodeSub);
-        textDemoNote = findViewById(R.id.textDemoNote);
         textFormError = findViewById(R.id.textFormError);
         progress = findViewById(R.id.progress);
         stepHeader = findViewById(R.id.stepHeader);

@@ -7,19 +7,24 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed:accounts": "node database/seed-accounts.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "staff:add": "node database/add-staff.js",
+    "email:test": "node scripts/email-test.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.7.1",
     "express-validator": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "nodemailer": "^10.1.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "smtp-server": "^3.19.21",
     "supertest": "^7.0.0"
   },
   "engines": {

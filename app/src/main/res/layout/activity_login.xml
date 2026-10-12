@@ -188,67 +188,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/demoNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:background="@drawable/bg_demo_note"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/demo_title"
-                    android:textColor="@color/white"
-                    android:textSize="13.5sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal">
-                    <TextView style="@style/Registrar.DemoKey" android:text="@string/demo_label_student" />
-                    <TextView style="@style/Registrar.DemoValue" android:text="@string/demo_student_number" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
-                    <TextView style="@style/Registrar.DemoKey" android:text="@string/demo_label_password" />
-                    <TextView style="@style/Registrar.DemoValue" android:text="@string/demo_student_password" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
-                    <TextView style="@style/Registrar.DemoKey" android:text="@string/demo_label_lecturer" />
-                    <TextView android:id="@+id/demoLecturerEmail" style="@style/Registrar.DemoValue" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
-                    <TextView style="@style/Registrar.DemoKey" android:text="@string/demo_label_password" />
-                    <TextView android:id="@+id/demoLecturerPassword" style="@style/Registrar.DemoValue" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/demo_note"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="13.5sp" />
-            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

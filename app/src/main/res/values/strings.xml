@@ -13,7 +13,7 @@
     <string name="action_forgot">Forgot password?</string>
     <string name="action_sign_in">Sign in</string>
     <string name="register_prompt">New here?</string>
-    <string name="action_register">Register with claim code</string>
+    <string name="action_register">Create an account</string>
 
     <!-- Short, one line. The staff email rule is never mentioned to students. -->
     <string name="error_id_empty">Enter your student number.</string>
@@ -23,15 +23,7 @@
     <string name="error_id_not_real">Enter your real student number.</string>
     <string name="error_password_empty">Enter your password.</string>
     <string name="error_offline">You\'re offline. Connect to sign in.</string>
-    <string name="error_bad_credentials">Incorrect sign-in details. Try again.</string>
-
-    <string name="demo_title">Demo accounts (testing only)</string>
-    <string name="demo_label_student">Student</string>
-    <string name="demo_label_lecturer">Lecturer</string>
-    <string name="demo_label_password">Password</string>
-    <string name="demo_student_number">202301045</string>
-    <string name="demo_student_password">anything</string>
-    <string name="demo_note">Any 9-digit number with any password also signs in as a student.</string>
+    <string name="error_bad_credentials">Incorrect student number, email or password. After 5 wrong tries the account is locked for 15 minutes.</string>
 
     <string name="toast_not_built">Not built yet.</string>
     <string name="action_sign_out">Sign out</string>
@@ -70,7 +62,6 @@
     <string name="roster_count_single">%1$d student</string>
     <string name="roster_empty_filtered">No students match these filters</string>
     <string name="roster_empty_title">No students yet</string>
-    <string name="roster_empty_sub">Add your first student to start building the roster.</string>
     <string name="action_add_student">Add student</string>
 
     <!-- Add/edit student sheet -->
@@ -117,13 +108,10 @@
 
     <!-- Register -->
     <string name="register_title">Register</string>
-    <string name="label_claim_code">Claim code</string>
-    <string name="hint_claim_code">e.g. MU-7K4Q</string>
-    <string name="error_claim_empty">Enter your claim code.</string>
-    <string name="error_claim_wrong">That claim code doesn\'t match. Ask your lecturer for a new one.</string>
+    <string name="label_claim_code">Verification code</string>
+    <string name="hint_claim_code">e.g. MU-7K4QXP</string>
     <string name="hint_password_create">At least 8 characters</string>
     <string name="error_password_short">At least 8 characters.</string>
-    <string name="action_continue">Continue</string>
     <string name="error_number_registered">That number is already registered. Try signing in instead.</string>
 
     <!-- Forgot password -->
@@ -143,82 +131,31 @@
     <string name="my_group_unassigned_note">You\'re not assigned to a group yet. Request one from Home.</string>
 
     <!-- Group change -->
-    <string name="group_change_title">Request group change</string>
     <string name="current_group_label">Current group</string>
-    <string name="not_assigned_yet">Not assigned yet</string>
     <string name="choose_a_group">Choose a group</string>
-    <string name="places_filled">%1$d of %2$d places filled</string>
-    <string name="group_full_no_places">Full, no places left</string>
     <string name="group_change_note">Asking does not reserve a place. Your lecturer confirms the move, and only if there is room.</string>
-    <string name="action_request_group">Request %1$s</string>
     <string name="action_choose_group_first">Choose a group</string>
     <string name="action_cancel_request">Cancel request</string>
-    <string name="requested_move_to">Move to %1$s</string>
-    <string name="requested_note">Your lecturer must confirm it.</string>
-    <string name="toast_request_sent">Request sent</string>
-    <string name="toast_request_cancelled">Request cancelled</string>
 
     <!-- Edit details -->
-    <string name="edit_details_title">Edit my details</string>
-    <string name="label_locked_number">Student number</string>
     <string name="locked_label">Locked</string>
-    <string name="only_lecturer_can_change">Only your lecturer can change this.</string>
     <string name="action_request_correction">Request a correction</string>
-    <string name="correction_to">Correction to %1$s</string>
-    <string name="correction_note">Requested. Your lecturer must confirm it. Your number stays %1$s until then.</string>
-    <string name="sheet_number_correction_title">Request number correction</string>
-    <string name="sheet_number_correction_sub">Your lecturer checks this before anything changes. Your number stays %1$s until they confirm.</string>
     <string name="label_correct_number">Correct student number</string>
     <string name="error_number_same">That is already your student number.</string>
     <string name="action_send_request">Send request</string>
-    <string name="action_save_changes_short">Save changes</string>
 
     <!-- Sync -->
-    <string name="sync_title">Sync status</string>
-    <string name="sync_sub">All change states</string>
     <string name="sync_group_transfer">Group transfer request → %1$s</string>
-    <string name="sync_number_correction">Number correction → %1$s</string>
-    <string name="sync_name_edit">Name and programme edit</string>
-    <string name="sync_confirm_note">Your lecturer must confirm before it takes effect.</string>
-    <string name="sync_saved_confirmed">Saved and confirmed by the server.</string>
-    <string name="sync_waiting">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
-    <string name="sync_up_to_date">Your changes are up to date. You\'ll only see your own records here.</string>
-    <string name="sync_footer_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
-    <string name="sync_footer_lecturer">Each status is conveyed by label text, not colour alone. The full class queue is lecturer-only.</string>
-    <string name="sync_lecturer_queue_title">Class-wide sync queue</string>
-    <string name="sync_lecturer_pending_line">%1$s — %2$s</string>
-    <string name="sync_lecturer_empty">Nothing waiting. Local and server records match.</string>
 
     <!-- Lecturer home -->
-    <string name="lecturer_home_title">Mulungushi Registrar</string>
     <string name="lecturer_portal_sub">Lecturer Portal</string>
     <string name="stat_students">Students</string>
-    <string name="stat_group_full">Group full</string>
     <string name="stat_requests">Requests</string>
-    <string name="group_occupancy">Group occupancy</string>
-    <string name="quick_actions">Quick actions</string>
-    <string name="qa_requests_sub_some">%1$d waiting</string>
-    <string name="qa_requests_sub_none">Nothing waiting</string>
-    <string name="qa_roster_title">Student roster</string>
-    <string name="qa_roster_sub">Search, filter, edit or remove students</string>
-    <string name="qa_add_title">Add a student</string>
-    <string name="qa_add_sub">Manual entry, assign a group</string>
 
     <!-- Requests -->
     <string name="requests_title">Requests</string>
-    <string name="requests_pending_sub">%1$d pending</string>
-    <string name="badge_group_change">Group change</string>
-    <string name="badge_number_correction">Number correction</string>
-    <string name="requests_group_line">%1$s → %2$s</string>
-    <string name="requests_group_note">%1$s has %2$d of %3$d places filled.</string>
-    <string name="requests_number_line">%1$s → %2$s</string>
     <string name="action_approve">Approve</string>
     <string name="action_decline">Decline</string>
-    <string name="requests_empty">No requests waiting</string>
-    <string name="toast_approved">Approved</string>
-    <string name="toast_declined">Declined</string>
-    <string name="toast_approve_failed_group">That group filled up — can\'t approve. Decline or ask the student to pick another.</string>
-    <string name="toast_approve_failed_number">That number is already taken — can\'t approve.</string>
     <string name="request_group_change_title">Request group change</string>
     <string name="group_full_note">Full, no places left</string>
     <string name="request_group_fmt">Request %1$s</string>
@@ -236,33 +173,23 @@
     <string name="pill_synced">Synced</string>
     <string name="pill_action">Action required</string>
     <string name="name_programme_edit_title">Name and programme edit</string>
-    <string name="name_programme_synced_note">Saved and confirmed.</string>
-    <string name="sync_waiting_banner">%1$d change(s) waiting to sync. You\'ll only see your own records here.</string>
     <string name="sync_up_to_date_banner">Your changes are up to date. You\'ll only see your own records here.</string>
     <string name="sync_footnote_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
     <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone. The full class queue is lecturer-only.</string>
     <string name="no_pending_requests">No requests waiting</string>
     <string name="group_change_label">Group change</string>
     <string name="number_correction_label">Number correction</string>
-    <string name="requested_label">Requested by</string>
     <string name="toast_request_approved">Approved</string>
     <string name="toast_request_declined">Declined</string>
     <string name="toast_group_full_decline">That group filled up — decline or ask the student to pick another.</string>
-    <string name="toast_number_taken_decline">That number is already taken — decline or ask for a different one.</string>
     <string name="pending_requests_count">%1$d pending</string>
     <string name="to_arrow_fmt">%1$s → %2$s</string>
-    <string name="welcome_back_lecturer">Welcome back, %1$s</string>
     <string name="stat_groups_full">Group full</string>
     <string name="stat_conflicts">Conflicts</string>
     <string name="section_group_occupancy">Group occupancy</string>
     <string name="section_quick_actions">Quick actions</string>
-    <string name="action_requests_title">Requests</string>
-    <string name="action_requests_sub_fmt">%1$d waiting</string>
     <string name="action_requests_sub_none">Nothing waiting</string>
     <string name="action_needs_attention_title">Needs attention</string>
-    <string name="action_conflicts_sub_fmt">%1$d conflict(s)</string>
-    <string name="action_roster_title">Student roster</string>
-    <string name="action_roster_sub">Search, filter, edit or remove</string>
     <string name="action_add_student_title">Add a student</string>
     <string name="action_add_student_sub">Manual entry, assign a group</string>
 
@@ -303,13 +230,8 @@
     <string name="welcome_lecturer_fmt">Welcome, %1$s</string>
     <string name="action_requests_title_group">Group requests</string>
     <string name="action_requests_waiting_fmt">%1$d waiting for approval</string>
-    <string name="action_conflicts_review_fmt">%1$d conflict(s) to review</string>
     <string name="hint_register_name">e.g. Chanda Mwansa</string>
     <string name="hint_register_number">9 digits</string>
-    <string name="demo_values_title">Demo values</string>
-    <string name="demo_testing_only">(testing only)</string>
-    <string name="demo_claim_label">Claim code</string>
-    <string name="demo_values_note">Any name, any 9-digit number and any 6 to 14 character code also work.</string>
     <string name="sync_group_transfer_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your current group stays active until then.</string>
     <string name="sync_number_title">Number correction → %1$s</string>
     <string name="sync_number_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your number stays %2$s until then.</string>
@@ -339,10 +261,10 @@
         <item quantity="other">%1$d conflicts to review</item>
     </plurals>
 
-    <!-- ===== Register with claim code (3 pages) and Forgot password (email, code, new password) ===== -->
+    <!-- ===== Register with an emailed code (3 pages) and Forgot password (email, code, new password) ===== -->
     <string name="register_step1_title">Create your account</string>
-    <string name="register_step1_sub">Enter your details. We\'ll email you a claim code.</string>
-    <string name="register_step2_title">Enter your claim code</string>
+    <string name="register_step1_sub">Enter your details exactly as the university has them. We\'ll email you a code.</string>
+    <string name="register_step2_title">Enter the code from your email</string>
     <string name="register_step2_sub_fmt">We sent a code to %1$s. It is valid for %2$d minutes.</string>
     <string name="register_step3_title">Finish your account</string>
     <string name="register_step3_sub">Choose your programme and set a password.</string>
@@ -389,11 +311,30 @@
     <string name="error_code_locked">Too many wrong tries. Request a new code.</string>
     <string name="error_confirm_empty">Type your password again.</string>
     <string name="error_password_mismatch">The two passwords don\'t match.</string>
-    <string name="error_not_on_roster">We can\'t find that student number on the university list.</string>
+    <string name="error_not_on_roster">Those details don\'t match the university record. Check your student number, NRC and date of birth, or ask your lecturer.</string>
     <string name="error_email_in_use">That email is already registered. Try signing in instead.</string>
     <string name="error_not_verified">Please verify your code first.</string>
     <string name="error_network">Couldn\'t reach the server. Check your connection and try again.</string>
 
-    <string name="demo_code_note_fmt">Demo (testing only): no email is sent. The code is %1$s.</string>
-    <string name="demo_reset_note_fmt">Demo (testing only): reset the demo student with %1$s. The code is %2$s.</string>
+    <!-- Sign-up: student or lecturer, date of birth, employee ID -->
+    <string name="role_student">Student</string>
+    <string name="role_lecturer">Lecturer</string>
+    <string name="register_step1_sub_staff">Use the email and employee ID the registrar has on the staff list. We\'ll email you a code.</string>
+    <string name="label_dob">Date of birth</string>
+    <string name="hint_dob">Tap to choose</string>
+    <string name="label_employee_id">Employee ID</string>
+    <string name="hint_employee_id">e.g. EMP-1001</string>
+    <string name="label_phone_optional">Phone number (optional)</string>
+    <string name="error_dob_empty">Choose your date of birth.</string>
+    <string name="error_dob_invalid">Choose a date in the past.</string>
+    <string name="error_employee_id_empty">Enter your employee ID.</string>
+    <string name="error_employee_id_invalid">Employee IDs look like EMP-1001.</string>
+    <string name="error_staff_not_listed">That email and employee ID aren\'t on the staff list. Ask the registrar to add you.</string>
+    <string name="error_staff_registered">This staff member already has an account. Try signing in instead.</string>
+
+    <!-- Answers from the server -->
+    <string name="error_resend_wait_fmt">Please wait %1$d seconds before asking for another code.</string>
+    <string name="error_delivery_failed">We couldn\'t send the email just now. Check the address and try again.</string>
+    <string name="error_rate_limited">Too many attempts from this network. Wait a few minutes and try again.</string>
+    <string name="error_server">Something went wrong on the server. Try again shortly.</string>
 </resources>

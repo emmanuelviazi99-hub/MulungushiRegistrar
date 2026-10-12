@@ -1,208 +1,310 @@
 # Mulungushi Registrar — Backend
 
-Node.js + Express + MySQL backend for the ICT361 Student Registration and
-Lab Group Management system. This is the **remote backend only** (Phase 1).
-Room, WorkManager and offline sync live in the Android app and are a
-separate, later phase — see the note at the bottom of this file.
+Node.js + Express + MySQL backend for the ICT361 Student Registration and Lab
+Group Management app (Android package `zm.ac.mulungushi.registrar`).
+
+What it does:
+
+- **Accounts are created in real time** by the people themselves, with a
+  **verification code sent by email (Nodemailer)**:
+  - a **student** gives their name, email, student number, NRC and date of
+    birth; the number + NRC + birth date must match the row a lecturer added
+  - a **lecturer** gives their name, email and employee ID, which must be on
+    the staff list the server operator keeps
+  - the code (e.g. `MU-7K4QXP`) is emailed, typed back into the app, and then
+    the person chooses a password
+- Lecturers manage the roster and the four lab groups, with a hard **15-seat
+  limit** that holds even when many phones act at the same moment.
+- Students ask for a group change or a student-number correction; a lecturer
+  approves or declines.
+- Offline changes from the app are replayed safely (`operationId`), never
+  applied twice.
+
+---
 
 ## 1. Requirements
 
-- Node.js 18+
-- MySQL 8+ (InnoDB, which is the default engine)
+- Node.js 18 or newer
+- MySQL 8 (or MariaDB 10.6+)
+- An email account that can send mail over SMTP. A Gmail account with an
+  **app password** is the simplest; see section 3.
 
-## 2. Setup
+## 2. Install and create the database
 
 ```bash
-cd backend
 npm install
-cp .env.example .env        # then edit .env with your real DB credentials
+cp .env.example .env          # Windows: copy .env.example .env
 ```
 
-Generate a real JWT secret and put it in `.env`:
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-```
+Create the database, then load the tables and demo data. In MySQL Workbench you
+can instead open each `.sql` file and run it with the lightning-bolt button.
 
-Create the database and load the schema + reference/demo data:
 ```bash
 mysql -u root -p -e "CREATE DATABASE mulungushi_registrar CHARACTER SET utf8mb4;"
 mysql -u root -p mulungushi_registrar < database/schema.sql
 mysql -u root -p mulungushi_registrar < database/seed.sql
-npm run seed:accounts        # creates the lecturer login (bcrypt-hashed — see below)
 ```
 
-Start the server:
+> `schema.sql` starts by dropping the old tables, so running it again (or over
+> the earlier version that had `claim_codes`) gives you a clean database. It
+> deletes all data in `mulungushi_registrar`.
+
+## 3. Fill in `.env`
+
+Open `.env` and set at least:
+
+| Setting | What to put |
+|---|---|
+| `DB_USER`, `DB_PASSWORD` | Your MySQL login (e.g. `root` and the password you chose when installing MySQL) |
+| `JWT_SECRET` | A long random string. Make one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `SMTP_*` | The email account that sends the codes (below) |
+
+**Sending codes with Gmail (Nodemailer):**
+
+1. Turn on 2-Step Verification on the Google account.
+2. Google Account → Security → 2-Step Verification → **App passwords**. Create
+   one called "Mulungushi Registrar" and copy the 16 letters.
+3. In `.env`:
+   ```
+   CODE_DELIVERY=email
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=465
+   SMTP_SECURE=true
+   SMTP_USER=yourname@gmail.com
+   SMTP_PASS=abcdabcdabcdabcd
+   SMTP_FROM="Mulungushi Registrar <yourname@gmail.com>"
+   ```
+4. Check it works before anyone signs up:
+   ```bash
+   npm run email:test -- yourname@gmail.com
+   ```
+   You should see `SMTP login OK` and receive a test email.
+
+Other choices are in `.env.example`: **Mailtrap** (every email is caught in a
+web inbox, handy for testing with made-up addresses) or the university's own
+mail server. `CODE_DELIVERY=console` prints codes in the terminal instead, for
+working with no mail account at all; the server refuses that setting in
+production. SMS through Twilio can be added on top: `CODE_DELIVERY=email,sms`.
+
+> If a value contains `#`, wrap it in double quotes (`"Lecturer#2025"`).
+> Otherwise everything after the `#` is silently dropped.
+
+The server checks these settings when it starts and stops with a clear message
+if something is missing (no JWT secret, SMTP not filled in, and so on).
+
+## 4. Demo logins and the staff list
+
 ```bash
-npm start          # or: npm run dev   (restarts on file changes)
+npm run seed:accounts
 ```
 
-Check it's alive:
+This creates a ready-made lecturer login from the `SEED_LECTURER_*` values in
+`.env` (by default `b.nyirenda@mulungushi.edu.zm` / `Lecturer#2025`, employee
+ID `EMP-1001`). Change the password before anyone outside your group sees it.
+
+Lecturers can only sign up if they are on the **staff list**. Add one with:
+
 ```bash
-curl http://localhost:3000/health
+npm run staff:add -- --email j.banda@mulungushi.edu.zm --employee-id EMP-2001 --name "Joseph Banda"
 ```
 
-### Demo accounts after seeding
+There is deliberately no API endpoint for this: a lecturer account can edit the
+whole roster, so it must never be creatable by someone who only knows an email
+address.
 
-| Role | Username | Password | Notes |
-|---|---|---|---|
-| Lecturer | `lecturer1` | `Lecturer#2025` | From `SEED_LECTURER_*` in `.env` |
-| Student | *(register with a claim code)* | — | See `database/seed.sql` for ready-made claim codes, e.g. student number `202301001` + code `MU-7K4Q` |
+Demo data in `seed.sql` (all fictitious):
 
-Change `SEED_LECTURER_PASSWORD` in `.env` before anyone outside your group sees this.
+| Who | Use for |
+|---|---|
+| Students `202301001` – `202301018`, NRC `700001/10/1` … `700018/10/1`, birth dates listed in `seed.sql` | Student sign-up. E.g. `202301001`, `700001/10/1`, `2003-04-12` |
+| Lecturer `m.chilufya@mulungushi.edu.zm`, `EMP-1002` | Lecturer sign-up (on the staff list, no account yet) |
+| Group G01 | Holds 14 of 15, so "racing for the last seat" can be shown at once |
 
-### Connecting from the Android emulator
-
-The emulator can't reach `localhost` on your laptop directly — use
-`10.0.2.2` instead, e.g. `http://10.0.2.2:3000/api/...`. A physical phone
-on the same Wi-Fi network instead uses your laptop's LAN IP address. Either
-way, switch to a real HTTPS host before the final submission (the brief
-requires HTTPS for the remote backend).
-
-## 3. Running the tests
+## 5. Run it
 
 ```bash
-# in .env, point TEST_DB_NAME at a database that is safe to drop/recreate
+npm start            # or: npm run dev   (restarts when you save a file)
+```
+
+```
+Mulungushi Registrar backend listening on port 3000
+Verification codes are sent by: email (SMTP smtp.gmail.com:465)
+```
+
+Check it is alive: open `http://localhost:3000/health`.
+
+**From the Android emulator** use `http://10.0.2.2:3000/api/` — `10.0.2.2` is
+how the emulator reaches your laptop. A real phone on the same Wi-Fi uses your
+laptop's IP address instead. Use HTTPS on a real host for the final submission.
+
+## 6. Tests
+
+```bash
 npm test
 ```
 
-`tests/helpers/resetDb.js` drops and rebuilds that test database from
-`schema.sql` + `seed.sql` before the suite runs, so tests always start from
-the same known state and never touch your real data. See
-`tests/TEST_CASES.md` for what each test demonstrates and how it maps to
-the brief's checklist.
+Set `TEST_DB_NAME` in `.env` to a database that is safe to delete (the default
+`mulungushi_registrar_test` is fine): the tests drop and rebuild it from
+`schema.sql` + `seed.sql`, and never touch your real data. The email tests run
+their own small mail server inside the test, so they need no internet or real
+mail account. `tests/TEST_CASES.md` lists what each test proves.
 
-## 4. Project structure
+## 7. Project structure
 
 ```
-backend/
-├── server.js              # wires everything together, starts listening
-├── config/database.js     # one shared MySQL connection pool
-├── middleware/
-│   ├── auth.js             # verifies the JWT, loads req.user
-│   ├── role.js              # rejects requests from the wrong role
-│   ├── validation.js       # field-level rules (express-validator)
-│   └── errorHandler.js     # turns any thrown error into the standard JSON shape
-├── routes/                 # URL -> controller wiring, one file per resource
-├── controllers/            # request in, response out; thin — delegates to services
-├── services/
-│   ├── claim.service.js    # claim-code generation/verification
-│   ├── group.service.js    # the capacity-safe group assignment transaction
-│   └── idempotency.service.js  # safe-retry support (operationId)
-├── utils/                  # ApiError, asyncHandler, response serializers
-├── database/
-│   ├── schema.sql           # table definitions
-│   ├── seed.sql              # reference data + fictitious demo students
-│   ├── seed-accounts.js     # creates the lecturer login (needs bcrypt, hence .js not .sql)
-│   └── ER_DIAGRAM.md         # Mermaid ER diagram
-├── tests/                   # Jest + Supertest, see TEST_CASES.md
-└── API_CONTRACT.md          # full endpoint list with example requests/responses
+server.js                  wires everything together; checks config, then listens
+config/
+  database.js              one shared MySQL connection pool
+  env.js                   refuses to start with unsafe or incomplete settings
+middleware/
+  auth.js                  checks the JWT and that the account is still active
+  role.js                  STUDENT / LECTURER only routes
+  validation.js            field rules (express-validator)
+  rateLimit.js             per-address limits on code requests and logins
+  errorHandler.js          every error -> { success:false, error, message }
+routes/                    URL -> controller, one file per area
+controllers/               thin: read the request, call a service, send the reply
+services/
+  student.service.js       every read and write of a roster row
+  group.service.js         THE 15-seat check, used by every path into a group
+  request.service.js       group-change and number-correction requests
+  code.service.js          verification codes: issue, verify, use up
+  delivery.service.js      sends codes: email (Nodemailer), SMS (Twilio), console
+  account.service.js       the signed-in account's profile
+  idempotency.service.js   safe retries (operationId)
+utils/                     validators, serializers, ApiError, withTransaction
+database/
+  schema.sql               tables (read the notes at the top)
+  seed.sql                 reference data + demo students and staff
+  seed-accounts.js         demo lecturer login (needs bcrypt, so it is .js)
+  add-staff.js             npm run staff:add
+  ER_DIAGRAM.md            the tables as a diagram
+scripts/email-test.js      npm run email:test
+tests/                     Jest + Supertest; TEST_CASES.md explains each one
+API_CONTRACT.md            every endpoint with real request/response examples
 ```
 
-## 5. How it works, in plain English
+## 8. How it works
 
-**`server.js`** creates the Express app, tells it to parse JSON bodies,
-registers each group of routes under its URL prefix (`/api/auth`,
-`/api/students`, ...), and finally registers the error handler. Middleware
-and routes are matched top-to-bottom, which is why the error handler must
-be added last — it only catches what nothing above it handled.
+### Signing up with a verification code
 
-**The database connection** (`config/database.js`) is a *pool*, not a
-single connection — think of it as a small stack of phone lines into
-MySQL. When one request needs the database, it borrows a line, uses it,
-and gives it back; several requests can be in progress at once without
-waiting on each other.
+Every sign-up is three calls (the Android app's `AuthService` has the same three
+steps):
 
-**A primary key** uniquely identifies one row in a table and never
-changes — `students.student_id` is deliberately a random UUID rather than
-the student's number, precisely so that correcting a mistyped number later
-never changes which row "is" that student. **A foreign key** is a column
-that points at another table's primary key, and the database itself
-refuses to let it point at something that doesn't exist — e.g. you cannot
-insert a student with a `programme_id` that isn't in the `programmes`
-table.
+1. **request** — the server checks the person is on the list (student number +
+   NRC + date of birth match a roster row, or email + employee ID match the
+   staff list). If so it creates a code and **emails it with Nodemailer**. The
+   reply only says *"sent to c\*\*\*@example.com"*; the code is never in any
+   HTTP response, so the only way to get it is to read that mailbox.
+2. **verify** — the person types the code.
+3. **complete** — they choose a password; the account is created and they are
+   signed in.
 
-**Claim codes** exist because a lecturer typically creates the student
-record first (name, number, programme) and the student later proves on
-their phone that the record is theirs. The code is generated once,
-e-mailed/handed to the student, and the server stores only its SHA-256
-hash — like a password, the plain code never sits in the database. The
-student sends the number + code back; if they match, the server lets them
-finish registering, and crucially *links* the new login to the *existing*
-student row instead of creating a second one. That link is enforced by the
-database too: `accounts.student_id` has a `UNIQUE` constraint, so two
-accounts can never point at the same student.
+The rules, all enforced in the database rather than trusted to the app:
 
-**Registration** (`POST /api/auth/register`) re-checks the claim code (it
-never trusts that the app already checked), hashes the chosen password
-with bcrypt, and — inside one transaction — creates the account row and
-marks the claim code used together. If either step failed partway, the
-transaction rolls back and nothing is left half-done.
+- a code lasts **10 minutes** and works **once**
+- **5 tries** per code, counted with one atomic `UPDATE ... WHERE attempts < 5`,
+  so even 50 guesses sent at the same instant get only 5 checks
+- a new code can be asked for every **30 seconds**, and asking again kills the
+  old one
+- after a code is accepted there are **30 minutes** to finish
+- only a keyed hash (HMAC-SHA256) of the code is stored, so a copy of the
+  database does not reveal live codes
+- if the email cannot be sent, the code is deleted and the app is told
+  `DELIVERY_FAILED`, so nothing half-sent is left behind
 
-**Login** (`POST /api/auth/login`) checks the password with
-`bcrypt.compare` (which re-hashes the attempt and compares hashes — the
-plain password is never stored anywhere, including not in memory for long)
-and, if it matches, signs a **JWT**: a signed, expiring token containing
-the account's id and role. The server's secret key signs it; anyone who
-has the token can prove to the server who they are by presenting it,
-without the server having to remember anything about open sessions.
+The answers do not leak who is registered: a wrong NRC and an unknown student
+number get the same `NOT_ON_ROSTER` reply, and *"forgot password"* always says
+"sent", whether or not the email has an account.
 
-**Every protected route** first runs `requireAuth` (checks the JWT is
-valid *and* that the account is still active in the database — a token
-doesn't keep working after an account is disabled) and then, for routes
-that only one role should reach, `requireRole('LECTURER')` or
-`requireRole('STUDENT')`. This is why a student sending
-`GET /api/students` straight from a tool like Postman still gets rejected
-even though that button doesn't exist in their part of the app — the
-server checks the role itself, it doesn't trust the client to have hidden
-the option.
+### Signing in
 
-**Student ownership**: `GET /api/students/me` never takes an id from the
-URL — it always uses `req.user.studentId`, which came from the verified
-token, not from anything the client typed. A student literally cannot ask
-for someone else's record through this endpoint, because the endpoint
-never looks at an id the client supplied.
+Students sign in with their student number or email, lecturers with email.
+Passwords are stored only as bcrypt hashes. A correct password gets a **JWT**,
+a signed token the app sends with every request. 5 wrong passwords lock the
+account for 15 minutes; resetting the password unlocks it and invalidates every
+token issued before the reset.
 
-**The 15-seat limit** (`services/group.service.js`) is the trickiest part.
-Naively, you'd count how many students are in a group and, if it's under
-15, add one more. The problem is that two requests can both do the count
-before either does the write — both see 14, both think there's room, both
-write, and now there are 16. The fix is a MySQL transaction that takes a
-row lock (`SELECT ... FOR UPDATE`) on the group before counting: a second
-transaction that wants the same lock has to wait until the first one
-finishes (commits or rolls back), so the count the second transaction
-eventually sees is never stale. The full reasoning, with more detail, is
-in the comment at the top of that file.
+### Roles are checked on the server
 
-**Soft deletion**: `DELETE /api/students/:id` never removes a row — it
-sets `active = 0` and `deleted_at`, disables the linked login, and frees
-the group seat. The `student_number` stays `UNIQUE` across deleted rows
-too, so the same number can't be accidentally reused for a different
-person.
+Every protected route checks the token, that the account is still active, and
+the role. A student sending `GET /api/students` from Postman is refused even
+though the app never shows them that screen. `GET /api/students/me` takes the
+student's id from the token, never from the URL, so nobody can read someone
+else's record by changing an id.
 
-**Idempotent retries** (`services/idempotency.service.js`) solve the case
-where a mutating request (like a group assignment) succeeds on the server
-but the response never reaches the phone — maybe the connection dropped.
-If the client always sends the same `operationId` when it retries the same
-logical action, the server recognises the id, sees it already has a
-result, and sends that same result back **without doing the work again**.
-If the client reuses an id for a *different* request body, that's
-treated as a bug, not a legitimate retry, and rejected.
+### The 15-seat limit
 
-**How Android will talk to this**: the app never touches MySQL directly.
-It makes HTTPS requests to these endpoints (via Retrofit, once that layer
-is built), attaches the JWT it got from `/auth/login` on every
-subsequent call, and reads the JSON back. `API_CONTRACT.md` has the exact
-request/response shape for every endpoint.
+Counting the members and then adding one is not safe: two requests can both
+count 14 before either writes, and the group ends up with 16. Every path that
+can put a student in a group — assigning, creating a student straight into a
+group, an approved change request, the offline-sync operations — goes through
+one function, `lockAndCheckSeat` in `services/group.service.js`. It locks the
+group row (`SELECT ... FOR UPDATE`) inside a transaction before counting, so a
+second request waits until the first has finished and then sees the true count.
+The tests fire up to 10 requests at the same moment for the last seat and check
+exactly one wins.
 
-## 6. Scope note — what's deliberately NOT here yet
+### Change requests
 
-This backend is Phase 1: a correct, secure, role-checked, capacity-safe
-remote API. It intentionally does not include Android Room, WorkManager,
-an offline operation queue, or client-side conflict resolution — those
-belong in the Android app, not the server, and are Phase 2 of the overall
-project. The server-side pieces that offline sync will lean on
-(`version` on every student row, `operation_receipts` for idempotent
-retries) are already in place so that Phase 2 doesn't require a schema
-rework. Do not submit the project without that phase — the brief marks
-offline storage, sync and conflict handling as 15 of 100 points, and
-Challenges 2 and 3 can't be demonstrated without it.
+A student can ask for a group change or a number correction; nothing changes
+until a lecturer approves. Approval and the change happen in one transaction,
+with the request locked first, so two lecturers approving at once apply it
+once, and a group that filled up in the meantime leaves the request pending.
+Only one request of each kind can be open per student; the database enforces
+that with a unique key, so even five taps at once create one request.
+
+### Soft delete
+
+Deleting a student sets `deleted_at`, frees their seat and disables their
+login. The row stays, so their student number and NRC can never be reused for
+someone else.
+
+### Safe retries
+
+When the app replays a change after a lost response, it sends the same
+`operationId`. The server recognises it and returns the stored answer without
+doing the work again. The same id with different content is refused.
+
+## 9. Why the database looks the way it does
+
+**Every fact is stored once.** This version was restructured to remove
+duplicate data and duplicate code:
+
+| Before | Now |
+|---|---|
+| `students.active` stored next to `deleted_at` (two columns that could disagree) | `active` is **computed** from `deleted_at` by MySQL (a generated column); code only sets `deleted_at` |
+| `accounts.role` stored next to `student_id` / `staff_id` | `role` is **computed** from which link is set; a CHECK guarantees exactly one |
+| Two request tables with the same status / reason / resolved-by columns and two copies of the code | One `change_requests` table with a `kind` column, one service |
+| "One open request" checked with a SELECT that two taps could race past | A UNIQUE key on a computed `is_pending` column |
+| Programme and group codes hard-coded in the validation code as well as in the database | Codes live only in `programmes` / `lab_groups`; adding group G05 is one `INSERT`, no code change |
+| The same student query written three times; the offline-sync copy had drifted (it skipped the name check, and its delete was not one transaction) | One `student.service.js` used by every route and every offline operation |
+| begin / commit / rollback / release repeated in eight places | One `withTransaction()` helper |
+| Two near-identical "finish sign-up" handlers | One `createAccountFromCode()` |
+| `verification_codes` could hold a code linked to the wrong kind of person | A CHECK ties each purpose to exactly the link it needs |
+
+Two copies are kept on purpose, because they are history, not duplicates:
+`change_requests.from_group_id` / `old_number` record what the student had when
+they asked (after approval the student row no longer shows it), and a
+lecturer's login email starts as a copy of their staff-list email (the staff
+list says who *may* sign up, the account is the login, and every login email
+must be unique across students and staff in one index).
+
+**Why the NRC is not the primary key.** Every citizen's NRC is different, so it
+is `UNIQUE` and `NOT NULL`: the database refuses a second student with the same
+NRC, including a deleted one. But it is deliberately not the primary key:
+
+- a primary key must never change, and an NRC can be typed wrongly and need
+  correcting
+- a primary key is copied into every table that points at the student, into
+  URLs and into logs, which is the last place a national ID number belongs
+
+So each student has a random `student_id` that never changes, and the NRC is a
+unique, correctable field. Lists in the app only ever get a masked NRC
+(`70****/**/1`).
+
+## 10. Not in this backend
+
+Room, WorkManager and the offline queue live in the Android app. The server
+already has what they rely on: a `version` on every student row (to detect
+conflicts) and `operation_receipts` (for safe retries).

@@ -2,6 +2,7 @@
 
 const pool = require('../config/database');
 const groupService = require('../services/group.service');
+const studentService = require('../services/student.service');
 const { withIdempotency } = require('../services/idempotency.service');
 const { serializeStudent } = require('../utils/serialize');
 
@@ -19,15 +20,7 @@ async function assignGroup(req, res) {
       groupCode,
       expectedVersion: version,
     });
-    // Re-read with the joined codes for a clean response.
-    const [[row]] = await pool.query(
-      `SELECT s.*, p.code AS programme_code, g.group_code AS group_code
-       FROM students s
-       JOIN programmes p ON p.programme_id = s.programme_id
-       LEFT JOIN lab_groups g ON g.group_id = s.group_id
-       WHERE s.student_id = ?`,
-      [student.student_id]
-    );
+    const row = await studentService.getStudent(student.student_id); // with programme/group codes
     return { statusCode: 200, body: { success: true, student: serializeStudent(row) } };
   };
 

@@ -1,20 +1,22 @@
 # ER diagram
 
-Paste this block into any Mermaid renderer (GitHub renders it natively, or use
-https://mermaid.live) for a visual version.
+Paste the block into any Mermaid renderer (GitHub shows it automatically, or
+use https://mermaid.live). Columns marked *derived* are MySQL generated
+columns: the database computes them from other columns, nobody writes them.
 
 ```mermaid
 erDiagram
-    PROGRAMMES ||--o{ STUDENTS : "has"
-    LAB_GROUPS ||--o{ STUDENTS : "contains"
-    STUDENTS ||--o| ACCOUNTS : "owns"
-    STUDENTS ||--o{ CLAIM_CODES : "has"
-    STUDENTS ||--o{ GROUP_REQUESTS : "requests"
-    STUDENTS ||--o{ NUMBER_CORRECTION_REQUESTS : "requests"
-    LAB_GROUPS ||--o{ GROUP_REQUESTS : "from/to"
-    ACCOUNTS ||--o{ GROUP_REQUESTS : "resolves"
-    ACCOUNTS ||--o{ NUMBER_CORRECTION_REQUESTS : "resolves"
-    ACCOUNTS ||--o{ OPERATION_RECEIPTS : "makes"
+    PROGRAMMES ||--o{ STUDENTS : "studies"
+    LAB_GROUPS ||--o{ STUDENTS : "seats (max 15 active)"
+    STUDENTS ||--o| ACCOUNTS : "signs in as"
+    STAFF_ROSTER ||--o| ACCOUNTS : "signs in as"
+    STUDENTS ||--o{ VERIFICATION_CODES : "student sign-up"
+    STAFF_ROSTER ||--o{ VERIFICATION_CODES : "lecturer sign-up"
+    ACCOUNTS ||--o{ VERIFICATION_CODES : "password reset"
+    STUDENTS ||--o{ CHANGE_REQUESTS : "asks"
+    LAB_GROUPS ||--o{ CHANGE_REQUESTS : "from / to"
+    ACCOUNTS ||--o{ CHANGE_REQUESTS : "resolves"
+    ACCOUNTS ||--o{ OPERATION_RECEIPTS : "retries"
 
     PROGRAMMES {
         int programme_id PK
@@ -30,82 +32,97 @@ erDiagram
     }
 
     STUDENTS {
-        char_36 student_id PK "immutable UUID"
-        char_9 student_number UK "9 digits, leading zeros kept"
+        char36 student_id PK "random UUID, never changes"
+        char9 student_number UK "correctable via request"
+        char11 nrc UK "123456/10/1, correctable by a lecturer"
+        date date_of_birth
         varchar full_name
         int programme_id FK
-        int group_id FK "nullable = Unassigned"
-        tinyint active "0 = soft-deleted"
+        int group_id FK "NULL = Unassigned"
         int version "optimistic concurrency"
-        datetime created_at
-        datetime updated_at
-        datetime deleted_at
-        varchar deletion_marker
+        datetime deleted_at "set = soft-deleted"
+        tinyint active "derived: deleted_at IS NULL"
+    }
+
+    STAFF_ROSTER {
+        int staff_id PK
+        varchar employee_id UK "EMP-1001"
+        varchar email UK "who MAY sign up"
+        varchar full_name
+        tinyint active
     }
 
     ACCOUNTS {
         int account_id PK
-        varchar username UK
-        varchar password_hash "bcrypt, never plain text"
-        enum role "STUDENT or LECTURER"
-        char_36 student_id FK "null for lecturers, UK"
+        varchar email UK "login, unique across everyone"
+        varchar phone "+260..."
+        varchar password_hash "bcrypt"
+        char36 student_id FK,UK "students ..."
+        int staff_id FK,UK "... or lecturers, exactly one"
+        enum role "derived: from which link is set"
         tinyint active
-        datetime created_at
+        tinyint failed_logins
+        datetime locked_until
+        datetime password_changed_at "older tokens rejected"
     }
 
-    CLAIM_CODES {
-        int claim_id PK
-        char_36 student_id FK
-        varchar code_hash "SHA-256, never plain code"
-        datetime expires_at
-        datetime used_at "null until consumed"
-        tinyint active
-        datetime created_at
+    VERIFICATION_CODES {
+        int code_id PK
+        enum purpose "STUDENT_SIGNUP, STAFF_SIGNUP, PASSWORD_RESET"
+        varchar email "where it was sent"
+        char64 code_hash "HMAC-SHA256, never the code"
+        char36 student_id FK "only for STUDENT_SIGNUP"
+        int staff_id FK "only for STAFF_SIGNUP"
+        int account_id FK "only for PASSWORD_RESET"
+        varchar phone "sign-up only"
+        tinyint attempts "max 5"
+        datetime expires_at "10 minutes"
+        datetime verified_at
+        datetime consumed_at "single use"
     }
 
-    GROUP_REQUESTS {
+    CHANGE_REQUESTS {
         int request_id PK
-        char_36 student_id FK
-        int from_group_id FK
-        int to_group_id FK
+        enum kind "GROUP or NUMBER"
+        char36 student_id FK
+        int from_group_id FK "GROUP: history"
+        int to_group_id FK "GROUP: target, NULL = Unassigned"
+        char9 old_number "NUMBER: history"
+        char9 new_number "NUMBER: target"
         varchar reason
         enum status "PENDING, APPROVED, DECLINED"
-        datetime requested_at
-        datetime resolved_at
         int resolved_by FK
-    }
-
-    NUMBER_CORRECTION_REQUESTS {
-        int request_id PK
-        char_36 student_id FK
-        char_9 old_number
-        char_9 new_number
-        varchar reason
-        enum status "PENDING, APPROVED, DECLINED"
-        datetime requested_at
         datetime resolved_at
-        int resolved_by FK
+        tinyint is_pending "derived; UNIQUE with student_id + kind"
     }
 
     OPERATION_RECEIPTS {
-        char_36 operation_id PK "client-supplied UUID"
+        char36 operation_id PK "from the app"
         int account_id FK
-        char_64 request_hash "detects id reuse with different content"
+        char64 request_hash
         smallint status_code
         json response_json
-        datetime created_at
     }
 ```
 
-## Relationship notes
+## Rules the database itself enforces
 
-- **One student ↔ at most one account.** `accounts.student_id` is `UNIQUE`,
-  so a student can never end up with two logins — this is what makes the
-  claim-code flow's "link, don't duplicate" rule enforceable at the schema
-  level, not just in application code.
-- **A student belongs to at most one group at a time** (`students.group_id`
-  is a single nullable foreign key, not a join table) — matches "one
-  active student may belong to only one group."
-- **Soft delete, not a separate table.** `deleted_at` / `deletion_marker` on
-  `students` keep the row (and its reserved `student_number`) instead of
-  moving it elsewhere, which would complicate every join above.
+| Rule | How |
+|---|---|
+| A student number, and an NRC, belongs to one person forever (even after deletion) | `UNIQUE` on `students.student_number` and `students.nrc`; soft delete keeps the row |
+| NRC and student number have the right shape | `CHECK` with a regular expression |
+| One login per student, one per lecturer, one per email | `UNIQUE` on `accounts.student_id`, `staff_id`, `email` |
+| An account is a student's or a lecturer's, never both or neither | `CHECK ((student_id IS NULL) <> (staff_id IS NULL))`; `role` is derived from it |
+| A verification code is linked to exactly the person its purpose needs | `CHECK chk_vcode_link` |
+| One open request per student per kind | `UNIQUE (student_id, kind, is_pending)`; `is_pending` is NULL once resolved |
+| A request's shape matches its kind; resolved requests have a resolved time | `CHECK chk_creq_shape`, `chk_creq_resolved` |
+| Nothing can point at a row that does not exist | Foreign keys everywhere |
+| At most 15 active students per group | Not a constraint (MySQL cannot count in a CHECK): one locked transaction in `services/group.service.js` that every path uses |
+
+## Why `student_id`, not the NRC, is the primary key
+
+The NRC is unique for every citizen, so it is `UNIQUE NOT NULL`. It is not the
+primary key because a primary key must never change (an NRC can be typed wrong
+and need correcting) and is copied into every foreign key, URL and log line,
+where a national ID number should not be. `student_id` is a random UUID that
+never changes; the NRC is a unique, correctable field next to it.

@@ -24,7 +24,7 @@ public final class LoginValidator {
 
     private LoginValidator() {}
 
-    /** One field takes both: an @ means staff email, anything else is a student number. */
+    /** One field takes both: an @ means an email (lecturers, or students who prefer it), anything else is a student number. */
     public static Result checkIdentity(String value) {
         String t = value == null ? "" : value.trim();
         if (t.isEmpty()) return Result.EMPTY;
@@ -32,7 +32,7 @@ public final class LoginValidator {
         if (t.contains("@")) {
             return EMAIL.matcher(t).matches() ? Result.OK_STAFF : Result.EMAIL_INCOMPLETE;
         }
-        if (!DIGITS.matcher(t).matches()) return Result.OK_STAFF;
+        if (!DIGITS.matcher(t).matches()) return Result.NOT_DIGITS;
         if (t.length() != 9) return Result.WRONG_LENGTH;
         if (SAME_DIGIT.matcher(t).matches()
                 || "0123456789".contains(t)

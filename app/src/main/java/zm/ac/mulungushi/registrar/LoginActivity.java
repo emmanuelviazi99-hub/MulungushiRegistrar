@@ -77,8 +77,6 @@ public class LoginActivity extends AppCompatActivity {
         });
         findViewById(R.id.buttonRegister).setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
 
-        setUpDemoNote();
-
         // short fade on first open only, not on every rotation
         if (savedInstanceState == null) {
             View card = findViewById(R.id.card);
@@ -106,6 +104,12 @@ public class LoginActivity extends AppCompatActivity {
 
         vm.getState().observe(this, s -> render());
         vm.getSignedIn().observe(this, this::onSignedIn);
+        vm.getBusy().observe(this, busy -> {
+            // while the server is checking, a second tap must not send a second sign-in
+            View button = findViewById(R.id.buttonSignIn);
+            button.setEnabled(!Boolean.TRUE.equals(busy));
+            button.setAlpha(Boolean.TRUE.equals(busy) ? 0.6f : 1f);
+        });
     }
 
     private void submit() {
@@ -160,8 +164,10 @@ public class LoginActivity extends AppCompatActivity {
         if (role == LoginViewModel.Role.LECTURER) {
             intent = new Intent(this, LecturerDashboardActivity.class);
         } else {
+            // the server's record of this student (the sign-in may have used an email, not the number)
+            StudentRepository.getInstance().putSignedIn(Session.toStudent());
             intent = new Intent(this, StudentHomeActivity.class);
-            intent.putExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER, text(idInput).trim());
+            intent.putExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER, Session.studentNumber());
         }
         startActivity(intent);
         finish();
@@ -169,13 +175,6 @@ public class LoginActivity extends AppCompatActivity {
 
     private void notBuilt() {
         Toast.makeText(this, R.string.toast_not_built, Toast.LENGTH_SHORT).show();
-    }
-
-    private void setUpDemoNote() {
-        boolean show = getResources().getBoolean(R.bool.show_demo_hints);
-        findViewById(R.id.demoNote).setVisibility(show ? View.VISIBLE : View.GONE);
-        ((TextView) findViewById(R.id.demoLecturerEmail)).setText(DemoAccounts.LECTURER_EMAIL);
-        ((TextView) findViewById(R.id.demoLecturerPassword)).setText(DemoAccounts.LECTURER_PASSWORD);
     }
 
     private boolean isOnline() {
