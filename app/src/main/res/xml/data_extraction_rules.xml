@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Backup rules for Android 12 and newer. The sign-in token (shared_prefs/session.xml)
-     is left out of cloud backups and of copying to a new phone. -->
+     and the saved roster and queued changes (databases/registrar.db) are left out of
+     cloud backups and of copying to a new phone. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="session.xml" />
+        <exclude domain="database" path="registrar.db" />
+        <exclude domain="sharedpref" path="registration_draft.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="session.xml" />
+        <exclude domain="database" path="registrar.db" />
+        <exclude domain="sharedpref" path="registration_draft.xml" />
     </device-transfer>
 </data-extraction-rules>

@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
@@ -73,6 +74,7 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        KeyboardInsets.apply(this); // keeps the field being typed in above the keyboard
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.register_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> goBack());
@@ -84,6 +86,9 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         bindViews();
+        // TalkBack: the programme picker has no label of its own, and form errors should be announced
+        spinnerProgramme.setContentDescription(getString(R.string.label_programme));
+        ViewCompat.setAccessibilityLiveRegion(textFormError, ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE);
 
         ArrayAdapter<String> pAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, StudentRepository.PROGRAMMES);
@@ -145,7 +150,32 @@ public class RegisterActivity extends AppCompatActivity {
         } else {
             setRole(false);
             showStep(1);
+            restoreDraft();
         }
+    }
+
+    /** Offline: keep whatever was typed on page 1 so it is not lost. */
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (step == 1 && !staff && !NetworkWatcher.isOnline(this)) saveDraft();
+    }
+
+    private void saveDraft() {
+        RegistrationDraft.save(this, text(inputName), text(inputNumber), text(inputPhone),
+                text(inputNrc), text(inputEmail), text(inputDob));
+    }
+
+    private void restoreDraft() {
+        RegistrationDraft.Draft d = RegistrationDraft.load(this);
+        if (d == null) return;
+        inputName.setText(d.name);
+        inputNumber.setText(d.number);
+        inputPhone.setText(d.phone);
+        inputNrc.setText(d.nrc);
+        inputEmail.setText(d.email);
+        inputDob.setText(d.dateOfBirth);
+        Feedback.show(this, R.string.draft_restored);
     }
 
     @Override
@@ -251,6 +281,12 @@ public class RegisterActivity extends AppCompatActivity {
             firstBad = mark(layoutEmail, emailError(ContactValidator.checkEmail(email)), firstBad);
             if (focus(firstBad)) return;
             details = new AuthService.Registration(name, number, ContactValidator.normalisePhone(phone), nrc, dob, email);
+            // Offline: the code is emailed by the server, so save a draft and finish later
+            if (!NetworkWatcher.isOnline(this)) {
+                saveDraft();
+                Feedback.show(this, R.string.draft_saved_offline);
+                return;
+            }
         }
         sendCode(false);
     }
@@ -288,6 +324,11 @@ public class RegisterActivity extends AppCompatActivity {
                 case EMAIL_IN_USE:
                     showStep(1);
                     fieldError(layoutEmail, R.string.error_email_in_use);
+                    break;
+                case NETWORK_ERROR:
+                    // the phone has a network but the server can't be reached: keep what was typed
+                    if (!staff && step == 1) saveDraft();
+                    showProblem(result);
                     break;
                 default:
                     showProblem(result);
@@ -423,6 +464,8 @@ public class RegisterActivity extends AppCompatActivity {
     private void openHome() {
         Toast.makeText(this, R.string.toast_registered, Toast.LENGTH_SHORT).show();
         StudentRepository.reset(); // start from what the server says for this account
+        SessionState.reset();
+        RegistrationDraft.clear(this);
         Intent intent;
         if (Session.isLecturer()) {
             intent = new Intent(this, LecturerDashboardActivity.class);

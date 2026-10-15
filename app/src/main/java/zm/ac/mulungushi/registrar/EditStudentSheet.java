@@ -47,6 +47,8 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
 
     private Listener listener;
     private Student original; // null when adding a new student
+    /** What the lecturer last tried to save, for "Keep mine" after a conflict. */
+    private String triedName, triedNumber, triedProgramme, triedGroup;
     private TextInputLayout layoutName, layoutNumber, layoutNrc, layoutDob;
     private TextInputEditText inputName, inputNumber, inputNrc, inputDob;
     private boolean busy;
@@ -298,6 +300,10 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
                     outcome -> onAnswer(outcome, getString(R.string.toast_student_added)));
         } else {
             boolean numberChanged = !original.number.equals(number);
+            triedName = name;
+            triedNumber = number;
+            triedProgramme = programme;
+            triedGroup = group;
             RosterApi.get().saveStudent(original, name, number, programme, group,
                     outcome -> onAnswer(outcome, getString(numberChanged ? R.string.toast_number_corrected : R.string.toast_changes_saved)));
         }
@@ -319,7 +325,7 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         if (!isAdded()) return;
         setBusy(false);
         if (outcome.ok) {
-            finishWith(okMessage);
+            finishWith(RosterUi.okText(requireActivity(), outcome, okMessage));
             return;
         }
         if (getActivity() != null && RosterUi.signedOut(getActivity(), outcome)) return;
@@ -341,7 +347,17 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
                 groupFullError.setVisibility(View.VISIBLE);
                 break;
             }
-            case "VERSION_CONFLICT":
+            case "VERSION_CONFLICT": {
+                // Someone else saved this student first. Nothing was overwritten: show both, let the lecturer choose.
+                Student theirs = original == null ? null : StudentRepository.getInstance().findById(original.id);
+                if (theirs != null && triedName != null) {
+                    askKeepMineOrTheirs(theirs);
+                    return;
+                }
+                if (listener != null) listener.onSaved(message);
+                dismiss();
+                return;
+            }
             case "STUDENT_NOT_FOUND":
                 // someone else changed or removed it: close, the roster behind now shows the latest
                 if (listener != null) listener.onSaved(message);
@@ -351,6 +367,33 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
                 formError.setText(message);
                 formError.setVisibility(View.VISIBLE);
         }
+    }
+
+    /** The conflict screen for an edit made online: my version next to the one now on the server. */
+    private void askKeepMineOrTheirs(Student theirs) {
+        String mine = getString(R.string.field_name) + ": " + triedName + "\n"
+                + getString(R.string.field_number) + ": " + triedNumber + "\n"
+                + getString(R.string.field_programme) + ": " + triedProgramme + "\n"
+                + getString(R.string.field_group) + ": " + triedGroup;
+        String server = getString(R.string.field_name) + ": " + theirs.name + "\n"
+                + getString(R.string.field_number) + ": " + theirs.number + "\n"
+                + getString(R.string.field_programme) + ": " + theirs.programme + "\n"
+                + getString(R.string.field_group) + ": " + theirs.group;
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.conflict_dialog_title)
+                .setMessage(getString(R.string.conflict_dialog_message,
+                        getString(R.string.sync_your_change).toUpperCase(), mine,
+                        getString(R.string.sync_current_server).toUpperCase(), server))
+                .setCancelable(false)
+                .setNegativeButton(R.string.action_use_theirs, (d, w) -> finishWith(getString(R.string.toast_used_theirs)))
+                .setPositiveButton(R.string.action_keep_mine, (d, w) -> {
+                    // Save my values again, on top of their version: only what differs from theirs is sent.
+                    original = theirs.copy();
+                    setBusy(true);
+                    RosterApi.get().saveStudent(original, triedName, triedNumber, triedProgramme, triedGroup,
+                            outcome -> onAnswer(outcome, getString(R.string.toast_kept_mine)));
+                })
+                .show();
     }
 
     private void finishWith(String message) {

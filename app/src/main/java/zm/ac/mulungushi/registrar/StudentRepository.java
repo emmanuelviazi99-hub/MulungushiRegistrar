@@ -7,16 +7,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * What the screens show: a copy of what the server last said. The server is the
- * only place anything is changed (see RosterApi); after every change RosterApi
- * reloads and hands the fresh answer to one of the apply...() methods below.
- * Nothing here invents or edits data on its own, so the phone can never show a
- * group, a request or a student that the server does not have.
+ * What the screens show: what the server last said (from the server, or from the
+ * copy saved on the phone when the server can't be reached), with this phone's
+ * waiting changes shown on top and marked (Student.unsynced). RosterApi hands
+ * every answer to one of the apply...() methods below; nothing here invents data.
  *
  *   lecturer  the roster, group totals, open requests, answered history
  *   student   their own record, group totals, their latest requests, their group's members
+ *   both      the outbox: changes waiting to upload, and changes the server refused
  *
- * Used on the main thread only (RosterApi applies answers on the main thread).
+ * Screens that are open can listen (addListener) to redraw when a background
+ * upload brings new data. Used on the main thread only.
  */
 public class StudentRepository {
 
@@ -57,11 +58,15 @@ public class StudentRepository {
     private final List<Student> myGroupMembers = new ArrayList<>();   // student
     private boolean rosterLoaded;
 
-    /** The one demo sync conflict on the lecturer's Sync screen (the prototype's showcase, not server data). */
-    private boolean conflictResolved = false;
-    public boolean isConflictResolved() { return conflictResolved; }
-    public void resolveConflict() { conflictResolved = true; }
-    public int conflictCount() { return conflictResolved ? 0 : 1; }
+    // ---- this phone's changes (the outbox) ----
+    private final List<PendingOp> waiting = new ArrayList<>();
+    private final List<PendingOp> refused = new ArrayList<>();
+    /** When the data on screen came from the server (ms), 0 if never. */
+    private long dataSavedAt;
+    /** The last attempt to reach the server failed: the screens show the saved copy. */
+    private boolean offline;
+
+    private final List<Runnable> listeners = new ArrayList<>();
 
     private StudentRepository() {}
 
@@ -72,7 +77,9 @@ public class StudentRepository {
 
     /** Forget everything (sign-out), so the next person on this phone never sees it. */
     public static synchronized void reset() {
+        List<Runnable> keep = instance == null ? new ArrayList<>() : instance.listeners;
         instance = new StudentRepository();
+        instance.listeners.addAll(keep);
         GROUPS = new String[]{"G01", "G02", "G03", "G04"};
     }
 
@@ -144,6 +151,41 @@ public class StudentRepository {
         return new ArrayList<>(answered);
     }
 
+    /** Changes made on this phone that are not on the server yet, oldest first. */
+    public List<PendingOp> getWaiting() {
+        return new ArrayList<>(waiting);
+    }
+
+    /** Changes the server refused, with its reason, until the person deals with them. */
+    public List<PendingOp> getRefused() {
+        return new ArrayList<>(refused);
+    }
+
+    /** Refused changes: shown as "Action required" on the dashboard and the Sync screen. */
+    public int conflictCount() {
+        return refused.size();
+    }
+
+    public long dataSavedAt() { return dataSavedAt; }
+
+    public boolean isOffline() { return offline; }
+
+    // =====================================================================
+    // listeners: open screens redraw when new data arrives
+    // =====================================================================
+
+    public void addListener(Runnable r) {
+        if (!listeners.contains(r)) listeners.add(r);
+    }
+
+    public void removeListener(Runnable r) {
+        listeners.remove(r);
+    }
+
+    private void changed() {
+        for (Runnable r : new ArrayList<>(listeners)) r.run();
+    }
+
     // =====================================================================
     // apply the server's answers (called by RosterApi on the main thread)
     // =====================================================================
@@ -154,8 +196,8 @@ public class StudentRepository {
         if (counts != null) groupCounts.putAll(counts);
     }
 
-    /** Lecturer: the whole roster plus the open requests, from one reload. */
-    void applyRoster(List<Student> students, List<RequestRecord> pending) {
+    /** Lecturer: the whole roster plus the open requests, with this phone's waiting changes on top. */
+    void applyRoster(List<Student> students, List<RequestRecord> pending, List<PendingOp> ops) {
         roster.clear();
         roster.addAll(students);
         for (RequestRecord r : pending) {
@@ -163,6 +205,7 @@ public class StudentRepository {
             if (s == null) continue;
             attachPending(s, r);
         }
+        Overlay.applyToRoster(roster, groupCounts, ops);
         rosterLoaded = true;
     }
 
@@ -170,6 +213,20 @@ public class StudentRepository {
         answered.clear();
         answered.addAll(records);
         Collections.sort(answered, (a, b) -> Long.compare(b.resolvedAtMillis, a.resolvedAtMillis));
+        changed();
+    }
+
+    /** The outbox and where the data on screen came from. Called last after every reload. */
+    void applySyncState(List<PendingOp> ops, long savedAt, boolean offline) {
+        waiting.clear();
+        refused.clear();
+        for (PendingOp op : ops) {
+            if (op.isWaiting()) waiting.add(op);
+            else if (op.isRefused()) refused.add(op);
+        }
+        dataSavedAt = savedAt;
+        this.offline = offline;
+        changed();
     }
 
     /**
@@ -177,7 +234,17 @@ public class StudentRepository {
      * members. An answered request they have not been told about yet becomes the
      * notice the home screen shows once.
      */
-    void applyMine(Student self, RequestRecord latestGroup, RequestRecord latestNumber, List<Student> members) {
+    void applyMine(Student self, RequestRecord latestGroup, RequestRecord latestNumber, List<Student> members,
+                   List<PendingOp> ops) {
+        if (self == null) {
+            // Nothing saved yet (first start offline): the record from sign-in, with waiting changes.
+            Student fromSignIn = Session.toStudent();
+            if (fromSignIn != null) {
+                Overlay.applyToMe(fromSignIn, ops);
+                me = fromSignIn;
+            }
+            return;
+        }
         for (RequestRecord r : new RequestRecord[]{latestGroup, latestNumber}) {
             if (r == null) continue;
             if (RequestRecord.PENDING.equals(r.status)) {
@@ -188,6 +255,7 @@ public class StudentRepository {
                 self.noticeRequestId = r.requestId;
             }
         }
+        Overlay.applyToMe(self, ops);
         me = self;
         myGroupMembers.clear();
         if (members != null) myGroupMembers.addAll(members);

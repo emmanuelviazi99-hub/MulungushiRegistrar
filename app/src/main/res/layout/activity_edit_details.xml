@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -62,7 +63,8 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:layout_marginBottom="2dp"
                 android:background="@drawable/bg_card_locked"
                 android:gravity="center_vertical"
@@ -139,7 +141,8 @@
                 <Button
                     android:id="@+id/buttonCancelNumberRequest"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:backgroundTint="@color/red_600"
                     android:text="@string/action_cancel_request"
                     android:textAllCaps="false"
@@ -180,6 +183,49 @@
                     tools:ignore="TouchTargetSizeCheck" />
             </LinearLayout>
 
+            <!-- Security: opens the Change password sheet -->
+            <TextView
+                style="@style/Registrar.FieldLabel"
+                android:text="@string/label_security" />
+
+            <LinearLayout
+                android:id="@+id/buttonChangePassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_card_plain"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="56dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_lock"
+                    app:tint="@color/navy_600" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/action_change_password"
+                    android:textColor="@color/navy_900"
+                    android:textSize="15sp" />
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="@color/slate_400" />
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/formError"
                 android:layout_width="match_parent"
@@ -201,7 +247,8 @@
                 <Button
                     android:id="@+id/buttonCancel"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
                     android:backgroundTint="@color/slate_100"
@@ -212,7 +259,8 @@
                 <Button
                     android:id="@+id/buttonSave"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:backgroundTint="@color/navy_600"

@@ -59,6 +59,7 @@ public class EditDetailsActivity extends AppCompatActivity {
         findViewById(R.id.buttonCancel).setOnClickListener(v -> finish());
         findViewById(R.id.buttonSave).setOnClickListener(v -> save());
         findViewById(R.id.buttonRequestCorrection).setOnClickListener(v -> showCorrectionDialog());
+        findViewById(R.id.buttonChangePassword).setOnClickListener(v -> showChangePasswordSheet());
         findViewById(R.id.buttonCancelNumberRequest).setOnClickListener(v -> {
             if (busy) return;
             busy = true;
@@ -67,7 +68,7 @@ public class EditDetailsActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 student = StudentRepository.getInstance().me();
                 render();
-                if (outcome.ok) Feedback.show(this, R.string.toast_request_cancelled_dot);
+                if (outcome.ok) Feedback.show(this, RosterUi.okText(this, outcome, R.string.toast_request_cancelled_dot));
                 else RosterUi.report(this, outcome);
             });
         });
@@ -123,7 +124,7 @@ public class EditDetailsActivity extends AppCompatActivity {
             save.setEnabled(true);
             if (isFinishing() || isDestroyed()) return;
             if (outcome.ok) {
-                Feedback.postForNext(getString(R.string.toast_changes_saved_dot));
+                Feedback.postForNext(RosterUi.okText(this, outcome, R.string.toast_changes_saved_dot));
                 finish();
             } else {
                 RosterUi.report(this, outcome);
@@ -178,7 +179,7 @@ public class EditDetailsActivity extends AppCompatActivity {
                     return;
                 }
                 dialog.dismiss();
-                Feedback.show(this, R.string.toast_request_sent_pending);
+                Feedback.show(this, RosterUi.okText(this, outcome, R.string.toast_request_sent_pending));
                 if (Notifier.ASK.equals(Notifier.pref)) {
                     new android.os.Handler(android.os.Looper.getMainLooper())
                             .postDelayed(() -> Notifier.showSheet(this), 1200);
@@ -192,6 +193,113 @@ public class EditDetailsActivity extends AppCompatActivity {
         });
         dialog.show();
         numberInput.requestFocus();
+    }
+
+    private void showChangePasswordSheet() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View content = getLayoutInflater().inflate(R.layout.sheet_change_password, null);
+        dialog.setContentView(content);
+        View sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (sheet != null) sheet.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setDimAmount(0.4f);
+            dialog.getWindow().setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+        dialog.getBehavior().setSkipCollapsed(true);
+
+        TextInputLayout currentLayout = content.findViewById(R.id.layoutCurrent);
+        TextInputLayout newLayout = content.findViewById(R.id.layoutNew);
+        TextInputLayout confirmLayout = content.findViewById(R.id.layoutConfirm);
+        TextInputEditText currentInput = content.findViewById(R.id.inputCurrent);
+        TextInputEditText newInput = content.findViewById(R.id.inputNew);
+        TextInputEditText confirmInput = content.findViewById(R.id.inputConfirm);
+
+        android.text.TextWatcher clearErrors = new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                currentLayout.setError(null);
+                newLayout.setError(null);
+                confirmLayout.setError(null);
+            }
+            @Override public void afterTextChanged(android.text.Editable e) {}
+        };
+        currentInput.addTextChangedListener(clearErrors);
+        newInput.addTextChangedListener(clearErrors);
+        confirmInput.addTextChangedListener(clearErrors);
+
+        content.findViewById(R.id.buttonSheetCancel).setOnClickListener(v -> dialog.dismiss());
+        content.findViewById(R.id.buttonSheetUpdate).setOnClickListener(v -> {
+            String current = textOf(currentInput);
+            String next = textOf(newInput);
+            String confirm = textOf(confirmInput);
+
+            if (current.isEmpty()) {
+                currentLayout.setError(getString(R.string.error_current_empty));
+                return;
+            }
+            if (next.length() < ContactValidator.MIN_PASSWORD) {
+                newLayout.setError(getString(R.string.error_password_short));
+                return;
+            }
+            if (next.equals(current)) {
+                newLayout.setError(getString(R.string.error_password_same));
+                return;
+            }
+            if (confirm.isEmpty()) {
+                confirmLayout.setError(getString(R.string.error_confirm_empty));
+                return;
+            }
+            if (!next.equals(confirm)) {
+                confirmLayout.setError(getString(R.string.error_password_mismatch));
+                return;
+            }
+
+            v.setEnabled(false); // one request at a time
+            submitPasswordChange(current, next, () -> {
+                dialog.dismiss();
+                Feedback.show(this, R.string.toast_password_changed);
+            }, () -> currentLayout.setError(getString(R.string.error_current_wrong)), () -> v.setEnabled(true));
+        });
+        dialog.show();
+        currentInput.requestFocus();
+    }
+
+    /**
+     * PUT /api/auth/password: the server checks the current password before saving the
+     * new one. On success this phone gets a fresh sign-in and every other phone is
+     * signed out. Needs a connection: a password is never queued offline.
+     */
+    private void submitPasswordChange(String current, String next, Runnable onOk, Runnable onWrongCurrent,
+                                      Runnable always) {
+        Auth.get().changePassword(current, next, result -> {
+            if (isFinishing() || isDestroyed()) return;
+            always.run();
+            switch (result.status) {
+                case OK:
+                    onOk.run();
+                    break;
+                case WRONG_PASSWORD:
+                    onWrongCurrent.run();
+                    break;
+                case SIGNED_OUT:
+                    RosterUi.signedOut(this, new RosterApi.Outcome(false, RosterApi.Outcome.UNAUTHORIZED, null));
+                    break;
+                case NETWORK_ERROR:
+                    Feedback.show(this, R.string.error_password_offline);
+                    break;
+                case RATE_LIMITED:
+                    Feedback.show(this, R.string.error_rate_limited_short);
+                    break;
+                default:
+                    Feedback.show(this, result.message != null ? result.message : getString(R.string.error_server));
+            }
+        });
+    }
+
+    private static String textOf(TextInputEditText input) {
+        return input.getText() == null ? "" : input.getText().toString();
     }
 
     private String nameError(StudentValidator.NameResult r) {

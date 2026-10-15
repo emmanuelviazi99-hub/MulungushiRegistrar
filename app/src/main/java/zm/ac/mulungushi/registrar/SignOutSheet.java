@@ -80,10 +80,17 @@ final class SignOutSheet {
         wlp.bottomMargin = RosterFormat.dp(a, 14);
         root.addView(who, wlp);
 
+        // Changes still waiting to upload are deleted with the rest of this account's data.
+        int waiting = StudentRepository.getInstance().getWaiting().size();
         TextView note = new TextView(a);
-        note.setText(R.string.sign_out_note);
+        if (waiting > 0) {
+            note.setText(a.getResources().getQuantityString(R.plurals.sign_out_waiting, waiting, waiting));
+            note.setTextColor(ContextCompat.getColor(a, R.color.red_600));
+        } else {
+            note.setText(R.string.sign_out_note);
+        }
         note.setTextSize(14f);
-        note.setTextColor(ContextCompat.getColor(a, R.color.slate_500));
+        if (waiting == 0) note.setTextColor(ContextCompat.getColor(a, R.color.slate_500));
         note.setPadding(0, 0, 0, RosterFormat.dp(a, 20));
         root.addView(note);
 
@@ -91,6 +98,10 @@ final class SignOutSheet {
         row.setOrientation(LinearLayout.HORIZONTAL);
 
         Button close = new Button(a);
+
+        close.setMinHeight(RosterFormat.dp(a, 52));
+
+        close.setMinimumHeight(RosterFormat.dp(a, 52));
         close.setText(R.string.action_close);
         close.setAllCaps(false);
         close.setTextSize(15f);
@@ -101,12 +112,16 @@ final class SignOutSheet {
         cb.setCornerRadius(RosterFormat.dp(a, 14));
         close.setBackground(cb);
         close.setStateListAnimator(null);
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(0, RosterFormat.dp(a, 52), 1f);
+        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         closeLp.setMarginEnd(RosterFormat.dp(a, 5));
         row.addView(close, closeLp);
 
         Button out = new Button(a);
-        out.setText(R.string.action_sign_out);
+
+        out.setMinHeight(RosterFormat.dp(a, 52));
+
+        out.setMinimumHeight(RosterFormat.dp(a, 52));
+        out.setText(waiting > 0 ? R.string.action_sign_out_anyway : R.string.action_sign_out);
         out.setAllCaps(false);
         out.setTextSize(15f);
         out.setTypeface(null, Typeface.BOLD);
@@ -116,7 +131,7 @@ final class SignOutSheet {
         ob.setCornerRadius(RosterFormat.dp(a, 14));
         out.setBackground(ob);
         out.setStateListAnimator(null);
-        LinearLayout.LayoutParams outLp = new LinearLayout.LayoutParams(0, RosterFormat.dp(a, 52), 1f);
+        LinearLayout.LayoutParams outLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         outLp.setMarginStart(RosterFormat.dp(a, 5));
         row.addView(out, outLp);
         root.addView(row);
@@ -124,11 +139,17 @@ final class SignOutSheet {
         close.setOnClickListener(v -> dialog.dismiss());
         out.setOnClickListener(v -> {
             dialog.dismiss();
-            Auth.get().signOut(); // forget the token on this phone
-            Intent i = new Intent(a, LoginActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            a.startActivity(i);
-            a.finish();
+            out.setEnabled(false);
+            // Delete this account's saved data and waiting changes from the phone, then the token.
+            RosterApi.get().forgetAccount(() -> {
+                Auth.get().signOut();
+                Notifier.reset(a);
+                StudentRepository.reset();
+                Intent i = new Intent(a, LoginActivity.class);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                a.startActivity(i);
+                a.finish();
+            });
         });
 
         dialog.setContentView(root);

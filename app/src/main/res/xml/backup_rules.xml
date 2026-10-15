@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Backup rules for Android 11 and older (see data_extraction_rules.xml for 12+).
-     The sign-in token (shared_prefs/session.xml) never leaves the phone. -->
+     The sign-in token (shared_prefs/session.xml) and the saved roster and queued
+     changes (databases/registrar.db) never leave the phone. -->
 <full-backup-content>
     <exclude domain="sharedpref" path="session.xml" />
+    <exclude domain="database" path="registrar.db" />
+    <exclude domain="sharedpref" path="registration_draft.xml" />
 </full-backup-content>

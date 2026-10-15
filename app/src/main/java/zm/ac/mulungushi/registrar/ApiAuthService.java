@@ -143,6 +143,20 @@ public final class ApiAuthService implements AuthService {
         });
     }
 
+    // ---------------------------------------------------------------- change password
+
+    @Override
+    public void changePassword(String currentPassword, String newPassword, Callback callback) {
+        call(callback, () -> {
+            JSONObject body = new JSONObject()
+                    .put("currentPassword", currentPassword)
+                    .put("newPassword", newPassword);
+            ApiClient.Response res = ApiClient.put("/auth/password", body, Session.token());
+            if (res.status == 401) return Result.of(Status.SIGNED_OUT);
+            return signedIn(res); // the answer carries the new token: keep this phone signed in
+        });
+    }
+
     // ---------------------------------------------------------------- shared
 
     private void verify(String path, String email, String code, Callback callback) {
@@ -177,6 +191,7 @@ public final class ApiAuthService implements AuthService {
             case "CODE_EXPIRED":        return Result.of(Status.CODE_EXPIRED);
             case "NOT_VERIFIED":        return Result.of(Status.NOT_VERIFIED);
             case "INVALID_CREDENTIALS": return Result.of(Status.BAD_CREDENTIALS);
+            case "WRONG_PASSWORD":      return Result.of(Status.WRONG_PASSWORD);
             case "RESEND_TOO_SOON":
                 return new Result(Status.RESEND_TOO_SOON, 0, res.body.optInt("retryAfterSeconds", RESEND_SECONDS), message);
             case "DELIVERY_FAILED":     return Result.of(Status.DELIVERY_FAILED);

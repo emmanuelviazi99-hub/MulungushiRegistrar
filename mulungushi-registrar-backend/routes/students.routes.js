@@ -9,6 +9,7 @@ const mutationController = require('../controllers/mutation.controller');
 const asyncHandler = require('../utils/asyncHandler');
 const { requireAuth } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
+const { idempotent } = require('../middleware/idempotency');
 const {
   validateCreateStudent,
   validateUpdateStudent,
@@ -25,6 +26,7 @@ router.put(
   '/me',
   requireAuth,
   requireRole('STUDENT'),
+  idempotent,
   validateUpdateStudent,
   handleValidation,
   asyncHandler(studentController.updateMe)
@@ -45,6 +47,7 @@ router.post(
   '/',
   requireAuth,
   requireRole('LECTURER'),
+  idempotent,
   validateCreateStudent,
   handleValidation,
   asyncHandler(studentController.create)
@@ -54,11 +57,12 @@ router.put(
   '/:id',
   requireAuth,
   requireRole('LECTURER'),
+  idempotent,
   validateUpdateStudent,
   handleValidation,
   asyncHandler(studentController.update)
 );
-router.delete('/:id', requireAuth, requireRole('LECTURER'), asyncHandler(studentController.remove));
+router.delete('/:id', requireAuth, requireRole('LECTURER'), idempotent, asyncHandler(studentController.remove));
 
 router.post(
   '/:id/group',

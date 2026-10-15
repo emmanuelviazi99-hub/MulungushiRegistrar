@@ -32,7 +32,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 /**
  * The prototype's "Get notified" flow: after a student sends a request we offer
  * alerts; if they allow, an answer to their request rings, buzzes and posts a
- * real Android notification. The choice is kept for this app run only, like the prototype.
+ * real Android notification. "Turn on" is remembered on this phone and also starts
+ * AnswerCheckWorker, so answers are announced while the app is closed too.
+ * "Not now" lasts for this app run, like the prototype.
  */
 final class Notifier {
 
@@ -47,7 +49,41 @@ final class Notifier {
     /** Set when a request was just sent, so Home offers the sheet once it is showing. */
     static boolean askSoon = false;
 
+    private static android.content.SharedPreferences prefs;
+
     private Notifier() {}
+
+    /** Called from RegistrarApp: restores "on", and keeps the background check running for a student. */
+    static void init(Context context) {
+        prefs = context.getApplicationContext().getSharedPreferences("notifier", Context.MODE_PRIVATE);
+        if (ON.equals(prefs.getString("pref", null))) {
+            pref = ON;
+            if (Session.isStudent()) AnswerCheckWorker.schedule(context);
+        }
+    }
+
+    private static void turnOn(Context c) {
+        pref = ON;
+        if (prefs != null) prefs.edit().putString("pref", ON).apply();
+        if (Session.isStudent()) AnswerCheckWorker.schedule(c);
+    }
+
+    /** Sign-out: the next person on this phone decides for themselves. */
+    static void reset(Context c) {
+        pref = ASK;
+        if (prefs != null) prefs.edit().remove("pref").apply();
+        AnswerCheckWorker.cancel(c);
+    }
+
+    /** "Your group change was approved." and the like. */
+    static String noticeText(Context c, String status, String subject) {
+        boolean approved = StudentRepository.RequestRecord.APPROVED.equals(status);
+        boolean group = StudentRepository.RequestRecord.GROUP.equals(subject);
+        int res = group
+                ? (approved ? R.string.notice_group_approved : R.string.notice_group_declined)
+                : (approved ? R.string.notice_number_approved : R.string.notice_number_declined);
+        return c.getString(res);
+    }
 
     // ---- the sheet ----
 
@@ -99,6 +135,10 @@ final class Notifier {
         root.addView(body);
 
         Button allow = new Button(a);
+
+        allow.setMinHeight(RosterFormat.dp(a, 52));
+
+        allow.setMinimumHeight(RosterFormat.dp(a, 52));
         allow.setText(R.string.notify_allow);
         allow.setAllCaps(false);
         allow.setTextSize(16f);
@@ -109,11 +149,15 @@ final class Notifier {
         ab.setCornerRadius(RosterFormat.dp(a, 14));
         allow.setBackground(ab);
         allow.setStateListAnimator(null);
-        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(-1, RosterFormat.dp(a, 52));
+        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT);
         alp.bottomMargin = RosterFormat.dp(a, 8);
         root.addView(allow, alp);
 
         Button later = new Button(a);
+
+        later.setMinHeight(RosterFormat.dp(a, 52));
+
+        later.setMinimumHeight(RosterFormat.dp(a, 52));
         later.setText(R.string.notify_later);
         later.setAllCaps(false);
         later.setTextSize(16f);
@@ -121,10 +165,10 @@ final class Notifier {
         later.setTextColor(ContextCompat.getColor(a, R.color.navy_600));
         later.setBackgroundColor(Color.TRANSPARENT);
         later.setStateListAnimator(null);
-        root.addView(later, new LinearLayout.LayoutParams(-1, RosterFormat.dp(a, 52)));
+        root.addView(later, new LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         allow.setOnClickListener(v -> {
-            pref = ON;
+            turnOn(a);
             dialog.dismiss();
             requestPermissionIfNeeded(a);
             Feedback.show(a, R.string.toast_notifications_on);

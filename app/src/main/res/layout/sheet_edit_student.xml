@@ -204,7 +204,8 @@
             <Button
                 android:id="@+id/buttonCancel"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:backgroundTint="@color/slate_100"
@@ -215,7 +216,8 @@
             <Button
                 android:id="@+id/buttonSave"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
                 android:backgroundTint="@color/navy_600"

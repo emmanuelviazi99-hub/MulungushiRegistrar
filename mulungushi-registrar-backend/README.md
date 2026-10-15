@@ -21,8 +21,9 @@ What it does:
 - Students ask for a group change or a student-number correction (and can
   withdraw it while it is open); a lecturer approves or declines, or simply
   makes the change on the roster sheet, which answers the request too.
-- Offline changes from the app are replayed safely (`operationId`), never
-  applied twice.
+- The app saves changes on the phone and uploads them when it is online.
+  Every change carries an id (`Idempotency-Key`), so a change sent twice after
+  a lost answer is applied once.
 
 ---
 
@@ -185,6 +186,7 @@ middleware/
   role.js                  STUDENT / LECTURER only routes
   validation.js            field rules (express-validator)
   rateLimit.js             per-address limits on code requests and logins
+  idempotency.js           Idempotency-Key: a change sent twice is applied once
   errorHandler.js          every error -> { success:false, error, message }
 routes/                    URL -> controller, one file per area
 controllers/               thin: read the request, call a service, send the reply
@@ -299,9 +301,14 @@ someone else.
 
 ### Safe retries
 
-When the app replays a change after a lost response, it sends the same
-`operationId`. The server recognises it and returns the stored answer without
-doing the work again. The same id with different content is refused.
+The app saves each change on the phone first and uploads it when it can, so a
+change may reach the server twice (the first answer was lost on the way back).
+Each change carries a UUID the phone gave it, sent as the `Idempotency-Key`
+header (`middleware/idempotency.js`; `/students/mutate` and
+`/students/:id/group` take it as `operationId` in the body). The first request
+does the work and its answer is stored in `operation_receipts`; a repeat gets
+that same answer back and changes nothing. The same id with different content,
+or from another account, is refused (`OPERATION_ID_REUSED`).
 
 ## 9. Why the database looks the way it does
 

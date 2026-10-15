@@ -17,6 +17,9 @@ Protected endpoints need the token from sign-in or sign-up:
 Authorization: Bearer <token>
 ```
 
+Every request that changes something may also carry an **Idempotency-Key**
+(see "Changes sent more than once" below). The app always sends one.
+
 The examples below were captured from the running server.
 
 | Method | Endpoint | Who | Purpose |
@@ -32,6 +35,7 @@ The examples below were captured from the running server.
 | POST | `/auth/password/reset` | anyone | Code + new password |
 | POST | `/auth/login` | anyone | Student number or email + password |
 | POST | `/auth/logout` | signed in | The app discards its token |
+| PUT | `/auth/password` | signed in | Change password: current + new |
 | GET | `/students/me` | student | Own record, including own NRC and birth date |
 | PUT | `/students/me` | student | Change own name / programme |
 | GET | `/students` | lecturer | Search, filter, page through the roster |
@@ -53,6 +57,41 @@ The examples below were captured from the running server.
 | GET | `/number-correction-requests` | lecturer | The queue |
 | PUT | `/number-correction-requests/:id/approve` | lecturer | Approve |
 | PUT | `/number-correction-requests/:id/decline` | lecturer | Decline |
+
+---
+
+## Changes sent more than once (`Idempotency-Key`)
+
+The app saves each change on the phone first and uploads it when it can (see
+`STORAGE_AND_SYNC.md` in the project root). If the network drops after the server
+has saved a change but before the answer arrives, the app sends the same change
+again. So that it is applied **once**, the app gives every change a UUID when the
+person makes it and sends it on every try:
+
+```
+Idempotency-Key: 6a1f6f0e-3c2b-4d0e-9a59-0d4b1f7e2c11
+```
+
+The first request with a key does the change and the server stores its answer.
+Any later request with the same key gets **that same answer back** (with the header
+`Idempotent-Replayed: true`) and changes nothing. So a retried "move to G02"
+moves once, a retried approval answers `APPROVED` rather than
+`REQUEST_NOT_FOUND`, and a retried edit is not mistaken for someone else's newer
+change (`VERSION_CONFLICT`). Refusals are stored too: a retried `GROUP_FULL` is
+answered `GROUP_FULL` again. Server faults (5xx) are not stored, so a retry runs
+for real.
+
+Accepted on: `POST /students`, `PUT /students/:id`, `DELETE /students/:id`,
+`PUT /students/me`, `POST /group-requests`, `POST /number-correction-requests`,
+`PUT /…/:id/approve`, `PUT /…/:id/decline`, `DELETE /my-requests/:kind`.
+(`POST /students/:id/group` and `POST /students/mutate` take the same id as
+`operationId` in the body.) Without the header a request runs normally.
+
+| Answer | When |
+|---|---|
+| 422 `VALIDATION_ERROR` | The key is not a UUID |
+| 422 `OPERATION_ID_REUSED` | The key was already used for a different request, or by another account |
+| 409 `CONFLICT` | The first request with this key is still running; retry in a moment. A request that died half-way (server stopped) releases its key after 2 minutes |
 
 ---
 
@@ -204,6 +243,23 @@ working. Same code errors as above.
 { "success": false, "error": "INVALID_CREDENTIALS",
   "message": "Incorrect student number/email or password. After 5 wrong attempts the account is locked for 15 minutes." }
 ```
+
+### `PUT /auth/password` (signed in)
+"Change password" in Edit my details.
+
+```json
+// Request
+{ "currentPassword": "Old#Password1", "newPassword": "New#Password2" }
+
+// 200 — same body as /auth/login, with a NEW token: keep it
+{ "success": true, "token": "eyJhbGciOiJIUzI1NiIs…", "account": { … }, "student": { … } }
+```
+
+The old password stops working at once, and every other phone's sign-in ends
+(their tokens are older than the change). Errors: 400 `WRONG_PASSWORD` (the
+current password is wrong; wrong guesses count towards the same 5-tries lock as
+sign-in), 422 `VALIDATION_ERROR` (new password 8–72 characters and different
+from the current one), 401 `UNAUTHORIZED`.
 
 ### `POST /auth/logout`
 `200 { "success": true, "status": "OK" }`. Tokens are not stored on the server;

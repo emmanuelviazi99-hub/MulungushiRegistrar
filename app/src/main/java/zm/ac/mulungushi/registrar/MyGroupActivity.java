@@ -13,11 +13,30 @@ import java.util.List;
 /** Ported from StudentProfile. Shows the signed-in student and their groupmates. */
 public class MyGroupActivity extends AppCompatActivity {
 
+    private final Runnable redraw = () -> {
+        Student me = StudentRepository.getInstance().me();
+        if (me != null && !isFinishing() && !isDestroyed()) render(me);
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StudentRepository.getInstance().addListener(redraw);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StudentRepository.getInstance().removeListener(redraw);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_group);
         ConnectivityBanner.attach(this);
+        LiveRefresh.student(this);
+        PullToRefresh.student(this);
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.my_group_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -33,11 +52,9 @@ public class MyGroupActivity extends AppCompatActivity {
         // the group and its members as the server has them now
         RosterApi.get().loadMine(outcome -> {
             if (isFinishing() || isDestroyed()) return;
-            if (!outcome.ok) {
-                RosterUi.refreshFailed(this, outcome, false);
-                return;
-            }
-            render(StudentRepository.getInstance().me());
+            if (!outcome.ok) RosterUi.refreshFailed(this, outcome, false);
+            Student me = StudentRepository.getInstance().me();
+            if (me != null) render(me);
         });
     }
 

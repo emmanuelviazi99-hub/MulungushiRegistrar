@@ -76,7 +76,21 @@ final class ApiClient {
         return send("DELETE", path, null, token);
     }
 
+    /**
+     * A change from the phone's queue: the same idempotencyKey is sent on every try, so
+     * the server applies the change once and answers a repeat with its first answer.
+     */
+    static Response send(String method, String path, JSONObject json, String token, String idempotencyKey)
+            throws IOException, JSONException {
+        return request(method, path, json, token, idempotencyKey);
+    }
+
     private static Response send(String method, String path, JSONObject json, String token)
+            throws IOException, JSONException {
+        return request(method, path, json, token, null);
+    }
+
+    private static Response request(String method, String path, JSONObject json, String token, String idempotencyKey)
             throws IOException, JSONException {
         HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + path).openConnection();
         try {
@@ -85,6 +99,7 @@ final class ApiClient {
             conn.setReadTimeout(READ_TIMEOUT_MS);
             conn.setRequestProperty("Accept", "application/json");
             if (token != null && !token.isEmpty()) conn.setRequestProperty("Authorization", "Bearer " + token);
+            if (idempotencyKey != null) conn.setRequestProperty("Idempotency-Key", idempotencyKey);
             if (json != null) {
                 byte[] bytes = json.toString().getBytes(StandardCharsets.UTF_8);
                 conn.setDoOutput(true);

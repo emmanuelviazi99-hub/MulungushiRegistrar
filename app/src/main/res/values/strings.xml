@@ -172,7 +172,6 @@
     <string name="pill_syncing">Syncing</string>
     <string name="pill_synced">Synced</string>
     <string name="pill_action">Action required</string>
-    <string name="name_programme_edit_title">Name and programme edit</string>
     <string name="sync_up_to_date_banner">Your changes are up to date. You\'ll only see your own records here.</string>
     <string name="sync_footnote_student">Each status is conveyed by label text, not colour alone. You see only your own record here.</string>
     <string name="sync_footnote_lecturer">Each status is conveyed by label text, not colour alone. The full class queue is lecturer-only.</string>
@@ -185,7 +184,7 @@
     <string name="pending_requests_count">%1$d pending</string>
     <string name="to_arrow_fmt">%1$s → %2$s</string>
     <string name="stat_groups_full">Group full</string>
-    <string name="stat_conflicts">Conflicts</string>
+    <string name="stat_conflicts">To review</string>
     <string name="section_group_occupancy">Group occupancy</string>
     <string name="section_quick_actions">Quick actions</string>
     <string name="action_requests_sub_none">Nothing waiting</string>
@@ -193,10 +192,6 @@
     <string name="action_add_student_title">Add a student</string>
     <string name="action_add_student_sub">Manual entry, assign a group</string>
 
-    <plurals name="sync_waiting_banner_plural">
-        <item quantity="one">%1$d change waiting to sync. You\'ll only see your own records here.</item>
-        <item quantity="other">%1$d changes waiting to sync. You\'ll only see your own records here.</item>
-    </plurals>
     <string name="notify_title">Get notified</string>
     <string name="notify_body">Hear or feel an alert when your request is answered.</string>
     <string name="notify_allow">Allow notifications</string>
@@ -210,7 +205,12 @@
     <string name="notice_group_declined">Your group request was declined.</string>
     <string name="notice_number_approved">Your number correction was approved.</string>
     <string name="notice_number_declined">Your number correction was declined.</string>
-    <string name="sign_out_note">Unsynced changes stay saved on this device and sync next time you sign in. Access is cleared when you sign out.</string>
+    <string name="sign_out_note">Your saved data is removed from this phone when you sign out. Everything is kept on the server.</string>
+    <plurals name="sign_out_waiting">
+        <item quantity="one">1 change on this phone hasn\'t uploaded yet. Signing out deletes it. Connect and open the Sync tab to upload it first.</item>
+        <item quantity="other">%1$d changes on this phone haven\'t uploaded yet. Signing out deletes them. Connect and open the Sync tab to upload them first.</item>
+    </plurals>
+    <string name="action_sign_out_anyway">Sign out anyway</string>
     <string name="action_close">Close</string>
     <string name="account_student_fmt">Student · %1$s</string>
     <string name="account_lecturer_fmt">Lecturer · %1$s</string>
@@ -226,6 +226,9 @@
     <string name="action_review">Review</string>
     <string name="review_hint">Review opens the student record with this number filled in. Nothing changes until you save.</string>
     <string name="offline_banner">You are offline. Changes save on this device and sync later.</string>
+    <string name="offline_banner_saved">You are offline. Showing what was saved at %1$s. Changes save on this device and sync later.</string>
+    <string name="server_down_banner">Can\'t reach the server. Changes save on this device and sync later.</string>
+    <string name="server_down_banner_saved">Can\'t reach the server. Showing what was saved at %1$s. Changes save on this device and sync later.</string>
     <string name="back_online">Back online. Syncing.</string>
     <string name="welcome_lecturer_fmt">Welcome, %1$s</string>
     <string name="action_requests_title_group">Group requests</string>
@@ -235,30 +238,12 @@
     <string name="sync_group_transfer_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your current group stays active until then.</string>
     <string name="sync_number_title">Number correction → %1$s</string>
     <string name="sync_number_note">Requested %1$s. Your lecturer must confirm before it takes effect. Your number stays %2$s until then.</string>
-    <string name="sync_edit_synced_note">Saved and confirmed by the server.</string>
     <string name="group_pending_confirm">Your lecturer must confirm it.</string>
     <string name="group_stay_fmt">You stay in %1$s until then.</string>
-    <string name="sync_syncing_title">Group change — Bwalya Phiri</string>
-    <string name="sync_syncing_note">Retrying with the same operation ID — safe to repeat, cannot double-apply.</string>
-    <string name="sync_conflict_title">Conflicting edit — Mutinta Banda</string>
-    <string name="sync_conflict_note">Their offline edit and the current server record differ. Nothing has been overwritten.</string>
-    <string name="sync_conflict_resolved_note">Resolved — local and server records now match.</string>
-    <string name="sync_offline_proposal">Offline proposal</string>
     <string name="sync_current_server">Current on server</string>
-    <string name="sync_proposal_body">Programme: DS\nGroup: G03</string>
-    <string name="sync_server_body">Programme: DS\nGroup: G02 (you moved this student)</string>
-    <string name="action_keep_proposal">Keep proposal</string>
-    <string name="action_accept_server">Accept server version</string>
-    <string name="toast_kept_proposal">Kept the offline proposal</string>
-    <string name="toast_accepted_server">Accepted the server version</string>
-    <string name="pill_resolved">Resolved</string>
-    <string name="sync_warn_banner">Deleting Natasha Zulu removed her offline edit\'s target — resurrection was blocked automatically.</string>
-    <string name="sync_ok_banner">2 changes synced successfully across the roster. Local and server records now match.</string>
-    <string name="sync_waiting_one">1 change waiting to sync. You\'ll only see your own records here.</string>
-    <string name="sync_waiting_many">%1$d changes waiting to sync. You\'ll only see your own records here.</string>
     <plurals name="conflicts_to_review">
-        <item quantity="one">%1$d conflict to review</item>
-        <item quantity="other">%1$d conflicts to review</item>
+        <item quantity="one">%1$d change to review</item>
+        <item quantity="other">%1$d changes to review</item>
     </plurals>
 
     <!-- ===== Register with an emailed code (3 pages) and Forgot password (email, code, new password) ===== -->
@@ -314,6 +299,9 @@
     <string name="error_not_on_roster">That student number or NRC is already on the university record with different details. Check them, or ask your lecturer.</string>
     <string name="error_email_in_use">That email is already registered. Try signing in instead.</string>
     <string name="error_not_verified">Please verify your code first.</string>
+    <string name="toast_saved_offline">Saved on this phone. It will upload when you\'re back online.</string>
+    <string name="offline_showing_saved">You\'re offline. Showing what was saved on this phone at %1$s.</string>
+    <string name="label_waiting_upload">Waiting to upload</string>
     <string name="error_network">Couldn\'t reach the server. Check your connection and try again.</string>
 
     <!-- Sign-up: student or lecturer, date of birth, employee ID -->
@@ -347,4 +335,102 @@
     <string name="error_student_nrc_empty">Enter the student\'s NRC.</string>
     <string name="error_student_dob_empty">Choose the student\'s date of birth.</string>
     <string name="add_student_identity_note">The student will type this same number, NRC and date of birth to create their account.</string>
+
+    <!-- Sync screen: phone storage and the outbox -->
+    <string name="sync_storage_title">Saved on this phone</string>
+    <string name="sync_storage_saved">Up to date with the server as of %1$s.</string>
+    <string name="sync_storage_saved_offline">Can\'t reach the server. Showing what was saved at %1$s.</string>
+    <string name="sync_storage_never">Nothing saved on this phone yet. Connect to load your data.</string>
+    <plurals name="sync_storage_waiting">
+        <item quantity="one">1 change waiting to upload.</item>
+        <item quantity="other">%1$d changes waiting to upload.</item>
+    </plurals>
+    <string name="sync_still_waiting">Still can\'t reach the server. Your changes stay saved on this phone.</string>
+    <string name="sync_all_uploaded">Everything is uploaded.</string>
+    <string name="sync_all_uploaded_lecturer">Everything on this phone is uploaded. The roster matches the server.</string>
+    <plurals name="sync_waiting_upload">
+        <item quantity="one">1 change is saved on this phone and waiting to upload.</item>
+        <item quantity="other">%1$d changes are saved on this phone and waiting to upload.</item>
+    </plurals>
+    <plurals name="sync_refused_banner">
+        <item quantity="one">1 change was not saved on the server. Check it above.</item>
+        <item quantity="other">%1$d changes were not saved on the server. Check them above.</item>
+    </plurals>
+    <plurals name="sync_waiting_short">
+        <item quantity="one">1 change waiting to upload</item>
+        <item quantity="other">%1$d changes waiting to upload</item>
+    </plurals>
+    <string name="sync_nothing_waiting">Everything is uploaded</string>
+    <string name="sync_refused_heading">Not saved: %1$s</string>
+    <string name="sync_conflict_heading">Changed by someone else: %1$s</string>
+    <string name="sync_conflict_explain">Someone else saved this student before your change reached the server. Nothing was overwritten. Choose which version to keep.</string>
+    <string name="sync_conflict_gone">Someone else changed this record first, so your change was not saved.</string>
+    <string name="sync_your_change">Your change</string>
+    <string name="action_keep_mine">Keep mine</string>
+    <string name="action_keep_mine_desc">Keep my change: %1$s</string>
+    <string name="action_use_theirs">Use theirs</string>
+    <string name="action_use_theirs_desc">Drop my change and keep the server\'s version: %1$s</string>
+    <string name="action_ok_remove">OK</string>
+    <string name="toast_kept_mine">Your change was saved over theirs.</string>
+    <string name="toast_used_theirs">Kept the version on the server.</string>
+    <string name="conflict_dialog_title">Someone else just changed this student</string>
+    <string name="conflict_dialog_message">Their save reached the server a moment before yours. Nothing was overwritten.\n\n%1$s\n%2$s\n\n%3$s\n%4$s</string>
+    <string name="field_name">Name</string>
+    <string name="field_number">Number</string>
+    <string name="field_programme">Programme</string>
+    <string name="field_group">Group</string>
+
+    <!-- TalkBack -->
+    <string name="a11y_student_row">%1$s, student number %2$s, %3$s, %4$s</string>
+
+    <!-- UI/UX team (Joshua): change password, roster states, share summary, registration draft, TalkBack, sync page -->
+    <string name="label_security">Security</string>
+    <string name="action_change_password">Change password</string>
+    <string name="change_password_hint">Enter your current password, then choose a new one.</string>
+    <string name="label_current_password">Current password</string>
+    <string name="hint_current_password">Enter your current password</string>
+    <string name="error_current_empty">Enter your current password.</string>
+    <string name="error_password_same">Choose a password different from your current one.</string>
+    <string name="error_current_wrong">Your current password isn\'t right.</string>
+    <string name="toast_password_changed">Password changed.</string>
+    <string name="error_password_offline">Changing your password needs a connection. Nothing was changed.</string>
+    <string name="error_rate_limited_short">Too many attempts. Wait a few minutes, then try again.</string>
+    <string name="roster_showing">Showing %1$d of %2$d</string>
+    <string name="roster_show_more">Show more</string>
+    <string name="session_expired_title">Your session has expired</string>
+    <string name="session_expired_body">Sign in again to keep working. Changes saved on this phone are kept.</string>
+    <string name="session_expired_action">Sign in again</string>
+    <string name="roster_cached_notice">Limited cached results. Showing students saved on this phone. Reconnect for the full list.</string>
+    <string name="share_summary_button">Share group summary</string>
+    <string name="share_summary_title">Lab group summary</string>
+    <string name="share_chooser_title">Share group summary</string>
+    <string name="group_summary_line">%1$s: %2$d of %3$d places filled</string>
+    <string name="share_failed">No app available to share with</string>
+    <string name="draft_saved_offline">You\'re offline. Details saved as a draft. Continue when you\'re back online.</string>
+    <string name="draft_restored">Draft restored. Check your details, then continue.</string>
+    <string name="a11y_account_menu">Account menu</string>
+    <string name="a11y_programme_filter">Programme filter: %1$s</string>
+    <string name="a11y_group_filter">Group filter: %1$s</string>
+    <string name="action_sync_now">Sync now</string>
+    <string name="action_syncing_short">Syncing…</string>
+    <string name="sync_last_synced_label">Last synced: %1$s</string>
+    <string name="sync_last_synced_never">Not synced yet</string>
+    <string name="sync_last_synced_just_now">Just now</string>
+    <plurals name="sync_minutes_ago">
+        <item quantity="one">%1$d minute ago</item>
+        <item quantity="other">%1$d minutes ago</item>
+    </plurals>
+    <plurals name="sync_hours_ago">
+        <item quantity="one">%1$d hour ago</item>
+        <item quantity="other">%1$d hours ago</item>
+    </plurals>
+    <plurals name="sync_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="sync_saved_locally_note">Saved on this phone at %1$s. It uploads by itself when you\'re online, even if you close the app.</string>
+    <string name="sync_pending_note">Saved on this phone at %1$s. Couldn\'t reach the server yet; it retries by itself, or tap Sync now.</string>
+    <string name="name_programme_edit_title">Name and programme edit</string>
+    <string name="sync_syncing_now_note">Sending this change to the server now…</string>
+    <string name="sync_edit_synced_note">Saved and confirmed by the server.</string>
 </resources>

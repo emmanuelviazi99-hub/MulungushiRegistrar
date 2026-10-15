@@ -44,18 +44,33 @@ mulungushi-registrar-backend/  the backend the app talks to (see its README.md)
 Sign-in, sign-up and forgotten password all go to the backend (`ApiAuthService`). If the
 backend cannot be reached the app says so; nobody is signed in.
 
-## What the app keeps on the phone
+## Storage: on the phone and on the server
 
-Nothing that matters. The roster, lab groups, group-change requests and number
-corrections all live on the server (`RosterApi` in the app). Every screen loads
-fresh data when it opens, and every change is saved on the server first; the
-phone only keeps a copy of the last answer (`StudentRepository`) so a screen
-can still show something when the server can't be reached. So when a lecturer
-puts a student in a group, the student sees it the next time their screen
-loads, on any phone.
+The roster, groups and requests live on the server (MySQL). The app keeps a copy
+in a Room database on the phone and saves every change there first, so it works
+offline: changes are labelled "Waiting to upload" and WorkManager uploads them
+when the phone is back online, each exactly once. If someone else changed the
+same student first, the app shows both versions and asks which to keep. How it
+works and how to show it on a phone: [`STORAGE_AND_SYNC.md`](STORAGE_AND_SYNC.md).
 
-The only fixed demo content left is the lecturer's **Sync status** screen,
-which shows the prototype's example rows (syncing, conflict, notices).
+Screens reload every 30 seconds while open and on a pull-down; students who turn
+alerts on get a notification when a lecturer answers, even with the app closed.
+
+## Accessibility and UI details
+
+The UI/UX team's work (Joshua) is merged on top of the server and storage code:
+change password in Edit my details, the roster keeping search and filters on
+rotation, "Show more" pagination, loading and "session expired" states, a
+"limited cached results" label, a Share group summary button (counts only, no
+names), a registration draft kept on the phone when offline, the keyboard no
+longer covering sign-up fields, Sync page "Last synced" and Sync now, and no
+"Unassigned" choice in a student's group-change picker.
+
+
+Statuses are said in words, not by colour alone. TalkBack reads each roster row
+as one sentence and announces search results; decorative icons are skipped.
+Buttons, tabs and bars grow with the phone's font size (they have minimum
+heights, not fixed ones), so text isn't cut off at large sizes.
 
 ## Never commit
 

@@ -104,7 +104,8 @@
                 <Button
                     android:id="@+id/buttonCancelRequest"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:backgroundTint="@color/red_600"
                     android:text="@string/action_cancel_request"
                     android:textColor="@color/white"
@@ -153,7 +154,8 @@
                 <Button
                     android:id="@+id/buttonSubmit"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:backgroundTint="@color/slate_100"
                     android:enabled="false"
                     android:text="@string/action_choose_group_first"

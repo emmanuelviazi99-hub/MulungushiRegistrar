@@ -31,6 +31,8 @@ final class RosterFormat {
         if (v == null) return;
         v.setText(initialsOf(name));
         v.setVisibility(View.VISIBLE);
+        v.setContentDescription(a.getString(R.string.a11y_account_menu));
+        Accessibility.asButton(v);
         v.setOnClickListener(x -> SignOutSheet.show(a, name, detail));
     }
 
@@ -39,6 +41,8 @@ final class RosterFormat {
         TextView v = a.findViewById(R.id.buttonSignOut);
         if (v == null) return;
         v.setText(initialsOf(name));
+        v.setContentDescription(a.getString(R.string.a11y_account_menu));
+        Accessibility.asButton(v);
         v.setOnClickListener(x -> SignOutSheet.show(a, name, detail));
     }
 

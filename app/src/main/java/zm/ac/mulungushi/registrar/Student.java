@@ -37,6 +37,8 @@ public class Student {
     /** "group" or "number" - which request the notice is about. */
     public String noticeSubject;
     public int noticeRequestId;
+    /** Changed on this phone and not on the server yet (waiting to upload). Shown with a label. */
+    public boolean unsynced;
 
     public Student(String id, String name, String number, String programme, String group, boolean active) {
         this.id = id;
@@ -67,6 +69,7 @@ public class Student {
         c.noticeKind = noticeKind;
         c.noticeSubject = noticeSubject;
         c.noticeRequestId = noticeRequestId;
+        c.unsynced = unsynced;
         return c;
     }
 }

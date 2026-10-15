@@ -39,7 +39,8 @@
         <activity android:name=".StudentHomeActivity" android:exported="false" />
         <activity android:name=".LecturerRosterActivity" android:exported="false" />
         <activity android:name=".ForgotPasswordActivity" android:exported="false" />
-        <activity android:name=".RegisterActivity" android:exported="false" />
+        <activity android:name=".RegisterActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".MyGroupActivity" android:exported="false" />
         <activity android:name=".GroupChangeActivity" android:exported="false" />
         <activity android:name=".EditDetailsActivity" android:exported="false" />

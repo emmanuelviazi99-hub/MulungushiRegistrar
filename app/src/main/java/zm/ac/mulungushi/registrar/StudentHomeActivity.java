@@ -14,12 +14,22 @@ public class StudentHomeActivity extends AppCompatActivity {
 
     private Student student;
     private boolean warned;
+    /** Redraws when a background upload (WorkManager) brings new data while this screen is open. */
+    private final Runnable redraw = () -> {
+        Student latest = StudentRepository.getInstance().me();
+        if (latest == null || isFinishing() || isDestroyed()) return;
+        student = latest;
+        render();
+        if (student.noticeKind != null) deliverNotice(); // a lecturer answered while this screen was open
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_student_home);
         ConnectivityBanner.attach(this);
+        LiveRefresh.student(this);
+        PullToRefresh.student(this);
 
         student = RosterUi.meOrSignIn(this);
         if (student == null) return;
@@ -38,6 +48,7 @@ public class StudentHomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (student == null) return;
+        StudentRepository.getInstance().addListener(redraw);
         render();
         Feedback.showPending(this);
         // what the server says now: group, open requests, answers from the lecturer
@@ -46,11 +57,12 @@ public class StudentHomeActivity extends AppCompatActivity {
             if (!outcome.ok) {
                 RosterUi.refreshFailed(this, outcome, warned);
                 warned = true;
-                return;
             }
-            student = StudentRepository.getInstance().me();
+            Student latest = StudentRepository.getInstance().me();
+            if (latest == null) return;
+            student = latest;
             render();
-            if (student.noticeKind != null) deliverNotice();
+            if (outcome.ok && student.noticeKind != null) deliverNotice();
         });
         if (Notifier.askSoon) {
             Notifier.askSoon = false;
@@ -61,14 +73,15 @@ public class StudentHomeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StudentRepository.getInstance().removeListener(redraw);
+    }
+
     /** A lecturer answered a request: say so, and alert if the student turned alerts on. */
     private void deliverNotice() {
-        boolean approved = "approved".equals(student.noticeKind);
-        boolean group = "group".equals(student.noticeSubject);
-        int res = group
-                ? (approved ? R.string.notice_group_approved : R.string.notice_group_declined)
-                : (approved ? R.string.notice_number_approved : R.string.notice_number_declined);
-        String message = getString(res);
+        String message = Notifier.noticeText(this, student.noticeKind, student.noticeSubject);
         Notices.markSeen(student.id, student.noticeSubject, student.noticeRequestId);
         student.noticeKind = null;
         student.noticeSubject = null;
@@ -121,7 +134,8 @@ public class StudentHomeActivity extends AppCompatActivity {
      * pill; with none it is the green "All changes are synced." banner.
      */
     private void renderPending() {
-        boolean pending = student.pendingGroup != null;
+        int waiting = StudentRepository.getInstance().getWaiting().size();
+        boolean pending = student.pendingGroup != null || waiting > 0;
         View banner = findViewById(R.id.bannerSync);
         android.widget.ImageView icon = findViewById(R.id.bannerIcon);
         TextView text = findViewById(R.id.bannerText);
@@ -131,7 +145,10 @@ public class StudentHomeActivity extends AppCompatActivity {
             icon.setImageResource(R.drawable.ic_sync);
             icon.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.indigo_700));
             text.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.indigo_700));
-            String lead = getString(R.string.pending_sync_one) + " ";
+            // Waiting to upload (saved on this phone) comes first; otherwise the open request.
+            String lead = (waiting > 0
+                    ? getResources().getQuantityString(R.plurals.sync_waiting_short, waiting, waiting) + ". "
+                    : getString(R.string.pending_sync_one)) + " ";
             String link = getString(R.string.view_status);
             android.text.SpannableString span = new android.text.SpannableString(lead + link);
             span.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
@@ -154,7 +171,7 @@ public class StudentHomeActivity extends AppCompatActivity {
         TextView requestSub = findViewById(R.id.textRequestSub);
         android.view.ViewGroup.MarginLayoutParams lp =
                 (android.view.ViewGroup.MarginLayoutParams) requestSub.getLayoutParams();
-        if (pending) {
+        if (student.pendingGroup != null) {
             pill.setVisibility(View.VISIBLE);
             requestSub.setText(getString(R.string.move_to_group, student.pendingGroup));
             lp.topMargin = (int) (6 * getResources().getDisplayMetrics().density);

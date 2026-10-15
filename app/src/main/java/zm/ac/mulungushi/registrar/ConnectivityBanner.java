@@ -23,8 +23,11 @@ import androidx.lifecycle.LifecycleOwner;
 /**
  * The prototype's amber "You are offline" strip and its "Back online. Syncing."
  * toast. Call attach(this) once from onCreate after setContentView: the strip
- * is slotted in above the screen's content and follows the real network state
- * while the screen is visible.
+ * is slotted in above the screen's content while the screen is visible, when
+ *   - the phone has no network, or
+ *   - it has a network but the server can't be reached (the last load failed),
+ * and says the screen shows what was saved on the phone, and when. When the
+ * network comes back, waiting changes are uploaded straight away.
  */
 final class ConnectivityBanner {
 
@@ -56,6 +59,8 @@ final class ConnectivityBanner {
 
         final Handler main = new Handler(Looper.getMainLooper());
         final ConnectivityManager cm = (ConnectivityManager) a.getSystemService(Context.CONNECTIVITY_SERVICE);
+        // the server could not be reached on the last load: redraw when that changes
+        final Runnable serverState = () -> apply(a, banner, isOnline(cm));
 
         final ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
             @Override public void onAvailable(@NonNull Network network) { main.post(() -> apply(a, banner, isOnline(cm))); }
@@ -67,12 +72,14 @@ final class ConnectivityBanner {
 
         a.getLifecycle().addObserver(new DefaultLifecycleObserver() {
             @Override public void onStart(@NonNull LifecycleOwner owner) {
+                StudentRepository.getInstance().addListener(serverState);
                 apply(a, banner, isOnline(cm));
                 try {
                     if (cm != null) cm.registerDefaultNetworkCallback(callback);
                 } catch (RuntimeException ignored) { }
             }
             @Override public void onStop(@NonNull LifecycleOwner owner) {
+                StudentRepository.getInstance().removeListener(serverState);
                 try {
                     if (cm != null) cm.unregisterNetworkCallback(callback);
                 } catch (RuntimeException ignored) { }
@@ -84,7 +91,21 @@ final class ConnectivityBanner {
         if (a.isFinishing() || a.isDestroyed()) return;
         boolean wasOffline = lastOnline != null && !lastOnline;
         lastOnline = online;
-        if (online) {
+        StudentRepository repo = StudentRepository.getInstance();
+        boolean serverDown = online && repo.isOffline() && Session.isSignedIn();
+        if (online && wasOffline && Session.isSignedIn()) {
+            RosterApi.get().syncNow(null); // upload what waited, and load what changed meanwhile
+        }
+        long saved = repo.dataSavedAt();
+        String when = saved > 0 ? RosterUi.savedAtText(saved) : null;
+        if (!online) {
+            banner.setText(when == null ? a.getString(R.string.offline_banner)
+                    : a.getString(R.string.offline_banner_saved, when));
+        } else if (serverDown) {
+            banner.setText(when == null ? a.getString(R.string.server_down_banner)
+                    : a.getString(R.string.server_down_banner_saved, when));
+        }
+        if (online && !serverDown) {
             if (banner.getVisibility() == View.VISIBLE) {
                 banner.animate().alpha(0f).setDuration(150).withEndAction(() -> {
                     banner.setVisibility(View.GONE);
@@ -93,6 +114,7 @@ final class ConnectivityBanner {
             }
             if (wasOffline) Feedback.show(a, R.string.back_online);
         } else if (banner.getVisibility() != View.VISIBLE) {
+            banner.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
             banner.setAlpha(0f);
             banner.setVisibility(View.VISIBLE);
             banner.animate().alpha(1f).setDuration(180).start();

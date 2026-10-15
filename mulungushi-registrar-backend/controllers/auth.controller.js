@@ -390,6 +390,37 @@ async function login(req, res) {
   res.json(await sessionBody(account.account_id));
 }
 
+// PUT /api/auth/password (signed in) — "Change password" in Edit my details.
+// The current password must be right; wrong guesses count towards the same
+// 5-strikes lock as sign-in, so this cannot be used to guess a password on an
+// unlocked phone. Changing it stamps password_changed_at, which signs out every
+// other phone (their tokens are older); this phone gets a fresh token back.
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  const [rows] = await pool.query(
+    `SELECT account_id, password_hash, (locked_until IS NOT NULL AND locked_until > NOW(3)) AS is_locked
+       FROM accounts WHERE account_id = ?`,
+    [req.user.accountId]
+  );
+  const account = rows[0];
+  const ok = await bcrypt.compare(currentPassword, account.password_hash);
+  if (account.is_locked || !ok) {
+    if (!account.is_locked) await recordFailedLogin(account.account_id);
+    throw new ApiError(400, 'WRONG_PASSWORD', "Your current password isn't right.");
+  }
+  if (currentPassword === newPassword) {
+    throw new ApiError(422, 'VALIDATION_ERROR', 'newPassword: must be different from your current password');
+  }
+  const passwordHash = await bcrypt.hash(newPassword, bcryptRounds());
+  await pool.query(
+    `UPDATE accounts
+        SET password_hash = ?, failed_logins = 0, locked_until = NULL, password_changed_at = NOW(3)
+      WHERE account_id = ?`,
+    [passwordHash, account.account_id]
+  );
+  res.json(await sessionBody(account.account_id));
+}
+
 // Tokens are stateless JWTs, so there is nothing to revoke server-side; the app
 // discards its copy. (A password reset DOES invalidate older tokens.)
 async function logout(req, res) {
@@ -408,4 +439,5 @@ module.exports = {
   passwordReset,
   login,
   logout,
+  changePassword,
 };

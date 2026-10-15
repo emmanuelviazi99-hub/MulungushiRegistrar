@@ -16,7 +16,8 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
+            android:layout_height="wrap_content"
+            android:minHeight="68dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingStart="16dp"
@@ -75,197 +76,209 @@
             android:background="@color/slate_200" />
     </LinearLayout>
 
-    <ScrollView
-        android:id="@+id/screenScroll"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipChildren="false"
-        android:clipToPadding="false">
-
-        <LinearLayout
+        android:layout_weight="1">
+        <ScrollView
+            android:id="@+id/screenScroll"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_height="match_parent"
             android:clipChildren="false"
-            android:clipToPadding="false"
-            android:paddingStart="20dp"
-            android:paddingTop="20dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="32dp">
+            android:clipToPadding="false">
 
-            <TextView
-                android:id="@+id/textWelcome"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/navy_900"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                tools:text="Welcome, B. Nyirenda" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="16dp"
-                android:text="@string/term_label"
-                android:textColor="@color/slate_500"
-                android:textSize="13sp" />
-
-            <!-- 4 stat tiles -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:orientation="vertical"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:paddingBottom="4dp"
-                android:orientation="horizontal">
+                android:paddingStart="20dp"
+                android:paddingTop="20dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="32dp">
 
-                <LinearLayout android:id="@+id/tileStudents" style="@style/Registrar.StatTile">
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginBottom="6dp"
-                        android:src="@drawable/ic_users"
-                        android:tint="@color/slate_400"
-                        android:contentDescription="@null" />
-                    <TextView android:id="@+id/tileStudentsNum" style="@style/Registrar.StatNumber" tools:text="6" />
-                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_students" />
+                <TextView
+                    android:id="@+id/textWelcome"
+                    android:accessibilityHeading="true"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/navy_900"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    tools:text="Welcome, B. Nyirenda" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/term_label"
+                    android:textColor="@color/slate_500"
+                    android:textSize="13sp" />
+
+                <!-- 4 stat tiles -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:paddingBottom="4dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout android:id="@+id/tileStudents" style="@style/Registrar.StatTile">
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginBottom="6dp"
+                            android:src="@drawable/ic_users"
+                            android:tint="@color/slate_400"
+                            android:contentDescription="@null" />
+                        <TextView android:id="@+id/tileStudentsNum" style="@style/Registrar.StatNumber" tools:text="6" />
+                        <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_students" />
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/tileGroupsFull" style="@style/Registrar.StatTile">
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginBottom="6dp"
+                            android:src="@drawable/ic_layers"
+                            android:tint="@color/slate_400"
+                            android:contentDescription="@null" />
+                        <TextView android:id="@+id/tileGroupsFullNum" style="@style/Registrar.StatNumber" tools:text="0" />
+                        <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_groups_full" />
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/tileRequests" style="@style/Registrar.StatTile">
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginBottom="6dp"
+                            android:src="@drawable/ic_clock"
+                            android:tint="@color/slate_400"
+                            android:contentDescription="@null" />
+                        <TextView android:id="@+id/tileRequestsNum" style="@style/Registrar.StatNumber" tools:text="1" />
+                        <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_requests" />
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/tileConflicts" style="@style/Registrar.StatTile" android:layout_marginEnd="0dp">
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginBottom="6dp"
+                            android:src="@drawable/ic_alert_triangle"
+                            android:tint="@color/red_600"
+                            android:contentDescription="@null" />
+                        <TextView android:id="@+id/tileConflictsNum" style="@style/Registrar.StatNumber" tools:text="0" />
+                        <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_conflicts" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <LinearLayout android:id="@+id/tileGroupsFull" style="@style/Registrar.StatTile">
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginBottom="6dp"
-                        android:src="@drawable/ic_layers"
-                        android:tint="@color/slate_400"
-                        android:contentDescription="@null" />
-                    <TextView android:id="@+id/tileGroupsFullNum" style="@style/Registrar.StatNumber" tools:text="0" />
-                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_groups_full" />
-                </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/section_group_occupancy"
+                    android:drawableStart="@drawable/ic_layers"
+                    android:drawableTint="@color/melon_600"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/melon_600"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.04"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
 
-                <LinearLayout android:id="@+id/tileRequests" style="@style/Registrar.StatTile">
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginBottom="6dp"
-                        android:src="@drawable/ic_clock"
-                        android:tint="@color/slate_400"
-                        android:contentDescription="@null" />
-                    <TextView android:id="@+id/tileRequestsNum" style="@style/Registrar.StatNumber" tools:text="1" />
-                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_requests" />
-                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/occupancyList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card_plain"
+                    android:elevation="2dp"
+                    android:padding="16dp" />
 
-                <LinearLayout android:id="@+id/tileConflicts" style="@style/Registrar.StatTile" android:layout_marginEnd="0dp">
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginBottom="6dp"
-                        android:src="@drawable/ic_alert_triangle"
-                        android:tint="@color/red_600"
-                        android:contentDescription="@null" />
-                    <TextView android:id="@+id/tileConflictsNum" style="@style/Registrar.StatNumber" tools:text="0" />
-                    <TextView style="@style/Registrar.StatLabel" android:text="@string/stat_conflicts" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/section_quick_actions"
+                    android:drawableStart="@drawable/ic_list"
+                    android:drawableTint="@color/melon_600"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/melon_600"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.04"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:elevation="2dp"
+                    android:background="@drawable/bg_card_plain">
+
+                    <LinearLayout
+                        android:id="@+id/actionRequests"
+                        style="@style/Registrar.ActionRow">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
+                            <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_swap" app:tint="@color/indigo_600" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_requests_title_group" />
+                            <TextView android:id="@+id/actionRequestsSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                        </LinearLayout>
+                        <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <View style="@style/Registrar.ActionDivider" />
+
+                    <LinearLayout
+                        android:id="@+id/actionSync"
+                        style="@style/Registrar.ActionRow">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_red">
+                            <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_alert_triangle" app:tint="@color/red_600" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_needs_attention_title" />
+                            <TextView android:id="@+id/actionSyncSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                        </LinearLayout>
+                        <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <View style="@style/Registrar.ActionDivider" />
+
+                    <LinearLayout
+                        android:id="@+id/actionAddStudent"
+                        style="@style/Registrar.ActionRow"
+                        android:paddingBottom="14dp">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_green">
+                            <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_add" app:tint="@color/green_700" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_add_student_title" />
+                            <TextView style="@style/Registrar.ActionSub" android:text="@string/action_add_student_sub" />
+                        </LinearLayout>
+                        <ImageView
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/section_group_occupancy"
-                android:drawableStart="@drawable/ic_layers"
-                android:drawableTint="@color/melon_600"
-                android:drawablePadding="8dp"
-                android:gravity="center_vertical"
-                android:textColor="@color/melon_600"
-                android:textAllCaps="true"
-                android:letterSpacing="0.04"
-                android:fontFamily="sans-serif-medium"
-                android:textStyle="bold"
-                android:textSize="12sp" />
-
-            <LinearLayout
-                android:id="@+id/occupancyList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_plain"
-                android:elevation="2dp"
-                android:padding="16dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/section_quick_actions"
-                android:drawableStart="@drawable/ic_list"
-                android:drawableTint="@color/melon_600"
-                android:drawablePadding="8dp"
-                android:gravity="center_vertical"
-                android:textColor="@color/melon_600"
-                android:textAllCaps="true"
-                android:letterSpacing="0.04"
-                android:fontFamily="sans-serif-medium"
-                android:textStyle="bold"
-                android:textSize="12sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:elevation="2dp"
-                android:background="@drawable/bg_card_plain">
-
-                <LinearLayout
-                    android:id="@+id/actionRequests"
-                    style="@style/Registrar.ActionRow">
-                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
-                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_swap" app:tint="@color/indigo_600" />
-                    </FrameLayout>
-                    <LinearLayout style="@style/Registrar.ActionTextCol">
-                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_requests_title_group" />
-                        <TextView android:id="@+id/actionRequestsSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
-                    </LinearLayout>
-                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
-                </LinearLayout>
-
-                <View style="@style/Registrar.ActionDivider" />
-
-                <LinearLayout
-                    android:id="@+id/actionSync"
-                    style="@style/Registrar.ActionRow">
-                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_red">
-                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_alert_triangle" app:tint="@color/red_600" />
-                    </FrameLayout>
-                    <LinearLayout style="@style/Registrar.ActionTextCol">
-                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_needs_attention_title" />
-                        <TextView android:id="@+id/actionSyncSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
-                    </LinearLayout>
-                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
-                </LinearLayout>
-
-                <View style="@style/Registrar.ActionDivider" />
-
-                <LinearLayout
-                    android:id="@+id/actionAddStudent"
-                    style="@style/Registrar.ActionRow"
-                    android:paddingBottom="14dp">
-                    <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_green">
-                        <ImageView style="@style/Registrar.ActionIcon" android:src="@drawable/ic_add" app:tint="@color/green_700" />
-                    </FrameLayout>
-                    <LinearLayout style="@style/Registrar.ActionTextCol">
-                        <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_add_student_title" />
-                        <TextView style="@style/Registrar.ActionSub" android:text="@string/action_add_student_sub" />
-                    </LinearLayout>
-                    <ImageView style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
-                </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <include layout="@layout/bottom_nav" />
 </LinearLayout>

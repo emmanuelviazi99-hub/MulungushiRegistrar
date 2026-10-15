@@ -58,6 +58,23 @@
                 android:textColor="@color/slate_500"
                 android:textSize="14sp"
                 tools:text="202301045" />
+
+            <!-- Changed on this phone, not on the server yet (said in words, not by colour alone) -->
+            <TextView
+                android:id="@+id/textUnsynced"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_pill_indigo"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="@string/label_waiting_upload"
+                android:textColor="@color/indigo_600"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout

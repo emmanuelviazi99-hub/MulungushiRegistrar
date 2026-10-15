@@ -36,5 +36,13 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.material)
     implementation(libs.recyclerview)
+    // Room: the phone's database (RegistrarDatabase). The compiler generates the DAO code.
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    // WorkManager: uploads waiting changes in the background (SyncWorker)
+    implementation(libs.androidx.work.runtime)
+    // pull down to refresh on the roster, requests, home and sync screens
+    implementation(libs.androidx.swiperefreshlayout)
     testImplementation(libs.junit)
+    testImplementation(libs.json)
 }

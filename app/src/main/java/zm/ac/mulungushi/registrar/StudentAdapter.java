@@ -1,5 +1,6 @@
 package zm.ac.mulungushi.registrar;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,33 +13,77 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.Holder> {
+/**
+ * The lecturer's roster list: one row per student, and at the end a "Showing 10 of 23 /
+ * Show more" row while more students match than are shown (pagination, UI/UX team).
+ * Rows changed on this phone and not uploaded yet say "Waiting to upload".
+ * TalkBack reads each row as one sentence.
+ */
+public class StudentAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public interface OnRowClick {
         void onClick(Student student);
     }
 
+    private static final int TYPE_ROW = 0;
+    private static final int TYPE_MORE = 1;
+
     private final List<Student> items = new ArrayList<>();
     private final OnRowClick onRowClick;
+    private int totalMatching = 0;
+    private Runnable onLoadMore;
 
     public StudentAdapter(OnRowClick onRowClick) {
         this.onRowClick = onRowClick;
     }
 
+    /** Called when the "Show more" button is tapped. */
+    public void setOnLoadMore(Runnable onLoadMore) {
+        this.onLoadMore = onLoadMore;
+    }
+
     public void submit(List<Student> newItems) {
+        submit(newItems, newItems.size());
+    }
+
+    /** newItems is the page shown so far; total is how many students match in all. */
+    public void submit(List<Student> newItems, int total) {
         items.clear();
         items.addAll(newItems);
+        totalMatching = Math.max(total, newItems.size());
         notifyDataSetChanged();
     }
 
-    @NonNull @Override
-    public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_student, parent, false);
-        return new Holder(v);
+    private boolean hasMore() {
+        return items.size() < totalMatching;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Holder holder, int position) {
+    public int getItemViewType(int position) {
+        return position < items.size() ? TYPE_ROW : TYPE_MORE;
+    }
+
+    @NonNull @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        if (viewType == TYPE_MORE) {
+            return new MoreHolder(inflater.inflate(R.layout.item_load_more, parent, false));
+        }
+        return new Holder(inflater.inflate(R.layout.item_student, parent, false));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+        if (viewHolder instanceof MoreHolder) {
+            MoreHolder more = (MoreHolder) viewHolder;
+            more.showing.setText(more.showing.getContext()
+                    .getString(R.string.roster_showing, items.size(), totalMatching));
+            more.button.setOnClickListener(v -> {
+                if (onLoadMore != null) onLoadMore.run();
+            });
+            return;
+        }
+        Holder holder = (Holder) viewHolder;
         Student s = items.get(position);
         holder.name.setText(s.name);
         holder.number.setText(s.number);
@@ -51,13 +96,23 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.Holder> 
             holder.group.setBackgroundResource(R.drawable.bg_badge_melon);
             holder.group.setTextColor(ContextCompat.getColor(holder.group.getContext(), R.color.melon_600));
         }
+        holder.unsynced.setVisibility(s.unsynced ? View.VISIBLE : View.GONE);
+
+        // TalkBack reads the row as one sentence instead of five separate pieces.
+        Context c = holder.itemView.getContext();
+        String spoken = c.getString(R.string.a11y_student_row,
+                s.name, Accessibility.spokenDigits(s.number), s.programme, s.group);
+        if (s.unsynced) spoken += ". " + c.getString(R.string.label_waiting_upload);
+        holder.itemView.setContentDescription(spoken);
+        holder.initials.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+
         holder.initials.setText(initialsOf(s.name));
         holder.itemView.setOnClickListener(v -> onRowClick.onClick(s));
     }
 
     @Override
     public int getItemCount() {
-        return items.size();
+        return items.size() + (hasMore() ? 1 : 0);
     }
 
     private static String initialsOf(String name) {
@@ -70,7 +125,7 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.Holder> 
     }
 
     static class Holder extends RecyclerView.ViewHolder {
-        final TextView initials, name, number, programme, group;
+        final TextView initials, name, number, programme, group, unsynced;
 
         Holder(@NonNull View itemView) {
             super(itemView);
@@ -79,6 +134,18 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.Holder> 
             number = itemView.findViewById(R.id.textNumber);
             programme = itemView.findViewById(R.id.badgeProgramme);
             group = itemView.findViewById(R.id.badgeGroup);
+            unsynced = itemView.findViewById(R.id.textUnsynced);
+        }
+    }
+
+    static class MoreHolder extends RecyclerView.ViewHolder {
+        final TextView showing;
+        final View button;
+
+        MoreHolder(@NonNull View itemView) {
+            super(itemView);
+            showing = itemView.findViewById(R.id.textShowing);
+            button = itemView.findViewById(R.id.buttonShowMore);
         }
     }
 }

@@ -143,6 +143,10 @@ const validateStaffComplete = [emailRule(), passwordRule()];
 
 const validatePasswordResetRequest = [emailRule()];
 const validatePasswordReset = [emailRule(), codeRule(), passwordRule('newPassword')];
+const validatePasswordChange = [
+  body('currentPassword').isString().withMessage('is required').bail().isLength({ min: 1, max: 72 }).withMessage('is required'),
+  passwordRule('newPassword'),
+];
 
 // loginKey is a 9-digit student number or an email address.
 const validateLogin = [
@@ -172,6 +176,7 @@ module.exports = {
   validateStaffComplete,
   validatePasswordResetRequest,
   validatePasswordReset,
+  validatePasswordChange,
   validateLogin,
   validateGroupRequest,
   validateNumberCorrectionRequest,

@@ -1,7 +1,7 @@
 # Documented test cases
 
-Everything below except the last section is automated: `npm test` runs 106
-tests in seven files against a throwaway database rebuilt from `schema.sql` +
+Everything below except the last section is automated: `npm test` runs 124
+tests in nine files against a throwaway database rebuilt from `schema.sql` +
 `seed.sql`. The email tests run a real SMTP server inside the test, so they
 check the actual Nodemailer path without needing the internet.
 
@@ -18,6 +18,8 @@ exactly what Jest prints.
 | `requests.test.js` | Group-change and number-correction requests | 10 |
 | `hardening.test.js` | Per-address rate limits | 2 |
 | `app-screens.test.js` | What the app's roster and request screens use: the lecturer's one-step save, a student's own requests, the Answered history, my group | 14 |
+| `password-change.test.js` | Change password while signed in: current password checked, old one stops, other phones signed out, guesses lock | 5 |
+| `idempotency.test.js` | The `Idempotency-Key` header the app's offline queue sends: every change applied once however often it is sent | 13 |
 
 ---
 
@@ -91,7 +93,7 @@ exactly what Jest prints.
 ### Challenge 2 — The response disappears
 - **Steps:** send a change with an `operationId`; resend the identical request; resend the same id with different content.
 - **Expected:** applied once; the retry returns the stored answer without re-applying it; the mismatched one gets 422 `OPERATION_ID_REUSED`.
-- **Evidence:** `students.test.js › retrying the same operationId does not apply the change twice …`; `› an offline-queued CREATE … replays safely`.
+- **Evidence:** `students.test.js › retrying the same operationId does not apply the change twice …`; `› an offline-queued CREATE … replays safely`; and for every other change the app makes (save, add, delete, approve, requests, withdraw), `idempotency.test.js › a retried change is applied once, and the retry gets the first answer › …` (8 tests, including ten copies sent at the same instant) and `› a key cannot be misused › …` (5 tests).
 - **For the video:** add a temporary `setTimeout` before `res.json` in `controllers/group.controller.js`, stop `node server.js` during that pause (after the database has committed), restart, resend with the same `operationId`, and show the single receipt row and single membership in MySQL.
 
 ---
@@ -148,11 +150,14 @@ releasing the seat · letting a student change their own NRC offline.
 
 ## Manual / mobile-dependent rows (from the brief's checklist)
 
-These need the Android app's Room / WorkManager layer:
+The app's Room / WorkManager layer handles these; the steps to show them on a
+phone are in `STORAGE_AND_SYNC.md` (project root). The same code is also run
+against the real backend by a live check (offline edits, restart, reconnect,
+conflict, refusal).
 
 | Row | What to test |
 |---|---|
-| Offline save and interrupted sync | Edit in airplane mode, restart the app, reconnect: WorkManager applies it exactly once |
-| Conflicting edit and remote deletion | Two devices: one edits while the other deletes or edits; the conflict screen appears and nothing is silently overwritten (`VERSION_CONFLICT`, `STUDENT_NOT_FOUND`) |
-| Search filters and accessibility | Combined search + programme + group filters; TalkBack; 200% font size; offline data clearly labelled |
+| Offline save and interrupted sync | Edit in airplane mode, close the app, reopen it (still offline): the edit is there, marked "Waiting to upload". Reconnect: WorkManager uploads it once (check in MySQL) |
+| Conflicting edit and remote deletion | Two devices: one edits offline while the other edits or deletes the same student; on reconnect the Sync screen shows "Changed by someone else" with both versions and Keep mine / Use theirs; nothing is silently overwritten (`VERSION_CONFLICT`, `STUDENT_NOT_FOUND`) |
+| Search filters and accessibility | Roster: type part of a name or number, then pick a programme and a group; the three combine, and work offline on the saved roster. TalkBack: each roster row is read as one sentence ("Chanda Mwansa, number 2 0 2 3 …, CS, group G01"), the result count is announced when it changes, decorative icons are skipped, screen titles are headings. Settings → Display → font size largest (or 200%): buttons, tabs and bars grow instead of cutting text off. Offline data: rows changed on the phone say "Waiting to upload"; the amber strip says when the data on screen was saved |
 | Sign-up on the phone | Real email arrives; code typed in lower case still works; "resend" waits 30 seconds |

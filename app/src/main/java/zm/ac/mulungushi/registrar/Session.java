@@ -98,12 +98,15 @@ public final class Session {
     }
 
     public static synchronized String token() { return values.get(TOKEN); }
+    /** The signed-in account's id: what this phone's saved data and queued changes belong to. */
+    public static synchronized String accountId() { return values.get(ACCOUNT_ID); }
     public static synchronized boolean isLecturer() { return "LECTURER".equals(values.get(ROLE)); }
     public static synchronized boolean isStudent() { return "STUDENT".equals(values.get(ROLE)); }
     public static synchronized String email() { return values.get(EMAIL); }
     public static synchronized String displayName() { return values.get(DISPLAY_NAME); }
     public static synchronized String employeeId() { return values.get(EMPLOYEE_ID); }
     public static synchronized String studentNumber() { return values.get(STUDENT_NUMBER); }
+    public static synchronized String studentId() { return values.get(STUDENT_ID); }
 
     /**
      * The signed-in student's record from the server, in the shape the rest of the

@@ -4,6 +4,7 @@
 //   Lecturer sign-up   POST /staff/request     ->  /staff/verify     ->  /staff/complete
 //   Password reset     POST /password/request  ->  /password/verify  ->  /password/reset
 //   Sign in / out      POST /login, /logout
+//   Change password    PUT  /password  (signed in: current + new password)
 
 const express = require('express');
 const router = express.Router();
@@ -34,5 +35,6 @@ post('/password/reset', codeVerifyLimiter, v.validatePasswordReset, c.passwordRe
 
 post('/login', loginLimiter, v.validateLogin, c.login);
 router.post('/logout', requireAuth, asyncHandler(c.logout));
+router.put('/password', requireAuth, loginLimiter, ...v.validatePasswordChange, v.handleValidation, asyncHandler(c.changePassword));
 
 module.exports = router;

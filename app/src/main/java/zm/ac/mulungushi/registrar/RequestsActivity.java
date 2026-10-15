@@ -30,6 +30,7 @@ public class RequestsActivity extends AppCompatActivity {
     private boolean showAnswered = false;
     private boolean busy;
     private boolean warned;
+    private final Runnable redraw = this::render;
 
     /** One pending request, group move or number correction. */
     private static final class Item {
@@ -48,6 +49,8 @@ public class RequestsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_requests);
         ConnectivityBanner.attach(this);
+        LiveRefresh.lecturer(this);
+        PullToRefresh.lecturer(this);
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.requests_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -68,6 +71,7 @@ public class RequestsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        StudentRepository.getInstance().addListener(redraw);
         render();
         Feedback.showPending(this);
         RosterApi.get().loadRoster(outcome -> {
@@ -79,6 +83,12 @@ public class RequestsActivity extends AppCompatActivity {
             render();
         });
         if (showAnswered) loadAnswered();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StudentRepository.getInstance().removeListener(redraw);
     }
 
     private void loadAnswered() {
@@ -94,7 +104,7 @@ public class RequestsActivity extends AppCompatActivity {
         busy = false;
         if (isFinishing() || isDestroyed()) return;
         if (outcome.ok) {
-            Feedback.show(this, okToast);
+            Feedback.show(this, RosterUi.okText(this, outcome, okToast));
             render();
             return;
         }

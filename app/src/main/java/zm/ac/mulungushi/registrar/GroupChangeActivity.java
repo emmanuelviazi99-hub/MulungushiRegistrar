@@ -88,8 +88,9 @@ public class GroupChangeActivity extends AppCompatActivity {
                     if (isFinishing() || isDestroyed()) return;
                     if (outcome.ok || outcome.is("REQUEST_NOT_FOUND")) {
                         // REQUEST_NOT_FOUND: the lecturer answered it first; home shows the answer
-                        Feedback.postForNext(getString(outcome.ok
-                                ? R.string.toast_request_cancelled_dot : R.string.error_request_gone));
+                        Feedback.postForNext(outcome.ok
+                                ? RosterUi.okText(this, outcome, R.string.toast_request_cancelled_dot)
+                                : getString(R.string.error_request_gone));
                         finish();
                     } else {
                         RosterUi.report(this, outcome);
@@ -109,13 +110,13 @@ public class GroupChangeActivity extends AppCompatActivity {
 
         StudentRepository repo = StudentRepository.getInstance();
         List<String> candidates = new ArrayList<>();
+        // Real lab groups only: a student can't ask to be Unassigned (UI/UX team). Lecturers can
+        // still set Unassigned from their own edit sheet.
         for (String g : StudentRepository.GROUPS) if (!g.equals(student.group)) candidates.add(g);
-        if (!StudentRepository.UNASSIGNED.equals(student.group)) candidates.add(StudentRepository.UNASSIGNED);
 
         for (String g : candidates) {
-            boolean unassignedOption = StudentRepository.UNASSIGNED.equals(g);
-            int count = unassignedOption ? 0 : repo.groupCount(g);
-            boolean full = !unassignedOption && count >= StudentRepository.CAPACITY;
+            int count = repo.groupCount(g);
+            boolean full = count >= StudentRepository.CAPACITY;
             options.addView(buildRow(g, count, full));
         }
     }
@@ -212,7 +213,7 @@ public class GroupChangeActivity extends AppCompatActivity {
                     busy = false;
                     if (isFinishing() || isDestroyed()) return;
                     if (outcome.ok) {
-                        Feedback.postForNext(getString(R.string.toast_request_sent_pending));
+                        Feedback.postForNext(RosterUi.okText(this, outcome, R.string.toast_request_sent_pending));
                         Notifier.askSoon = true;
                         finish();
                         return;

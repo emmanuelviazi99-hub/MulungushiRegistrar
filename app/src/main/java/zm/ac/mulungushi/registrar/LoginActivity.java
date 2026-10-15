@@ -162,6 +162,7 @@ public class LoginActivity extends AppCompatActivity {
         vm.consumeSignedIn();
         // start from what the server says for this account, never a previous sign-in's data
         StudentRepository.reset();
+        SessionState.reset();
         Intent intent;
         if (role == LoginViewModel.Role.LECTURER) {
             intent = new Intent(this, LecturerDashboardActivity.class);

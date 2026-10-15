@@ -20,6 +20,7 @@ import java.util.Locale;
 public class LecturerRosterActivity extends AppCompatActivity implements EditStudentSheet.Listener {
 
     private boolean warned;
+    private final Runnable redraw = this::refresh;
 
     private StudentAdapter adapter;
     private TextView textRecordCount, textResultCount, buttonFilterProgramme, buttonFilterGroup, buttonClearFilters;
@@ -34,11 +35,41 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
     private String programmeFilter = "all";
     private String groupFilter = "all";
 
+    // Pagination (UI/UX team): how many students per page, and how many pages are open now.
+    private static final int PAGE_SIZE = 10;
+    private int pagesShown = 1;
+
+    // Loading: true until the first answer (server, or the copy saved on the phone) arrives.
+    private boolean loading;
+
+    private static final int MODE_LIST = 0, MODE_LOADING = 1, MODE_EXPIRED = 2;
+    private RecyclerView recycler;
+    private android.widget.EditText search;
+    private View loadingState, sessionExpiredState, fabAdd;
+    private TextView textCachedNotice;
+    private boolean networkOffline;
+
+    // Keys for what survives a rotation
+    private static final String STATE_QUERY = "roster_query";
+    private static final String STATE_PROGRAMME = "roster_programme";
+    private static final String STATE_GROUP = "roster_group";
+    private static final String STATE_PAGES = "roster_pages";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lecturer_roster);
         ConnectivityBanner.attach(this);
+        LiveRefresh.lecturer(this);
+        PullToRefresh.lecturer(this);
+
+        // Get the search text, filters and open pages back after a rotation
+        if (savedInstanceState != null) {
+            query = savedInstanceState.getString(STATE_QUERY, "");
+            programmeFilter = savedInstanceState.getString(STATE_PROGRAMME, "all");
+            groupFilter = savedInstanceState.getString(STATE_GROUP, "all");
+            pagesShown = Math.max(1, savedInstanceState.getInt(STATE_PAGES, 1));
+        }
 
         textRecordCount = findViewById(R.id.textRecordCount);
         textResultCount = findViewById(R.id.textResultCount);
@@ -47,31 +78,61 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         buttonClearFilters = findViewById(R.id.buttonClearFilters);
         emptyState = findViewById(R.id.emptyState);
         textEmptyTitle = findViewById(R.id.textEmptyTitle);
+        loadingState = findViewById(R.id.loadingState);
+        sessionExpiredState = findViewById(R.id.sessionExpiredState);
+        fabAdd = findViewById(R.id.fabAdd);
+        textCachedNotice = findViewById(R.id.textCachedNotice);
 
-        RecyclerView recycler = findViewById(R.id.recyclerStudents);
+        recycler = findViewById(R.id.recyclerStudents);
         recycler.setLayoutManager(new LinearLayoutManager(this));
         adapter = new StudentAdapter(this::openEdit);
+        adapter.setOnLoadMore(() -> {
+            pagesShown++;
+            refresh();
+        });
         recycler.setAdapter(adapter);
 
-        android.widget.EditText search = findViewById(R.id.inputSearch);
+        search = findViewById(R.id.inputSearch);
         search.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}
             @Override public void afterTextChanged(Editable s) {
-                query = s.toString();
+                String now = s.toString();
+                if (now.equals(query)) return; // also fires when Android restores the text after a rotation
+                query = now;
+                pagesShown = 1;
                 refresh();
             }
         });
+
+        Accessibility.asButton(buttonFilterProgramme);
+        Accessibility.asButton(buttonFilterGroup);
+        Accessibility.asButton(buttonClearFilters);
 
         buttonFilterProgramme.setOnClickListener(v -> showProgrammeFilter());
         buttonFilterGroup.setOnClickListener(v -> showGroupFilter());
         buttonClearFilters.setOnClickListener(v -> {
             programmeFilter = "all";
             groupFilter = "all";
+            pagesShown = 1;
             refresh();
         });
 
-        findViewById(R.id.fabAdd).setOnClickListener(v -> openAdd());
+        fabAdd.setOnClickListener(v -> openAdd());
+
+        // Session expired: "Sign in again" goes to the sign-in screen. Waiting changes stay saved
+        // on the phone and upload after the lecturer signs in again.
+        findViewById(R.id.buttonSessionSignIn).setOnClickListener(v -> {
+            SessionState.reset();
+            RosterUi.signedOut(this, new RosterApi.Outcome(false, RosterApi.Outcome.UNAUTHORIZED, null));
+        });
+
+        // Offline: show the "limited cached results" label
+        NetworkWatcher.watch(this, online -> {
+            networkOffline = !online;
+            refresh();
+        });
+        loading = !StudentRepository.getInstance().isRosterLoaded();
 
         String reviewId = getIntent().getStringExtra(EXTRA_REVIEW_ID);
         if (reviewId != null && savedInstanceState == null) {
@@ -87,17 +148,37 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_QUERY, query);
+        outState.putString(STATE_PROGRAMME, programmeFilter);
+        outState.putString(STATE_GROUP, groupFilter);
+        outState.putInt(STATE_PAGES, pagesShown);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        StudentRepository.getInstance().addListener(redraw);
         refresh();
         reload();
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StudentRepository.getInstance().removeListener(redraw);
+    }
+
 
     /** Fetches the roster from the server, then shows it. */
     private void reload() {
         RosterApi.get().loadRoster(outcome -> {
             if (isFinishing() || isDestroyed()) return;
-            if (!outcome.ok) {
+            loading = false;
+            if (outcome.is(RosterApi.Outcome.UNAUTHORIZED)) {
+                SessionState.expire(); // shown in place of the list, with "Sign in again"
+            } else if (!outcome.ok) {
                 RosterUi.refreshFailed(this, outcome, warned);
                 warned = true;
             }
@@ -105,8 +186,46 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         });
     }
 
+    /** Shows the list, the loading spinner or the expired-session message. */
+    private void applyMode(int mode) {
+        boolean list = mode == MODE_LIST;
+        recycler.setVisibility(list ? View.VISIBLE : View.GONE);
+        fabAdd.setVisibility(list ? View.VISIBLE : View.GONE);
+        loadingState.setVisibility(mode == MODE_LOADING ? View.VISIBLE : View.GONE);
+        sessionExpiredState.setVisibility(mode == MODE_EXPIRED ? View.VISIBLE : View.GONE);
+        if (!list) {
+            emptyState.setVisibility(View.GONE);
+            textRecordCount.setText("");
+            textResultCount.setText("");
+            textCachedNotice.setVisibility(View.GONE);
+        }
+        // Search and filters are switched off when the session has expired
+        boolean usable = mode != MODE_EXPIRED;
+        float alpha = usable ? 1f : 0.5f;
+        search.setEnabled(usable);
+        search.setAlpha(alpha);
+        buttonFilterProgramme.setClickable(usable);
+        buttonFilterProgramme.setAlpha(alpha);
+        buttonFilterGroup.setClickable(usable);
+        buttonFilterGroup.setAlpha(alpha);
+    }
+
     private void refresh() {
         StudentRepository repo = StudentRepository.getInstance();
+        if (SessionState.isExpired()) {
+            applyMode(MODE_EXPIRED);
+            buttonClearFilters.setVisibility(View.GONE);
+            return;
+        }
+        if (loading && !repo.isRosterLoaded()) {
+            applyMode(MODE_LOADING);
+            buttonClearFilters.setVisibility(View.GONE);
+            return;
+        }
+        applyMode(MODE_LIST);
+        // Only what is saved on this phone: no network, or the server can't be reached
+        textCachedNotice.setVisibility(networkOffline || repo.isOffline() ? View.VISIBLE : View.GONE);
+
         List<Student> active = repo.getActive();
         textRecordCount.setText(getString(R.string.roster_records, active.size()));
 
@@ -118,7 +237,8 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
             boolean matchesG = groupFilter.equals("all") || s.group.equals(groupFilter);
             if (matchesQ && matchesP && matchesG) filtered.add(s);
         }
-        adapter.submit(filtered);
+        int limit = Math.min(filtered.size(), pagesShown * PAGE_SIZE);
+        adapter.submit(new ArrayList<>(filtered.subList(0, limit)), filtered.size());
 
         textResultCount.setText(filtered.size() == 1
                 ? getString(R.string.roster_count_single, filtered.size())
@@ -130,6 +250,10 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         buttonFilterGroup.setBackgroundResource(groupFilter.equals("all") ? R.drawable.bg_filter : R.drawable.bg_filter_active);
         buttonFilterProgramme.setText(getString(R.string.filter_programme) + ": " + (programmeFilter.equals("all") ? getString(R.string.filter_all) : programmeFilter));
         buttonFilterGroup.setText(getString(R.string.filter_group) + ": " + (groupFilter.equals("all") ? getString(R.string.filter_all) : groupFilter));
+        buttonFilterProgramme.setContentDescription(getString(R.string.a11y_programme_filter,
+                programmeFilter.equals("all") ? getString(R.string.filter_all) : programmeFilter));
+        buttonFilterGroup.setContentDescription(getString(R.string.a11y_group_filter,
+                groupFilter.equals("all") ? getString(R.string.filter_all) : groupFilter));
 
         if (filtered.isEmpty()) {
             emptyState.setVisibility(View.VISIBLE);
@@ -157,6 +281,7 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         }
         showChoiceSheet(getString(R.string.filter_programme), labels, counts, values, programmeFilter, v -> {
             programmeFilter = v;
+            pagesShown = 1;
             refresh();
         });
     }
@@ -182,6 +307,7 @@ public class LecturerRosterActivity extends AppCompatActivity implements EditStu
         values.add(StudentRepository.UNASSIGNED);
         showChoiceSheet(getString(R.string.filter_group), labels, counts, values, groupFilter, v -> {
             groupFilter = v;
+            pagesShown = 1;
             refresh();
         });
     }

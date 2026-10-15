@@ -33,6 +33,10 @@ public interface AuthService {
         NOT_VERIFIED,
         /** Sign-in: wrong number/email or password (the server never says which). */
         BAD_CREDENTIALS,
+        /** Change password: the current password isn't right. */
+        WRONG_PASSWORD,
+        /** Change password: the sign-in on this phone has expired; sign in again. */
+        SIGNED_OUT,
         /** A new code was asked for within 30 seconds; see retryAfterSeconds. */
         RESEND_TOO_SOON,
         /** The server could not send the email. Nothing was saved; try again. */
@@ -155,4 +159,13 @@ public interface AuthService {
 
     /** Sets the new password. Only works with a code that was verified. */
     void setNewPassword(String email, String code, String newPassword, Callback callback);
+
+    // ---- change password (signed in, Edit my details) ----
+
+    /**
+     * Changes the signed-in person's password. OK: changed, and this phone gets a fresh
+     * sign-in (every other phone is signed out). WRONG_PASSWORD: current password wrong.
+     * Needs the server: offline gives NETWORK_ERROR and nothing changes.
+     */
+    void changePassword(String currentPassword, String newPassword, Callback callback);
 }

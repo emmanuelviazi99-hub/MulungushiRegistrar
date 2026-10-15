@@ -21,12 +21,15 @@ import androidx.appcompat.app.AppCompatActivity;
 public class LecturerDashboardActivity extends AppCompatActivity implements EditStudentSheet.Listener {
 
     private boolean warned;
+    private final Runnable redraw = this::render;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lecturer_dashboard);
         ConnectivityBanner.attach(this);
+        LiveRefresh.lecturer(this);
+        PullToRefresh.lecturer(this);
 
         RosterFormat.bindHomeAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
 
@@ -46,6 +49,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
     @Override
     protected void onResume() {
         super.onResume();
+        StudentRepository.getInstance().addListener(redraw);
         render();
         // counts, groups and open requests as the server has them now
         RosterApi.get().loadRoster(outcome -> {
@@ -56,6 +60,12 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
             }
             render();
         });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StudentRepository.getInstance().removeListener(redraw);
     }
 
     @Override
@@ -83,13 +93,42 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         ((TextView) findViewById(R.id.actionRequestsSub)).setText(requestCount > 0
                 ? getString(R.string.action_requests_waiting_fmt, requestCount)
                 : getString(R.string.action_requests_sub_none));
-        ((TextView) findViewById(R.id.actionSyncSub)).setText(getResources().getQuantityString(R.plurals.conflicts_to_review, conflictCount, conflictCount));
+        int waiting = repo.getWaiting().size();
+        ((TextView) findViewById(R.id.actionSyncSub)).setText(conflictCount > 0
+                ? getResources().getQuantityString(R.plurals.conflicts_to_review, conflictCount, conflictCount)
+                : waiting > 0 ? getResources().getQuantityString(R.plurals.sync_waiting_short, waiting, waiting)
+                : getString(R.string.sync_nothing_waiting));
 
         LinearLayout occupancy = findViewById(R.id.occupancyList);
         occupancy.removeAllViews();
         for (String g : StudentRepository.GROUPS) {
             occupancy.addView(occupancyRow(g, repo.groupCount(g)));
         }
+        View shareRow = getLayoutInflater().inflate(R.layout.row_share_summary, occupancy, false);
+        shareRow.findViewById(R.id.buttonShareSummary).setOnClickListener(v -> shareSummary());
+        occupancy.addView(shareRow);
+    }
+
+    /** Opens the Android Sharesheet with the group labels and counts only. No names, no student numbers. */
+    private void shareSummary() {
+        StudentRepository repo = StudentRepository.getInstance();
+        String title = getString(R.string.share_summary_title);
+        StringBuilder text = new StringBuilder(title);
+        for (String g : StudentRepository.GROUPS) {
+            text.append('\n').append(getString(R.string.group_summary_line,
+                    g, repo.groupCount(g), StudentRepository.CAPACITY));
+        }
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_SUBJECT, title);
+        send.putExtra(Intent.EXTRA_TITLE, title);
+        send.putExtra(Intent.EXTRA_TEXT, text.toString());
+        try {
+            startActivity(Intent.createChooser(send, getString(R.string.share_chooser_title)));
+        } catch (android.content.ActivityNotFoundException e) {
+            Feedback.show(this, R.string.share_failed);
+        }
+        // Closing the Sharesheet without picking an app just returns here. Nothing else happens.
     }
 
     private View occupancyRow(String group, int count) {
@@ -132,6 +171,13 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         countView.setLayoutParams(new LinearLayout.LayoutParams(dp(48), LinearLayout.LayoutParams.WRAP_CONTENT));
         countView.setGravity(Gravity.END);
         row.addView(countView);
+
+        // TalkBack reads the whole row as one sentence, not "G01", then "14 slash 15"
+        row.setContentDescription(getString(R.string.group_summary_line, group, count, StudentRepository.CAPACITY));
+        androidx.core.view.ViewCompat.setScreenReaderFocusable(row, true);
+        label.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        track.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        countView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 
         return row;
     }
