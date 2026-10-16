@@ -1,7 +1,7 @@
 # Documented test cases
 
-Everything below except the last section is automated: `npm test` runs 124
-tests in nine files against a throwaway database rebuilt from `schema.sql` +
+Everything below except the last section is automated: `npm test` runs 132
+tests in ten files against a throwaway database rebuilt from `schema.sql` +
 `seed.sql`. The email tests run a real SMTP server inside the test, so they
 check the actual Nodemailer path without needing the internet.
 
@@ -20,6 +20,7 @@ exactly what Jest prints.
 | `app-screens.test.js` | What the app's roster and request screens use: the lecturer's one-step save, a student's own requests, the Answered history, my group | 14 |
 | `password-change.test.js` | Change password while signed in: current password checked, old one stops, other phones signed out, guesses lock | 5 |
 | `idempotency.test.js` | The `Idempotency-Key` header the app's offline queue sends: every change applied once however often it is sent | 13 |
+| `first-sign-in.test.js` | "Welcome" on the first sign-in, "Welcome back" after (sign-up counts, failed sign-ins don't, two at once give one first); asking for the group you are already in is refused; an unassigned student's request is the same kind | 8 |
 
 ---
 
@@ -102,6 +103,9 @@ exactly what Jest prints.
 
 | What is proved | Test |
 |---|---|
+| A new account is greeted "Welcome" once, then "Welcome back" | `first-sign-in.test.js › a finished sign-up is the first sign-in; every later sign-in is a return` |
+| Two sign-ins at the same moment cannot both be "first" | `first-sign-in.test.js › two sign-ins at the same moment: exactly one is "first"` |
+| A student cannot ask for the group they are already in | `first-sign-in.test.js › asking for the group you are already in is refused and nothing is stored` |
 | The code is stored only as a keyed hash | `auth.test.js › the code is stored only as a keyed hash, never in plain text` |
 | A code works only for the email and purpose it was issued for | `auth.test.js › a code only works for the email it was sent to, and only for its own purpose` |
 | 30 minutes to finish after verifying, not longer | `auth.test.js › after a code is accepted there are 30 minutes to finish, not longer` |

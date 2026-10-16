@@ -94,6 +94,25 @@ public class StudentRepository {
         return new ArrayList<>(roster);
     }
 
+    /**
+     * Lecturer search: the active students that match, in roster order. It filters
+     * the roster already loaded from the server (GET /students, refreshed when the
+     * screen opens, on pull-down and every 30 s), so typing and changing filters
+     * never sends a request. The rules are in RosterQuery.
+     */
+    public List<Student> search(RosterQuery query) {
+        List<Student> out = new ArrayList<>();
+        for (Student s : roster) if (query.matches(s)) out.add(s);
+        return out;
+    }
+
+    /** How many students a query would show (the counts in the filter sheet). */
+    public int countMatching(RosterQuery query) {
+        int n = 0;
+        for (Student s : roster) if (query.matches(s)) n++;
+        return n;
+    }
+
     /** Active members of a group: the server's total when known, else counted from the roster. */
     public int groupCount(String group) {
         Integer n = groupCounts.get(group);

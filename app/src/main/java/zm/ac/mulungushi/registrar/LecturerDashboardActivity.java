@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 /**
  * Ported from LecturerDashboard. The lecturer's Home tab: counts from the
@@ -22,11 +23,17 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
 
     private boolean warned;
     private final Runnable redraw = this::render;
+    private AuthViewModel auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!RosterUi.lecturerOrLeave(this)) return; // lecturers only
         setContentView(R.layout.activity_lecturer_dashboard);
+        auth = new ViewModelProvider(this).get(AuthViewModel.class);
+        TextView welcome = findViewById(R.id.textWelcome);
+        auth.getWelcome().observe(this, g -> welcome.setText(
+                getString(g.firstTime ? R.string.welcome_first : R.string.welcome_back, g.name)));
         ConnectivityBanner.attach(this);
         LiveRefresh.lecturer(this);
         PullToRefresh.lecturer(this);
@@ -39,6 +46,9 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
                 startActivity(new Intent(this, SyncActivity.class).putExtra(SyncActivity.EXTRA_ROLE, SyncActivity.ROLE_LECTURER)));
         findViewById(R.id.actionAddStudent).setOnClickListener(v ->
                 EditStudentSheet.forAdd().show(getSupportFragmentManager(), this));
+        Accessibility.explain(findViewById(R.id.actionRequests), R.string.why_requests);
+        Accessibility.explain(findViewById(R.id.actionSync), R.string.why_sync_lecturer);
+        Accessibility.explain(findViewById(R.id.actionAddStudent), R.string.why_add_student);
 
         BottomNav.bindLecturer(this, BottomNav.HOME);
 
@@ -75,8 +85,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
     }
 
     private void render() {
-        ((TextView) findViewById(R.id.textWelcome)).setText(
-                getString(R.string.welcome_lecturer_fmt, RosterUi.lecturerName()));
+        auth.showWelcome(RosterUi.lecturerName());
 
         StudentRepository repo = StudentRepository.getInstance();
         int activeCount = repo.getActive().size();
@@ -106,6 +115,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         }
         View shareRow = getLayoutInflater().inflate(R.layout.row_share_summary, occupancy, false);
         shareRow.findViewById(R.id.buttonShareSummary).setOnClickListener(v -> shareSummary());
+        Accessibility.explain(shareRow.findViewById(R.id.buttonShareSummary), R.string.why_share_summary);
         occupancy.addView(shareRow);
     }
 

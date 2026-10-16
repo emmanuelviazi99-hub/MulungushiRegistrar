@@ -162,7 +162,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/only_lecturer_note"
-                    android:textColor="@color/slate_400"
+                    android:textColor="@color/slate_500"
                     android:textSize="13.5sp" />
 
                 <TextView
@@ -201,7 +201,7 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="14dp">
 
-                <ImageView
+                <ImageView android:contentDescription="@null"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:importantForAccessibility="no"
@@ -218,7 +218,7 @@
                     android:textColor="@color/navy_900"
                     android:textSize="15sp" />
 
-                <ImageView
+                <ImageView android:contentDescription="@null"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:importantForAccessibility="no"

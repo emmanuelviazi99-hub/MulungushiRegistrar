@@ -157,10 +157,11 @@ answer for all of them).
 // REQUIRED for a self sign-up (new student), who is created now with no lab group
 { "email": "chanda@example.com", "password": "Str0ngPass!", "programmeCode": "CS" }
 
-// 201 — signed in
+// 201 — signed in. firstSignIn: true because a finished sign-up is the account's first sign-in
 {
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIs…",
+  "firstSignIn": true,
   "account": {
     "accountId": 1, "role": "STUDENT", "email": "chanda@example.com", "phone": "+260977123456",
     "displayName": "Chanda Mwansa", "studentId": "9d0684ac-c5b1-11f1-a0d1-02fc00000001", "employeeId": null
@@ -201,6 +202,7 @@ the server operator with `npm run staff:add`), and the code goes to that email.
 {
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIs…",
+  "firstSignIn": true,
   "account": {
     "accountId": 2, "role": "LECTURER", "email": "m.chilufya@mulungushi.edu.zm", "phone": null,
     "displayName": "Mutale Chilufya", "studentId": null, "employeeId": "EMP-1002"
@@ -237,7 +239,10 @@ working. Same code errors as above.
 // Request — loginKey is a 9-digit student number or an email
 { "loginKey": "202301001", "password": "Str0ngPass!" }
 
-// 200 — same body as register/complete (student) or staff/complete (lecturer)
+// 200 — same body as register/complete (student) or staff/complete (lecturer).
+// firstSignIn is true only on the account's very first successful sign-in (the app
+// says "Welcome, Riley!"), false after that ("Welcome back, Riley!"). Kept on the
+// server (accounts.first_signed_in_at), so signing out or changing phone does not reset it.
 
 // 401 — one answer for unknown user, wrong password, locked or disabled account
 { "success": false, "error": "INVALID_CREDENTIALS",
@@ -251,8 +256,8 @@ working. Same code errors as above.
 // Request
 { "currentPassword": "Old#Password1", "newPassword": "New#Password2" }
 
-// 200 — same body as /auth/login, with a NEW token: keep it
-{ "success": true, "token": "eyJhbGciOiJIUzI1NiIs…", "account": { … }, "student": { … } }
+// 200 — same body as /auth/login, with a NEW token: keep it. Not a new sign-in, so firstSignIn is false
+{ "success": true, "token": "eyJhbGciOiJIUzI1NiIs…", "firstSignIn": false, "account": { … }, "student": { … } }
 ```
 
 The old password stops working at once, and every other phone's sign-in ends
@@ -430,7 +435,12 @@ of each kind at a time (409 `REQUEST_ALREADY_PENDING`).
 ```json
 { "groupCode": "G02", "reason": "Timetable clash" }      // groupCode may be UNASSIGNED
 // 201 { "success": true, "requestId": 1, "status": "PENDING" }
+// 409 ALREADY_IN_GROUP — the student is already in that group (checked against the
+//     student's group at that moment, in the same statement as the insert)
 ```
+The same request serves both cases: a student with no group asks for their first
+group ("Request for Group" in the app; stored with no `fromGroup`), a student with a
+group asks to move ("Request for Group Change"). Approval works the same for both.
 
 ### `POST /number-correction-requests` (student)
 ```json
@@ -513,6 +523,7 @@ stays `PENDING` and the student is unchanged: 409 `GROUP_FULL`, 409
 | `GROUP_FULL` | 409 | The group already has 15 active students |
 | `VERSION_CONFLICT` | 409 | The record changed since you last read it |
 | `REQUEST_ALREADY_PENDING` | 409 | Already an open request of that kind |
+| `ALREADY_IN_GROUP` | 409 | Asked for the group the student is already in |
 | `CONFLICT` | 409 | Same `operationId` still being processed, or another clash |
 | `OPERATION_ID_REUSED` | 422 | Same `operationId` with a different body |
 | `INTERNAL_ERROR` | 500 | Unexpected server error (details only in the server log) |

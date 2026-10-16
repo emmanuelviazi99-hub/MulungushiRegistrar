@@ -28,6 +28,7 @@ final class BottomNav {
         style(a);
         boolean root = a instanceof StudentHomeActivity;
         setup(a, selected, a.getString(R.string.nav_my_group), R.drawable.ic_user);
+        explainTabs(a, R.string.why_nav_my_group);
 
         a.findViewById(R.id.navHome).setOnClickListener(v -> {
             if (root) return;
@@ -55,6 +56,7 @@ final class BottomNav {
         style(a);
         boolean root = a instanceof LecturerDashboardActivity;
         setup(a, selected, a.getString(R.string.nav_roster), R.drawable.ic_list);
+        explainTabs(a, R.string.why_nav_roster);
 
         a.findViewById(R.id.navHome).setOnClickListener(v -> {
             if (root) return;
@@ -72,6 +74,13 @@ final class BottomNav {
                     .putExtra(SyncActivity.EXTRA_ROLE, SyncActivity.ROLE_LECTURER);
             go(a, i, !root);
         });
+    }
+
+    /** TalkBack: "Double-tap to ..."; press and hold: the same words in a bubble. */
+    private static void explainTabs(Activity a, int middle) {
+        Accessibility.explain(a.findViewById(R.id.navHome), R.string.why_nav_home);
+        Accessibility.explain(a.findViewById(R.id.navMiddle), middle);
+        Accessibility.explain(a.findViewById(R.id.navSync), R.string.why_nav_sync);
     }
 
     private static void go(Activity a, Intent intent, boolean finishCurrent) {

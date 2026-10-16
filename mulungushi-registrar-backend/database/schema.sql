@@ -167,6 +167,7 @@ CREATE TABLE accounts (
   failed_logins       TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- consecutive wrong passwords
   locked_until        DATETIME(3) NULL,                     -- login lock after 5 wrong passwords
   password_changed_at DATETIME(3) NULL,                     -- tokens issued before this are rejected
+  first_signed_in_at  DATETIME(3) NULL,                     -- NULL until the first sign-in: "Welcome" vs "Welcome back"
   created_at          DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_account_email (email),
   UNIQUE KEY uq_account_student (student_id),               -- one account per student
@@ -275,4 +276,4 @@ CREATE TABLE schema_migrations (
   applied_at DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql');
+INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql'), ('002-first-sign-in.sql');

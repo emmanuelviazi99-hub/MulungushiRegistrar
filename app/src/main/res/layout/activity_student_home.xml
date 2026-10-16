@@ -289,7 +289,9 @@
                                     android:contentDescription="@null" />
                             </FrameLayout>
 
+                            <!-- "Request for Group" or "Request for Group Change": set from GroupViewModel -->
                             <TextView
+                                android:id="@+id/textGroupRequestTitle"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="10dp"

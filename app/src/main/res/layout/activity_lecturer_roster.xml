@@ -74,22 +74,59 @@
         android:paddingHorizontal="20dp"
         android:paddingTop="16dp">
 
-        <EditText
-            android:id="@+id/inputSearch"
+        <!-- Search by name or student number, with a Clear (x) button, and the Filters button beside it -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="44dp"
-            android:background="@drawable/bg_search"
-            android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="8dp"
-            android:paddingHorizontal="12dp"
-            android:hint="@string/roster_search_hint"
-            android:textColorHint="@color/slate_400"
-            android:textColor="@color/ink"
-            android:textSize="16sp"
-            android:singleLine="true"
-            android:inputType="text"
-            android:imeOptions="actionSearch" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <EditText
+                    android:id="@+id/inputSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:background="@drawable/bg_search"
+                    android:drawableStart="@drawable/ic_search"
+                    android:drawablePadding="8dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="48dp"
+                    android:hint="@string/roster_search_hint"
+                    android:importantForAutofill="no"
+                    android:textColorHint="@color/slate_500"
+                    android:textColor="@color/ink"
+                    android:textSize="16sp"
+                    android:singleLine="true"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch" />
+
+                <ImageButton
+                    android:id="@+id/buttonClearSearch"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close"
+                    android:tint="@color/slate_500"
+                    android:contentDescription="@string/a11y_clear_search"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <ImageButton
+                android:id="@+id/buttonFilters"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_filter"
+                android:src="@drawable/ic_filter"
+                android:tint="@color/navy_700"
+                android:contentDescription="@string/a11y_filters_none" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -147,7 +184,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/slate_400"
+                android:textColor="@color/slate_500"
                 android:textSize="13.5sp"
                 android:textAllCaps="true"
                 android:letterSpacing="0.05"
@@ -162,7 +199,9 @@
                 android:textColor="@color/navy_600"
                 android:textSize="14.5sp"
                 android:fontFamily="sans-serif-medium"
-                android:padding="4dp"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="8dp"
                 android:visibility="gone"
                 android:clickable="true"
                 android:focusable="true" />
@@ -221,7 +260,25 @@
                 android:textSize="16sp"
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
+                android:accessibilityLiveRegion="polite"
                 tools:text="No students match these filters" />
+
+            <!-- Shown when a search or filter finds nobody -->
+            <TextView
+                android:id="@+id/buttonClearAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:text="@string/roster_clear_all"
+                android:textColor="@color/navy_600"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Loading state: shown while the list is being fetched -->

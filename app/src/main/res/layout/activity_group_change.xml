@@ -148,7 +148,7 @@
                     android:layout_marginTop="6dp"
                     android:layout_marginBottom="16dp"
                     android:text="@string/group_change_note"
-                    android:textColor="@color/slate_400"
+                    android:textColor="@color/slate_500"
                     android:textSize="12sp" />
 
                 <Button
@@ -159,7 +159,7 @@
                     android:backgroundTint="@color/slate_100"
                     android:enabled="false"
                     android:text="@string/action_choose_group_first"
-                    android:textColor="@color/slate_400"
+                    android:textColor="@color/slate_500"
                     app:cornerRadius="12dp"
                     android:textAllCaps="false" />
             </LinearLayout>

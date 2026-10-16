@@ -7,6 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 public class StudentHomeActivity extends AppCompatActivity {
 
@@ -14,6 +15,8 @@ public class StudentHomeActivity extends AppCompatActivity {
 
     private Student student;
     private boolean warned;
+    private AuthViewModel auth;
+    private GroupViewModel groups;
     /** Redraws when a background upload (WorkManager) brings new data while this screen is open. */
     private final Runnable redraw = () -> {
         Student latest = StudentRepository.getInstance().me();
@@ -34,9 +37,27 @@ public class StudentHomeActivity extends AppCompatActivity {
         student = RosterUi.meOrSignIn(this);
         if (student == null) return;
 
+        // "Welcome, Riley!" on the first sign-in, "Welcome back, Riley!" after: decided by AuthViewModel
+        auth = new ViewModelProvider(this).get(AuthViewModel.class);
+        TextView welcome = findViewById(R.id.textWelcome);
+        auth.getWelcome().observe(this, g -> welcome.setText(
+                getString(g.firstTime ? R.string.welcome_first : R.string.welcome_back, g.name)));
+
+        // "Request for Group" (no group yet) or "Request for Group Change": from the student's
+        // group as the server has it, updated by itself when it changes (GroupViewModel)
+        groups = new ViewModelProvider(this).get(GroupViewModel.class);
+        TextView requestTitle = findViewById(R.id.textGroupRequestTitle);
+        groups.getScreen().observe(this, s -> {
+            boolean first = s.mode == GroupRequestRules.Mode.FIRST_GROUP;
+            requestTitle.setText(first ? R.string.card_group_first_title : R.string.card_group_change_title);
+            Accessibility.explain(findViewById(R.id.cardGroupChange), first ? R.string.why_group_first : R.string.why_group_change);
+        });
+
         findViewById(R.id.cardGroupChange).setOnClickListener(v -> openGroupChange());
         findViewById(R.id.cardEditDetails).setOnClickListener(v -> openEditDetails());
         findViewById(R.id.cardGroup).setOnClickListener(v -> openMyGroup());
+        Accessibility.explain(findViewById(R.id.cardEditDetails), R.string.why_edit_details);
+        Accessibility.explain(findViewById(R.id.cardGroup), R.string.why_my_group);
         BottomNav.bindStudent(this, BottomNav.HOME, student.number);
 
         render();
@@ -92,8 +113,7 @@ public class StudentHomeActivity extends AppCompatActivity {
     private void render() {
         RosterFormat.bindHomeAvatar(this, student.name, SignOutSheet.studentDetail(this, student.number));
 
-        TextView welcome = findViewById(R.id.textWelcome);
-        welcome.setText(getString(R.string.welcome_back, firstName(student.name)));
+        auth.showWelcome(student.name);
 
         boolean assigned = !StudentRepository.UNASSIGNED.equals(student.group);
         int count = assigned ? StudentRepository.getInstance().groupCount(student.group) : 0;
@@ -157,6 +177,7 @@ public class StudentHomeActivity extends AppCompatActivity {
                     lead.length(), span.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             text.setText(span);
             banner.setOnClickListener(v -> openSync());
+            Accessibility.explain(banner, R.string.why_sync_banner);
         } else {
             banner.setBackgroundResource(R.drawable.bg_card_green);
             icon.setImageResource(R.drawable.ic_check_circle);
@@ -165,6 +186,7 @@ public class StudentHomeActivity extends AppCompatActivity {
             text.setText(R.string.synced_ok);
             banner.setOnClickListener(null);
             banner.setClickable(false);
+            Accessibility.plain(banner);
         }
 
         View pill = findViewById(R.id.pillPending);
@@ -202,11 +224,6 @@ public class StudentHomeActivity extends AppCompatActivity {
         startActivity(new Intent(this, SyncActivity.class)
                 .putExtra(EXTRA_STUDENT_NUMBER, student.number)
                 .putExtra(SyncActivity.EXTRA_ROLE, SyncActivity.ROLE_STUDENT));
-    }
-
-    private static String firstName(String fullName) {
-        if (fullName == null || fullName.trim().isEmpty()) return "";
-        return fullName.trim().split("\\s+")[0];
     }
 
     private static String initialsOf(String name) {

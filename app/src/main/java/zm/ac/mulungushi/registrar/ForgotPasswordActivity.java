@@ -197,7 +197,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private void startResendTimer(int seconds) {
         resendEndsAt = SystemClock.elapsedRealtime() + seconds * 1000L;
         textResend.setEnabled(false);
-        textResend.setTextColor(ContextCompat.getColor(this, R.color.slate_400));
+        textResend.setTextColor(ContextCompat.getColor(this, R.color.slate_500));
         resendTimer.start(seconds, new ResendTimer.Listener() {
             @Override
             public void onTick(int secondsLeft) {
@@ -392,6 +392,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         textStepLabel = findViewById(R.id.textStepLabel);
         textCodeSub = findViewById(R.id.textCodeSub);
         textFormError = findViewById(R.id.textFormError);
+        // errors such as "We couldn't send the email" are read out by TalkBack when they appear
+        textFormError.setAccessibilityLiveRegion(android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE);
         progress = findViewById(R.id.progress);
         stepHeader = findViewById(R.id.stepHeader);
         dots[0] = findViewById(R.id.stepDot1);

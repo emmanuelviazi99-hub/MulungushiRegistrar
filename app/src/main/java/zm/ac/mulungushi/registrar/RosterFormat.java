@@ -32,7 +32,7 @@ final class RosterFormat {
         v.setText(initialsOf(name));
         v.setVisibility(View.VISIBLE);
         v.setContentDescription(a.getString(R.string.a11y_account_menu));
-        Accessibility.asButton(v);
+        Accessibility.explain(v, R.string.why_account);
         v.setOnClickListener(x -> SignOutSheet.show(a, name, detail));
     }
 
@@ -42,7 +42,7 @@ final class RosterFormat {
         if (v == null) return;
         v.setText(initialsOf(name));
         v.setContentDescription(a.getString(R.string.a11y_account_menu));
-        Accessibility.asButton(v);
+        Accessibility.explain(v, R.string.why_account);
         v.setOnClickListener(x -> SignOutSheet.show(a, name, detail));
     }
 

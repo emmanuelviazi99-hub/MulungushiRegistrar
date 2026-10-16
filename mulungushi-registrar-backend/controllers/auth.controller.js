@@ -55,9 +55,29 @@ function signToken(account) {
   });
 }
 
-async function sessionBody(accountId) {
+/**
+ * Records a successful sign-in and says whether it was the account's first one.
+ * One atomic UPDATE: only the request that changes NULL to a time gets true, so
+ * two sign-ins at the same moment cannot both be "first". A finished sign-up is
+ * the first sign-in; a failed sign-in never reaches here.
+ */
+async function markSignIn(accountId) {
+  const [result] = await pool.query(
+    'UPDATE accounts SET first_signed_in_at = NOW(3) WHERE account_id = ? AND first_signed_in_at IS NULL',
+    [accountId]
+  );
+  return result.affectedRows === 1;
+}
+
+/**
+ * The answer to a sign-in, sign-up or password change: token + profile.
+ * signIn = true for a new sign-in (login, finished sign-up): the body then says
+ * firstSignIn true/false. A password change is not a new sign-in: always false.
+ */
+async function sessionBody(accountId, { signIn = false } = {}) {
+  const firstSignIn = signIn ? await markSignIn(accountId) : false;
   const profile = await accountService.loadProfile(accountId);
-  const body = { success: true, token: signToken(profile), account: serializeAccount(profile) };
+  const body = { success: true, token: signToken(profile), firstSignIn, account: serializeAccount(profile) };
   if (profile.student_id) {
     body.student = serializeStudent(await studentService.findStudent(profile.student_id, { includeDeleted: true }), {
       full: true,
@@ -230,7 +250,7 @@ async function studentRegisterComplete(req, res) {
       return verified.student_id;
     },
   });
-  res.status(201).json(await sessionBody(accountId));
+  res.status(201).json(await sessionBody(accountId, { signIn: true }));
 }
 
 // ---------------------------------------------------------------------------
@@ -275,7 +295,7 @@ async function staffRegisterVerify(req, res) {
 async function staffRegisterComplete(req, res) {
   const { email, password } = req.body;
   const accountId = await createAccountFromCode({ purpose: 'STAFF_SIGNUP', email, password });
-  res.status(201).json(await sessionBody(accountId));
+  res.status(201).json(await sessionBody(accountId, { signIn: true }));
 }
 
 // ---------------------------------------------------------------------------
@@ -387,7 +407,7 @@ async function login(req, res) {
   if (account.failed_logins > 0 || account.locked_until) {
     await pool.query('UPDATE accounts SET failed_logins = 0, locked_until = NULL WHERE account_id = ?', [account.account_id]);
   }
-  res.json(await sessionBody(account.account_id));
+  res.json(await sessionBody(account.account_id, { signIn: true }));
 }
 
 // PUT /api/auth/password (signed in) — "Change password" in Edit my details.

@@ -181,7 +181,7 @@
                         android:padding="16dp"
                         android:gravity="center"
                         android:text="@string/my_group_empty"
-                        android:textColor="@color/slate_400"
+                        android:textColor="@color/slate_500"
                         android:textSize="14.5sp"
                         android:visibility="gone" />
                 </LinearLayout>

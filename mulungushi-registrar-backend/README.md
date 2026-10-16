@@ -62,7 +62,9 @@ npm run db:migrate
 ```
 
 instead. It applies only the changes in `database/migrations/` that your
-database has not had yet, and keeps your data. Open sign-up codes are cancelled
+database has not had yet, and keeps your data. (`002-first-sign-in.sql`, 16 Oct,
+adds the first sign-in marker behind "Welcome" / "Welcome back"; existing
+accounts count as returning.) Open sign-up codes are cancelled
 by the update, so anyone halfway through sign-up just asks for a new code.
 
 ## 3. Fill in `.env`

@@ -35,6 +35,7 @@ public class EditDetailsActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.card_edit_details_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        Accessibility.explain(findViewById(R.id.btnBack), R.string.why_back);
 
         student = RosterUi.meOrSignIn(this);
         if (student == null) return;
@@ -60,6 +61,11 @@ public class EditDetailsActivity extends AppCompatActivity {
         findViewById(R.id.buttonSave).setOnClickListener(v -> save());
         findViewById(R.id.buttonRequestCorrection).setOnClickListener(v -> showCorrectionDialog());
         findViewById(R.id.buttonChangePassword).setOnClickListener(v -> showChangePasswordSheet());
+        Accessibility.explain(findViewById(R.id.buttonSave), R.string.why_save_details);
+        Accessibility.explain(findViewById(R.id.buttonCancel), R.string.why_cancel_edit);
+        Accessibility.explain(findViewById(R.id.buttonRequestCorrection), R.string.why_request_correction);
+        Accessibility.explain(findViewById(R.id.buttonChangePassword), R.string.why_change_password);
+        Accessibility.explain(findViewById(R.id.buttonCancelNumberRequest), R.string.why_cancel_correction);
         findViewById(R.id.buttonCancelNumberRequest).setOnClickListener(v -> {
             if (busy) return;
             busy = true;

@@ -230,14 +230,14 @@
                         android:id="@+id/actionRequests"
                         style="@style/Registrar.ActionRow">
                         <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
-                            <ImageView
+                            <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_swap" app:tint="@color/indigo_600" />
                         </FrameLayout>
                         <LinearLayout style="@style/Registrar.ActionTextCol">
                             <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_requests_title_group" />
                             <TextView android:id="@+id/actionRequestsSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
                         </LinearLayout>
-                        <ImageView
+                        <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
                     </LinearLayout>
 
@@ -247,14 +247,14 @@
                         android:id="@+id/actionSync"
                         style="@style/Registrar.ActionRow">
                         <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_red">
-                            <ImageView
+                            <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_alert_triangle" app:tint="@color/red_600" />
                         </FrameLayout>
                         <LinearLayout style="@style/Registrar.ActionTextCol">
                             <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_needs_attention_title" />
                             <TextView android:id="@+id/actionSyncSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
                         </LinearLayout>
-                        <ImageView
+                        <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
                     </LinearLayout>
 
@@ -265,14 +265,14 @@
                         style="@style/Registrar.ActionRow"
                         android:paddingBottom="14dp">
                         <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_green">
-                            <ImageView
+                            <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_add" app:tint="@color/green_700" />
                         </FrameLayout>
                         <LinearLayout style="@style/Registrar.ActionTextCol">
                             <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_add_student_title" />
                             <TextView style="@style/Registrar.ActionSub" android:text="@string/action_add_student_sub" />
                         </LinearLayout>
-                        <ImageView
+                        <ImageView android:contentDescription="@null"
                     android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
                     </LinearLayout>
                 </LinearLayout>

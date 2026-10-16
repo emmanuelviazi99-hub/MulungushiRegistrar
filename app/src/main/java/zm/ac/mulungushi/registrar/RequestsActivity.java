@@ -47,6 +47,7 @@ public class RequestsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!RosterUi.lecturerOrLeave(this)) return; // lecturers only
         setContentView(R.layout.activity_requests);
         ConnectivityBanner.attach(this);
         LiveRefresh.lecturer(this);
@@ -54,10 +55,13 @@ public class RequestsActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.requests_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        Accessibility.explain(findViewById(R.id.btnBack), R.string.why_back);
         RosterFormat.bindAvatar(this, RosterUi.lecturerName(), SignOutSheet.lecturerDetail(this));
         BottomNav.bindLecturer(this, BottomNav.HOME);
 
         findViewById(R.id.tabPending).setOnClickListener(v -> { showAnswered = false; render(); });
+        Accessibility.explain(findViewById(R.id.tabPending), R.string.why_tab_pending);
+        Accessibility.explain(findViewById(R.id.tabAnswered), R.string.why_tab_answered);
         findViewById(R.id.tabAnswered).setOnClickListener(v -> {
             showAnswered = true;
             render();
@@ -173,7 +177,7 @@ public class RequestsActivity extends AppCompatActivity {
     private TextView emptyText(int res) {
         TextView empty = new TextView(this);
         empty.setText(res);
-        empty.setTextColor(getResources().getColor(R.color.slate_400));
+        empty.setTextColor(getResources().getColor(R.color.slate_500));
         empty.setTextSize(14f);
         empty.setGravity(Gravity.CENTER);
         empty.setPadding(0, dp(56), 0, dp(56));
@@ -230,7 +234,7 @@ public class RequestsActivity extends AppCompatActivity {
         nameCol.addView(nameView);
         TextView numberView = new TextView(this);
         numberView.setText(number);
-        numberView.setTextColor(getResources().getColor(R.color.slate_400));
+        numberView.setTextColor(getResources().getColor(R.color.slate_500));
         numberView.setTextSize(12f);
         nameCol.addView(numberView);
         header.addView(nameCol, nameColLp);
@@ -239,9 +243,14 @@ public class RequestsActivity extends AppCompatActivity {
         return header;
     }
 
-    private TextView kindBadge(boolean isGroup) {
+    /**
+     * "Group request" when the student had no group (their first), "Group change" when
+     * moving: the same request on the server (GroupRequestRules), told apart for the lecturer.
+     */
+    private TextView kindBadge(boolean isGroup, boolean firstGroup) {
         TextView badge = new TextView(this);
-        badge.setText(isGroup ? R.string.group_change_label : R.string.number_correction_label);
+        badge.setText(!isGroup ? R.string.number_correction_label
+                : firstGroup ? R.string.group_first_label : R.string.group_change_label);
         badge.setBackgroundResource(isGroup ? R.drawable.bg_badge_navy : R.drawable.bg_badge_melon);
         badge.setTextColor(getResources().getColor(isGroup ? R.color.navy_700 : R.color.melon_600));
         badge.setTextSize(11f);
@@ -296,7 +305,7 @@ public class RequestsActivity extends AppCompatActivity {
 
         LinearLayout card = newCard();
         card.addView(newHeader(s.name, s.number, null));
-        card.addView(kindBadge(isGroup));
+        card.addView(kindBadge(isGroup, !GroupRequestRules.isAssigned(s)));
 
         String from = isGroup ? s.group : s.number;
         String to = isGroup ? s.pendingGroup : s.pendingNumber;
@@ -374,7 +383,7 @@ public class RequestsActivity extends AppCompatActivity {
 
         LinearLayout card = newCard();
         card.addView(newHeader(r.studentName, r.studentNumber, result));
-        card.addView(kindBadge(isGroup));
+        card.addView(kindBadge(isGroup, StudentRepository.UNASSIGNED.equals(r.from)));
         card.addView(line(getString(R.string.to_arrow_fmt, r.from, r.to), 13f, R.color.navy_900, true, 2));
         if (r.reason != null) {
             card.addView(line("“" + r.reason + "”", 12.5f, R.color.slate_600, false, 2));

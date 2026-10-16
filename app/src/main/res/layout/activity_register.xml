@@ -146,7 +146,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_full_name" />
+                <TextView android:labelFor="@+id/inputName" style="@style/Registrar.FieldLabel" android:text="@string/label_full_name" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutName"
                     style="@style/Widget.Registrar.InputLayout"
@@ -164,7 +164,7 @@
                         android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView android:id="@+id/labelNumber" style="@style/Registrar.FieldLabel" android:text="@string/label_student_number" />
+                <TextView android:labelFor="@+id/inputNumber" android:id="@+id/labelNumber" style="@style/Registrar.FieldLabel" android:text="@string/label_student_number" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutNumber"
                     style="@style/Widget.Registrar.InputLayout"
@@ -183,7 +183,7 @@
                         android:maxLength="9" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView android:id="@+id/labelDob" style="@style/Registrar.FieldLabel" android:text="@string/label_dob" />
+                <TextView android:labelFor="@+id/inputDob" android:id="@+id/labelDob" style="@style/Registrar.FieldLabel" android:text="@string/label_dob" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutDob"
                     style="@style/Widget.Registrar.InputLayout"
@@ -204,7 +204,7 @@
                         android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView android:id="@+id/labelPhone" style="@style/Registrar.FieldLabel" android:text="@string/label_phone" />
+                <TextView android:labelFor="@+id/inputPhone" android:id="@+id/labelPhone" style="@style/Registrar.FieldLabel" android:text="@string/label_phone" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutPhone"
                     style="@style/Widget.Registrar.InputLayout"
@@ -223,7 +223,7 @@
                         android:maxLength="16" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView android:id="@+id/labelNrc" style="@style/Registrar.FieldLabel" android:text="@string/label_nrc" />
+                <TextView android:labelFor="@+id/inputNrc" android:id="@+id/labelNrc" style="@style/Registrar.FieldLabel" android:text="@string/label_nrc" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutNrc"
                     style="@style/Widget.Registrar.InputLayout"
@@ -243,7 +243,7 @@
                         android:maxLength="11" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_email" />
+                <TextView android:labelFor="@+id/inputEmail" style="@style/Registrar.FieldLabel" android:text="@string/label_email" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutEmail"
                     style="@style/Widget.Registrar.InputLayout"
@@ -261,7 +261,7 @@
                         android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView android:id="@+id/labelEmployeeId" style="@style/Registrar.FieldLabel" android:text="@string/label_employee_id" />
+                <TextView android:labelFor="@+id/inputEmployeeId" android:id="@+id/labelEmployeeId" style="@style/Registrar.FieldLabel" android:text="@string/label_employee_id" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutEmployeeId"
                     style="@style/Widget.Registrar.InputLayout"
@@ -320,7 +320,7 @@
                     android:textColor="@color/slate_500"
                     android:textSize="14sp" />
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_claim_code" />
+                <TextView android:labelFor="@+id/inputCode" style="@style/Registrar.FieldLabel" android:text="@string/label_claim_code" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutCode"
                     style="@style/Widget.Registrar.InputLayout"
@@ -384,7 +384,7 @@
                     android:gravity="center"
                     android:minHeight="48dp"
                     android:text="@string/action_resend"
-                    android:textColor="@color/slate_400"
+                    android:textColor="@color/slate_500"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -413,7 +413,7 @@
                     android:textColor="@color/slate_500"
                     android:textSize="14sp" />
 
-                <TextView android:id="@+id/labelProgramme" style="@style/Registrar.FieldLabel" android:text="@string/label_programme" />
+                <TextView android:labelFor="@+id/spinnerProgramme" android:id="@+id/labelProgramme" style="@style/Registrar.FieldLabel" android:text="@string/label_programme" />
                 <Spinner
                     android:id="@+id/spinnerProgramme"
                     android:layout_width="match_parent"
@@ -422,7 +422,7 @@
                     android:background="@drawable/bg_search"
                     android:paddingHorizontal="10dp" />
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_password" />
+                <TextView android:labelFor="@+id/inputPassword" style="@style/Registrar.FieldLabel" android:text="@string/label_password" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutPassword"
                     style="@style/Widget.Registrar.InputLayout"
@@ -441,7 +441,7 @@
                         android:singleLine="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView style="@style/Registrar.FieldLabel" android:text="@string/label_confirm_password" />
+                <TextView android:labelFor="@+id/inputConfirm" style="@style/Registrar.FieldLabel" android:text="@string/label_confirm_password" />
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutConfirm"
                     style="@style/Widget.Registrar.InputLayout"

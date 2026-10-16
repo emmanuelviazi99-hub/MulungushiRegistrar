@@ -57,11 +57,13 @@ public class SyncActivity extends AppCompatActivity {
         sub.setText(R.string.sync_status_sub);
         sub.setVisibility(View.VISIBLE);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        Accessibility.explain(findViewById(R.id.btnBack), R.string.why_back);
         RosterFormat.hideBack(this);
         findViewById(R.id.dashLine).setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
         buildLegend();
         findViewById(R.id.btnSyncNow).setOnClickListener(v -> syncNow(true));
+        Accessibility.explain(findViewById(R.id.btnSyncNow), R.string.why_sync_now);
 
         lecturer = ROLE_LECTURER.equals(getIntent().getStringExtra(EXTRA_ROLE));
         LiveRefresh.attach(this, () -> RosterApi.get().syncNow(null));

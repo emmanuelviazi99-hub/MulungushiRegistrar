@@ -45,7 +45,7 @@ public final class ApiAuthService implements AuthService {
             JSONObject body = new JSONObject()
                     .put("loginKey", loginKey.trim())
                     .put("password", password);
-            return signedIn(ApiClient.post("/auth/login", body, null));
+            return signedIn(ApiClient.post("/auth/login", body, null), true);
         });
     }
 
@@ -84,7 +84,7 @@ public final class ApiAuthService implements AuthService {
                     .put("email", email.trim())
                     .put("password", password);
             if (programme != null && !programme.isEmpty()) body.put("programmeCode", programme);
-            return signedIn(ApiClient.post("/auth/register/complete", body, null));
+            return signedIn(ApiClient.post("/auth/register/complete", body, null), true);
         });
     }
 
@@ -113,7 +113,7 @@ public final class ApiAuthService implements AuthService {
             JSONObject body = new JSONObject()
                     .put("email", email.trim())
                     .put("password", password);
-            return signedIn(ApiClient.post("/auth/staff/complete", body, null));
+            return signedIn(ApiClient.post("/auth/staff/complete", body, null), true);
         });
     }
 
@@ -153,7 +153,7 @@ public final class ApiAuthService implements AuthService {
                     .put("newPassword", newPassword);
             ApiClient.Response res = ApiClient.put("/auth/password", body, Session.token());
             if (res.status == 401) return Result.of(Status.SIGNED_OUT);
-            return signedIn(res); // the answer carries the new token: keep this phone signed in
+            return signedIn(res, false); // the new token keeps this phone signed in; not a new sign-in
         });
     }
 
@@ -168,12 +168,17 @@ public final class ApiAuthService implements AuthService {
         });
     }
 
-    /** A successful sign-in or sign-up carries the token and profile: remember them. */
-    private static Result signedIn(ApiClient.Response res) {
+    /**
+     * A successful sign-in or sign-up carries the token and profile: remember them.
+     * newSignIn: a login or a finished sign-up, whose answer says whether it was the
+     * account's first sign-in ("Welcome" or "Welcome back"). A password change is not.
+     */
+    private static Result signedIn(ApiClient.Response res, boolean newSignIn) {
         Result r = interpret(res);
         if (r.ok()) {
             if (res.body.optString("token", "").isEmpty()) return new Result(Status.SERVER_ERROR, 0, 0, null);
             Session.save(res.body);
+            if (newSignIn) Session.recordSignIn(res.body.optBoolean("firstSignIn", false));
         }
         return r;
     }

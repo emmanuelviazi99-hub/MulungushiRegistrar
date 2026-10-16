@@ -67,6 +67,24 @@ final class RosterUi {
     }
 
     /**
+     * Lecturer screens call this first. A student (or nobody) is sent to their own
+     * home or the sign-in screen, and the screen closes. Returns true for a lecturer.
+     * The backend refuses students on every lecturer endpoint (403) anyway; this keeps
+     * a student from even seeing an empty lecturer screen.
+     */
+    static boolean lecturerOrLeave(Activity a) {
+        if (Session.isSignedIn() && Session.isLecturer()) return true;
+        Intent intent = Session.isSignedIn() && Session.isStudent()
+                ? new Intent(a, StudentHomeActivity.class)
+                        .putExtra(StudentHomeActivity.EXTRA_STUDENT_NUMBER, Session.studentNumber())
+                : new Intent(a, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        a.startActivity(intent);
+        a.finish();
+        return false;
+    }
+
+    /**
      * The signed-in student for a student screen, or null after sending the person
      * to the sign-in screen (no saved sign-in, e.g. the app data was cleared).
      */

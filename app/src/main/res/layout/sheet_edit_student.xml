@@ -32,7 +32,7 @@
             android:fontFamily="sans-serif-medium"
             android:text="@string/sheet_title_add" />
 
-        <TextView
+        <TextView android:labelFor="@+id/inputName"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_full_name" />
 
@@ -52,7 +52,7 @@
                 android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
+        <TextView android:labelFor="@+id/inputNumber"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_student_number" />
 
@@ -93,7 +93,7 @@
             android:visibility="gone"
             tools:visibility="visible">
 
-            <TextView
+            <TextView android:labelFor="@+id/inputNrc"
                 style="@style/Registrar.FieldLabel"
                 android:text="@string/label_nrc" />
 
@@ -116,7 +116,7 @@
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
+            <TextView android:labelFor="@+id/inputDob"
                 style="@style/Registrar.FieldLabel"
                 android:text="@string/label_dob" />
 
@@ -150,7 +150,7 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <TextView
+        <TextView android:labelFor="@+id/spinnerProgramme"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_programme" />
 
@@ -162,7 +162,7 @@
             android:background="@drawable/bg_search"
             android:paddingHorizontal="10dp" />
 
-        <TextView
+        <TextView android:labelFor="@+id/spinnerGroup"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_lab_group" />
 
@@ -175,6 +175,7 @@
 
         <TextView
             android:id="@+id/groupFullError"
+            android:accessibilityLiveRegion="polite"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"

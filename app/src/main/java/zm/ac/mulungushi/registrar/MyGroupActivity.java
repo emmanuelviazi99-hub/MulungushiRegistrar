@@ -40,6 +40,7 @@ public class MyGroupActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.topBarTitle)).setText(R.string.my_group_title);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        Accessibility.explain(findViewById(R.id.btnBack), R.string.why_back);
 
         Student self = RosterUi.meOrSignIn(this);
         if (self == null) return;
@@ -124,7 +125,7 @@ public class MyGroupActivity extends AppCompatActivity {
 
         TextView number = new TextView(this);
         number.setText(s.number);
-        number.setTextColor(getResources().getColor(R.color.slate_400));
+        number.setTextColor(getResources().getColor(R.color.slate_500));
         number.setTextSize(13.5f);
         textCol.addView(number);
 

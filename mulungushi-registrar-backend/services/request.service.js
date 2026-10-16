@@ -47,9 +47,14 @@ async function createRequest(kind, studentId, details) {
 
   if (kind === 'GROUP') {
     const target = await groupService.resolveGroupId(pool, details.groupCode); // null = Unassigned
+    // Checked against the student's group as it is NOW, in the same statement:
+    // asking for the group you are already in inserts nothing (ALREADY_IN_GROUP below).
+    // An unassigned student's request (from_group_id NULL) is their first group;
+    // an assigned student's is a group change. Same kind, same approval flow.
     sql = `INSERT INTO change_requests (kind, student_id, from_group_id, to_group_id, reason)
-           SELECT 'GROUP', student_id, group_id, ?, ? FROM students WHERE student_id = ? AND active = 1`;
-    params = [target ? target.group_id : null, reason, studentId];
+           SELECT 'GROUP', student_id, group_id, ?, ? FROM students
+            WHERE student_id = ? AND active = 1 AND NOT (group_id <=> ?)`;
+    params = [target ? target.group_id : null, reason, studentId, target ? target.group_id : null];
   } else {
     const newNumber = String(details.newNumber ?? '').trim();
     if (!v.isValidStudentNumber(newNumber)) {
@@ -69,7 +74,13 @@ async function createRequest(kind, studentId, details) {
     }
     throw err;
   }
-  if (result.affectedRows === 0) throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Your profile could not be found.');
+  if (result.affectedRows === 0) {
+    if (kind === 'GROUP') {
+      const [[me]] = await pool.query('SELECT student_id FROM students WHERE student_id = ? AND active = 1', [studentId]);
+      if (me) throw new ApiError(409, 'ALREADY_IN_GROUP', 'You are already in that group.');
+    }
+    throw new ApiError(404, 'STUDENT_NOT_FOUND', 'Your profile could not be found.');
+  }
   return result.insertId;
 }
 

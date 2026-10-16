@@ -384,7 +384,7 @@ public class RegisterActivity extends AppCompatActivity {
     private void startResendTimer(int seconds) {
         resendEndsAt = SystemClock.elapsedRealtime() + seconds * 1000L;
         textResend.setEnabled(false);
-        textResend.setTextColor(ContextCompat.getColor(this, R.color.slate_400));
+        textResend.setTextColor(ContextCompat.getColor(this, R.color.slate_500));
         resendTimer.start(seconds, new ResendTimer.Listener() {
             @Override
             public void onTick(int secondsLeft) {

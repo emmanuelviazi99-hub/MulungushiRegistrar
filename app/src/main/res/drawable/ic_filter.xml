@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filter (three sliders), stroke style like ic_chevron_down. Tinted where used. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:strokeColor="#000000" android:strokeWidth="2" android:strokeLineCap="round"
+        android:pathData="M4,6 L20,6 M4,12 L20,12 M4,18 L20,18" />
+    <path android:fillColor="#000000" android:strokeColor="#000000" android:strokeWidth="2"
+        android:pathData="M9,6 m-2,0 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0 M15,12 m-2,0 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0 M8,18 m-2,0 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0" />
+</vector>

@@ -81,6 +81,7 @@ public class StudentAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             more.button.setOnClickListener(v -> {
                 if (onLoadMore != null) onLoadMore.run();
             });
+            Accessibility.explain(more.button, R.string.why_load_more);
             return;
         }
         Holder holder = (Holder) viewHolder;
@@ -108,6 +109,7 @@ public class StudentAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         holder.initials.setText(initialsOf(s.name));
         holder.itemView.setOnClickListener(v -> onRowClick.onClick(s));
+        Accessibility.explainRow(holder.itemView, c.getString(R.string.why_student_row));
     }
 
     @Override

@@ -38,7 +38,7 @@
             android:textColor="@color/slate_500"
             android:textSize="14.5sp" />
 
-        <TextView
+        <TextView android:labelFor="@+id/inputCorrectNumber"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_correct_number" />
 
@@ -59,7 +59,7 @@
                 android:maxLength="9" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
+        <TextView android:labelFor="@+id/inputReason"
             style="@style/Registrar.FieldLabel"
             android:text="@string/label_reason_optional" />
 

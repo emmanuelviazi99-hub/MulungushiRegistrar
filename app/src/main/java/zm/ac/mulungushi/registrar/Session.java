@@ -45,6 +45,14 @@ public final class Session {
     private static SharedPreferences prefs;
     private static final Map<String, String> values = new HashMap<>();
 
+    /**
+     * Whether the sign-in made during this run of the app was the account's first
+     * (true) or a return (false); null when nobody signed in during this run (the
+     * app reopened with a saved sign-in). Memory only, on purpose: the server keeps
+     * the real answer (accounts.first_signed_in_at), and a reopened app is a return.
+     */
+    private static Boolean firstSignInThisRun;
+
     private Session() {}
 
     /** Called once from RegistrarApp.onCreate. */
@@ -90,7 +98,18 @@ public final class Session {
 
     public static synchronized void clear() {
         values.clear();
+        firstSignInThisRun = null;
         persist();
+    }
+
+    /** A new sign-in (login or finished sign-up) and the server's firstSignIn answer. */
+    static synchronized void recordSignIn(boolean first) {
+        firstSignInThisRun = first;
+    }
+
+    /** See {@link #firstSignInThisRun}. */
+    static synchronized Boolean firstSignInThisRun() {
+        return firstSignInThisRun;
     }
 
     public static synchronized boolean isSignedIn() {

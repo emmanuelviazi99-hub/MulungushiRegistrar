@@ -34,7 +34,8 @@
 
     <!-- Student home -->
     <string name="student_portal_sub">Student Portal</string>
-    <string name="welcome_back">Welcome back, %1$s</string>
+    <string name="welcome_first">Welcome, %1$s!</string>
+    <string name="welcome_back">Welcome back, %1$s!</string>
     <string name="term_label">Semester 2 · Week 4</string>
     <string name="pending_sync_one">1 change pending sync. </string>
     <string name="view_status">View status</string>
@@ -45,7 +46,8 @@
     <string name="no_group_yet">No lab group yet</string>
     <string name="request_group_below">Request a group below</string>
     <string name="lab_group_prefix">Lab group %1$s</string>
-    <string name="card_group_change_title">Request group change</string>
+    <string name="card_group_first_title">Request for Group</string>
+    <string name="card_group_change_title">Request for Group Change</string>
     <string name="card_group_change_sub">No request open</string>
     <string name="card_edit_details_title">Edit my details</string>
     <string name="card_edit_details_sub">Programme: %1$s</string>
@@ -156,7 +158,8 @@
     <string name="requests_title">Requests</string>
     <string name="action_approve">Approve</string>
     <string name="action_decline">Decline</string>
-    <string name="request_group_change_title">Request group change</string>
+    <string name="request_group_first_title">Request for Group</string>
+    <string name="request_group_change_title">Request for Group Change</string>
     <string name="group_full_note">Full, no places left</string>
     <string name="request_group_fmt">Request %1$s</string>
     <string name="number_correction_pending_note">Your lecturer must confirm it. Your number stays the same until then.</string>
@@ -230,7 +233,6 @@
     <string name="server_down_banner">Can\'t reach the server. Changes save on this device and sync later.</string>
     <string name="server_down_banner_saved">Can\'t reach the server. Showing what was saved at %1$s. Changes save on this device and sync later.</string>
     <string name="back_online">Back online. Syncing.</string>
-    <string name="welcome_lecturer_fmt">Welcome, %1$s</string>
     <string name="action_requests_title_group">Group requests</string>
     <string name="action_requests_waiting_fmt">%1$d waiting for approval</string>
     <string name="hint_register_name">e.g. Chanda Mwansa</string>
@@ -433,4 +435,68 @@
     <string name="name_programme_edit_title">Name and programme edit</string>
     <string name="sync_syncing_now_note">Sending this change to the server now…</string>
     <string name="sync_edit_synced_note">Saved and confirmed by the server.</string>
+    <!-- "What is this for": TalkBack says "Double-tap to <this>", and pressing and holding shows it in a bubble -->
+    <string name="why_account">See who is signed in, or sign out</string>
+    <string name="why_back">Go back to the previous screen</string>
+    <string name="why_nav_home">Go to the home screen</string>
+    <string name="why_nav_my_group">See your group and your groupmates</string>
+    <string name="why_nav_roster">See and manage every student</string>
+    <string name="why_nav_sync">See what is saved on this phone and what is waiting to upload</string>
+    <string name="why_my_group">See your group, its seats and your groupmates</string>
+    <string name="why_group_change">Ask the lecturer to move you to another group</string>
+    <string name="why_edit_details">Update your contact details or password, or ask to correct your student number</string>
+    <string name="why_sync_banner">See the changes waiting to upload</string>
+    <string name="why_requests">Approve or decline students\' requests</string>
+    <string name="why_sync_lecturer">Upload changes saved on this phone and check any that were refused</string>
+    <string name="why_add_student">Add a new student to the roster</string>
+    <string name="why_share_summary">Share how full each group is in a message</string>
+    <string name="why_filter_programme">Show only the students of one programme</string>
+    <string name="why_filter_group">Show only the students of one group</string>
+    <string name="why_clear_filters">Show all students again</string>
+    <string name="why_student_row">Edit or move this student</string>
+    <string name="why_load_more">Show the next students in the list</string>
+    <string name="why_sync_now">Upload the waiting changes now</string>
+    <string name="why_tab_pending">Show requests waiting for your answer</string>
+    <string name="why_tab_answered">Show requests you have already answered</string>
+    <string name="why_submit_group">Send this request to the lecturer</string>
+    <string name="why_cancel_group">Withdraw your open group change request</string>
+    <string name="why_request_correction">Ask the lecturer to correct your student number</string>
+    <string name="why_cancel_correction">Withdraw your student number correction request</string>
+    <string name="why_change_password">Choose a new password</string>
+    <string name="why_save_details">Save the changes to your details</string>
+    <string name="why_cancel_edit">Leave without saving</string>
+
+    <!-- Lecturer search and filters (LecturerViewModel, RosterFilterSheet) -->
+    <string name="filter_sheet_title">Filter students</string>
+    <string name="filter_all_programmes">All programmes</string>
+    <string name="filter_all_groups">All groups</string>
+    <string name="filter_reset">Reset</string>
+    <plurals name="filter_show_results">
+        <item quantity="one">Show %1$d student</item>
+        <item quantity="other">Show %1$d students</item>
+    </plurals>
+    <plurals name="filter_option_students">
+        <item quantity="one">%1$d student</item>
+        <item quantity="other">%1$d students</item>
+    </plurals>
+    <string name="a11y_selected">selected</string>
+    <string name="a11y_not_selected">not selected</string>
+    <string name="a11y_clear_search">Clear search</string>
+    <string name="a11y_filters_none">Filters</string>
+    <plurals name="a11y_filters_on">
+        <item quantity="one">Filters, %1$d on</item>
+        <item quantity="other">Filters, %1$d on</item>
+    </plurals>
+    <string name="roster_no_match_text">No students match \u201c%1$s\u201d</string>
+    <string name="roster_clear_all">Clear search and filters</string>
+    <string name="why_filters">Choose a programme or group, or show unassigned students</string>
+    <string name="why_clear_search">Empty the search box and show all students</string>
+
+    <!-- Group requests: first group vs group change (GroupViewModel, GroupRequestRules) -->
+    <string name="why_group_first">Ask the lecturer to put you in a group</string>
+    <string name="why_submit_first_group">Send this request for a group to the lecturer</string>
+    <string name="join_group">Join %1$s</string>
+    <string name="group_first_label">Group request</string>
+    <string name="error_request_already_open">You already have an open request. Withdraw it first to ask for a different group.</string>
+    <string name="error_already_in_group">You are already in that group. Choose a different one.</string>
 </resources>
