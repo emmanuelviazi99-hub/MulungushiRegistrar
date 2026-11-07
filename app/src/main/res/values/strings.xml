@@ -499,4 +499,32 @@
     <string name="group_first_label">Group request</string>
     <string name="error_request_already_open">You already have an open request. Withdraw it first to ask for a different group.</string>
     <string name="error_already_in_group">You are already in that group. Choose a different one.</string>
+
+    <!-- Class list (lecturer dashboard): import a spreadsheet, download the group lists, add a group -->
+    <string name="section_class_list">Class list</string>
+    <string name="action_import_title">Import class list</string>
+    <string name="action_import_sub">Excel or CSV file; you see a preview first</string>
+    <string name="action_download_title">Download group lists</string>
+    <string name="action_download_sub">Excel file with a sheet for each group</string>
+    <string name="action_add_group_title">Add a group</string>
+    <string name="action_add_group_sub_fmt">Next: %1$s with %2$d places</string>
+    <string name="action_add_group_sub_full">All groups are full. Add one</string>
+    <string name="class_list_working">Working…</string>
+    <string name="class_list_reading">Reading the file…</string>
+    <string name="import_preview_title">Import this class list?</string>
+    <string name="import_nothing_title">Nothing new to import</string>
+    <string name="import_done_title">Class list imported</string>
+    <string name="import_file_too_big">That file is larger than 3 MB. Save only the class list sheet and try again.</string>
+    <string name="import_file_unreadable">That file couldn\'t be opened. Choose an Excel (.xlsx) or CSV file.</string>
+    <string name="import_no_picker">No app on this phone can choose files.</string>
+    <string name="download_saved_fmt">Saved %1$s</string>
+    <string name="download_failed">The file couldn\'t be saved there. Try another folder.</string>
+    <string name="add_group_title_fmt">Add %1$s?</string>
+    <string name="add_group_message_fmt">%1$s will be a new group with %2$d places. Students can then ask to join it, and you can move students into it.</string>
+    <string name="add_group_confirm">Add group</string>
+    <string name="add_group_done_fmt">%1$s added</string>
+    <string name="action_ok">OK</string>
+    <string name="why_import_class_list">Choose a spreadsheet of students and groups to add to the roster</string>
+    <string name="why_download_groups">Save the current group lists as an Excel file</string>
+    <string name="why_add_group">Create one more lab group</string>
 </resources>

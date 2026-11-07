@@ -36,6 +36,7 @@ XML layout + Activity (View)  ──actions──▶  ViewModel  ──calls─�
 | Welcome line, role checks | `StudentHomeActivity`, `LecturerDashboardActivity` | `AuthViewModel` (+ `Greeting`) | `Session` ← `firstSignIn` from the server |
 | Roster search and filters | `LecturerRosterActivity`, `RosterFilterSheet` | `LecturerViewModel` (+ `RosterQuery`) | `StudentRepository.search()` ← `RosterApi.loadRoster()` → `GET /students` |
 | Group request | `GroupChangeActivity`, home card | `GroupViewModel` (+ `GroupRequestRules`) | `RosterApi.loadMine()`, `requestGroupChange()`, `cancelGroupChange()` → `/students/me`, `/group-requests`, `/my-requests/group` |
+| Class list (import, download, add group) | `LecturerDashboardActivity` (file picker, preview dialog) | `ClassListViewModel` (+ `ClassListImport`) | `ClassListApi` → `POST /students/import`, `GET /students/export`, `POST /groups`; then `RosterApi.loadRoster()` |
 
 **Why one Java package?** The data classes (`RosterApi`, `StudentRepository`,
 `Session`, …) are package-private on purpose, so only the app's own code can

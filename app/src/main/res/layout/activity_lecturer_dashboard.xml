@@ -276,6 +276,83 @@
                     android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
                     </LinearLayout>
                 </LinearLayout>
+
+                <!-- The class list: import the lecturer's spreadsheet, download the groups, add a group (ClassListViewModel) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/section_class_list"
+                    android:accessibilityHeading="true"
+                    android:drawableStart="@drawable/ic_users"
+                    android:drawableTint="@color/melon_600"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/melon_600"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.04"
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:elevation="2dp"
+                    android:background="@drawable/bg_card_plain">
+
+                    <LinearLayout
+                        android:id="@+id/actionImportClassList"
+                        style="@style/Registrar.ActionRow">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
+                            <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_upload" app:tint="@color/indigo_600" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_import_title" />
+                            <TextView android:id="@+id/actionImportSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                        </LinearLayout>
+                        <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <View style="@style/Registrar.ActionDivider" />
+
+                    <LinearLayout
+                        android:id="@+id/actionDownloadGroups"
+                        style="@style/Registrar.ActionRow">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_pill_green">
+                            <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_download" app:tint="@color/green_700" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_download_title" />
+                            <TextView android:id="@+id/actionDownloadSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                        </LinearLayout>
+                        <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <View style="@style/Registrar.ActionDivider" />
+
+                    <LinearLayout
+                        android:id="@+id/actionAddGroup"
+                        style="@style/Registrar.ActionRow"
+                        android:paddingBottom="14dp">
+                        <FrameLayout style="@style/Registrar.ActionIconChip" android:background="@drawable/bg_chip_indigo">
+                            <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionIcon" android:src="@drawable/ic_add" app:tint="@color/indigo_600" />
+                        </FrameLayout>
+                        <LinearLayout style="@style/Registrar.ActionTextCol">
+                            <TextView style="@style/Registrar.ActionTitle" android:text="@string/action_add_group_title" />
+                            <TextView android:id="@+id/actionAddGroupSub" style="@style/Registrar.ActionSub" tools:text="placeholder" />
+                        </LinearLayout>
+                        <ImageView android:contentDescription="@null"
+                    android:importantForAccessibility="no" style="@style/Registrar.ActionChevron" android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

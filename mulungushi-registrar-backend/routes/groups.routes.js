@@ -15,4 +15,8 @@ router.get('/', requireAuth, requireRole('STUDENT', 'LECTURER'), asyncHandler(gr
 // A student's own group and who is in it (names and numbers only).
 router.get('/mine', requireAuth, requireRole('STUDENT'), asyncHandler(groupController.listMine));
 
+// A lecturer adds a group when the others are full: the next number (G15 after G14).
+const classListController = require('../controllers/classlist.controller');
+router.post('/', requireAuth, requireRole('LECTURER'), asyncHandler(classListController.addGroup));
+
 module.exports = router;

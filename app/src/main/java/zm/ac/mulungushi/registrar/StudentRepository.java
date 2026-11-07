@@ -21,8 +21,10 @@ import java.util.Map;
  */
 public class StudentRepository {
 
+    /** The usual group size. Each group has its own limit on the server (capacityOf); this is only the default. */
     public static final int CAPACITY = 15;
-    public static final String[] PROGRAMMES = {"CS", "IT", "DS"};
+    /** Programme codes (ICTED = ICT with Education, from the lecturer's class list). */
+    public static final String[] PROGRAMMES = {"CS", "IT", "DS", "ICTED"};
     /** The lab groups. Replaced by the server's list (GET /groups) once it has been loaded. */
     public static String[] GROUPS = {"G01", "G02", "G03", "G04"};
     public static final String UNASSIGNED = "Unassigned";
@@ -53,6 +55,7 @@ public class StudentRepository {
     // ---- what the server last said ----
     private final List<Student> roster = new ArrayList<>();          // lecturer
     private final Map<String, Integer> groupCounts = new HashMap<>(); // both
+    private final Map<String, Integer> groupCapacities = new HashMap<>(); // both: each group's own limit
     private final List<RequestRecord> answered = new ArrayList<>();   // lecturer, newest first
     private Student me;                                               // student
     private final List<Student> myGroupMembers = new ArrayList<>();   // student
@@ -114,6 +117,35 @@ public class StudentRepository {
     }
 
     /** Active members of a group: the server's total when known, else counted from the roster. */
+    /**
+     * A group's limit as the server has it: 15 usually, more for a group imported from
+     * the class list with more students (kept whole), or one the lecturer set.
+     */
+    public int capacityOf(String group) {
+        Integer c = group == null ? null : groupCapacities.get(group);
+        return c != null && c > 0 ? c : CAPACITY;
+    }
+
+    public boolean isFull(String group) {
+        return group != null && groupCount(group) >= capacityOf(group);
+    }
+
+    /** True when every group is full: the lecturer should add a group. */
+    public boolean allGroupsFull() {
+        if (GROUPS.length == 0) return false;
+        for (String g : GROUPS) if (!isFull(g)) return false;
+        return true;
+    }
+
+    /** The code the next new group will get (G15 after G14), as the server numbers them. */
+    public String nextGroupCode() {
+        int highest = 0;
+        for (String g : GROUPS) {
+            if (g != null && g.matches("G\\d+")) highest = Math.max(highest, Integer.parseInt(g.substring(1)));
+        }
+        return String.format(java.util.Locale.ROOT, "G%02d", highest + 1);
+    }
+
     public int groupCount(String group) {
         Integer n = groupCounts.get(group);
         if (n != null) return n;
@@ -209,10 +241,12 @@ public class StudentRepository {
     // apply the server's answers (called by RosterApi on the main thread)
     // =====================================================================
 
-    void applyGroups(List<String> codes, Map<String, Integer> counts) {
+    void applyGroups(List<String> codes, Map<String, Integer> counts, Map<String, Integer> capacities) {
         if (codes != null && !codes.isEmpty()) GROUPS = codes.toArray(new String[0]);
         groupCounts.clear();
         if (counts != null) groupCounts.putAll(counts);
+        groupCapacities.clear();
+        if (capacities != null) groupCapacities.putAll(capacities);
     }
 
     /** Lecturer: the whole roster plus the open requests, with this phone's waiting changes on top. */

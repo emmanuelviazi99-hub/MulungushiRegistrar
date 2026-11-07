@@ -29,7 +29,8 @@ import androidx.lifecycle.LifecycleOwner;
  * and says the screen shows what was saved on the phone, and when. When the
  * network comes back, waiting changes are uploaded straight away.
  */
-final class ConnectivityBanner {
+final class
+ConnectivityBanner {
 
     /** Last state any screen saw, so the "back online" message shows once on whichever screen is open. */
     private static Boolean lastOnline = null;

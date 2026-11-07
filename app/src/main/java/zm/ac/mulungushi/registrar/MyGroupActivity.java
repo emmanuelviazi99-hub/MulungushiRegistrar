@@ -70,7 +70,7 @@ public class MyGroupActivity extends AppCompatActivity {
         int count = assigned ? repo.groupCount(self.group) : 0;
 
         ((TextView) findViewById(R.id.textClassmatesOf)).setText(getString(R.string.my_group_classmates, self.group));
-        ((TextView) findViewById(R.id.badgeCount)).setText(count + " of " + StudentRepository.CAPACITY);
+        ((TextView) findViewById(R.id.badgeCount)).setText(count + " of " + repo.capacityOf(self.group));
 
         LinearLayout list = findViewById(R.id.membersList);
         list.removeAllViews();

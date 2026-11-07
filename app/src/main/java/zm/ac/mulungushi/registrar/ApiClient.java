@@ -123,13 +123,69 @@ final class ApiClient {
         }
     }
 
+    /** A file from the backend (the group list download): its bytes and suggested name, or the JSON error. */
+    static final class Download {
+        final int status;
+        final byte[] bytes;       // the file on success, else empty
+        final String fileName;    // from Content-Disposition, or null
+        final Response error;     // the JSON answer when status is not 2xx, else null
+
+        Download(int status, byte[] bytes, String fileName, Response error) {
+            this.status = status;
+            this.bytes = bytes;
+            this.fileName = fileName;
+            this.error = error;
+        }
+
+        boolean ok() {
+            return status >= 200 && status < 300;
+        }
+    }
+
+    /** GET for a file rather than JSON. Network problems throw IOException, as everywhere else. */
+    static Download download(String path, String token) throws IOException, JSONException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + path).openConnection();
+        try {
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            conn.setReadTimeout(READ_TIMEOUT_MS);
+            if (token != null && !token.isEmpty()) conn.setRequestProperty("Authorization", "Bearer " + token);
+            int status = conn.getResponseCode();
+            if (status >= 400) {
+                InputStream in = conn.getErrorStream();
+                String text = in == null ? "" : readAll(in).trim();
+                JSONObject body = text.startsWith("{") ? new JSONObject(text) : new JSONObject();
+                return new Download(status, new byte[0], null, new Response(status, body));
+            }
+            byte[] bytes = readBytes(conn.getInputStream());
+            return new Download(status, bytes, fileNameFrom(conn.getHeaderField("Content-Disposition")), null);
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /** attachment; filename="Mulungushi-Registrar-groups-2026-11-07.xlsx" → the name, or null. */
+    static String fileNameFrom(String contentDisposition) {
+        if (contentDisposition == null) return null;
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("filename\\s*=\\s*\"?([^\";]+)\"?", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(contentDisposition);
+        if (!m.find()) return null;
+        String name = m.group(1).trim().replaceAll("[\\\\/:*?<>|]", "_");
+        return name.isEmpty() ? null : name;
+    }
+
     private static String readAll(InputStream in) throws IOException {
+        return new String(readBytes(in), StandardCharsets.UTF_8);
+    }
+
+    private static byte[] readBytes(InputStream in) throws IOException {
         try (InputStream input = in) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
+            byte[] buf = new byte[8192];
             int n;
             while ((n = input.read(buf)) != -1) out.write(buf, 0, n);
-            return new String(out.toByteArray(), StandardCharsets.UTF_8);
+            return out.toByteArray();
         }
     }
 }

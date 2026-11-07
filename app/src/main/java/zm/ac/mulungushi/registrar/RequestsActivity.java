@@ -319,7 +319,7 @@ public class RequestsActivity extends AppCompatActivity {
         String meta = getString(R.string.requested_on_fmt, on == null ? "today" : on);
         if (isGroup) {
             meta += " " + getString(R.string.group_places_fmt, s.pendingGroup,
-                    repo.groupCount(s.pendingGroup), StudentRepository.CAPACITY);
+                    repo.groupCount(s.pendingGroup), repo.capacityOf(s.pendingGroup));
         } else {
             meta += " " + getString(R.string.review_hint);
         }

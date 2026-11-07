@@ -496,7 +496,7 @@ public final class RosterApi {
         boolean offline = outcome.is(Outcome.NETWORK) || outcome.queued;
         return new Step(outcome, () -> {
             StudentRepository repo = StudentRepository.getInstance();
-            repo.applyGroups(totals.codes, totals.counts);
+            repo.applyGroups(totals.codes, totals.counts, totals.capacities);
             if (saved) repo.applyRoster(students, pending, ops);
             repo.applySyncState(ops, savedAt, offline);
         });
@@ -561,7 +561,7 @@ public final class RosterApi {
         boolean offline = outcome.is(Outcome.NETWORK) || outcome.queued;
         return new Step(outcome, () -> {
             StudentRepository repo = StudentRepository.getInstance();
-            repo.applyGroups(totals.codes, totals.counts);
+            repo.applyGroups(totals.codes, totals.counts, totals.capacities);
             repo.applyMine(self, latestGroup, latestNumber, members, ops);
             repo.applySyncState(ops, savedAt, offline);
         });
@@ -593,6 +593,7 @@ public final class RosterApi {
     private static final class GroupTotals {
         final List<String> codes = new ArrayList<>();
         final Map<String, Integer> counts = new HashMap<>();
+        final Map<String, Integer> capacities = new HashMap<>();
     }
 
     private static GroupTotals groupsFrom(JSONArray groups) throws JSONException {
@@ -601,6 +602,7 @@ public final class RosterApi {
             JSONObject g = groups.getJSONObject(i);
             t.codes.add(g.getString("groupCode"));
             t.counts.put(g.getString("groupCode"), g.optInt("activeCount", 0));
+            t.capacities.put(g.getString("groupCode"), g.optInt("capacity", StudentRepository.CAPACITY));
         }
         return t;
     }

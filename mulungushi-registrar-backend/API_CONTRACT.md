@@ -110,6 +110,9 @@ when typing.
 //  - studentNumber already on the roster: nrc + dateOfBirth must match that row
 //  - a new studentNumber (self sign-up): accepted if the nrc is not another student's.
 //    Nothing is saved in students yet; the record is created at /register/complete.
+//  - a number imported from the lecturer's class list (its row has no NRC or birth date
+//    yet): the student "claims" it. The nrc and dateOfBirth wait on the code row and are
+//    written to that student only at /register/complete, if the row still has none.
 // nrc may be typed with or without slashes; phone accepts 0977…, 260977…, +260 977 …
 {
   "fullName": "Chanda Mwansa",
@@ -298,6 +301,56 @@ records** (`/students/me`, `/students/:id`, create, update, sign-in) also carry
 `groupCode: null` means Unassigned. `version` goes up on every change; send it
 back on an edit to detect that someone else changed the record first.
 
+A student imported from a class list has `nrc: null`, `dateOfBirth: null` and
+`nrcMasked: null` until they sign up (they give both then).
+
+### `POST /students/import` (lecturer): the class list spreadsheet
+
+```json
+// Request (JSON, up to 5 MB). The file is base64; .xlsx or .csv.
+{ "fileName": "Mobile_application_Group_List.xlsx", "fileBase64": "UEsDBBQ…", "apply": false }
+```
+
+Accepted layouts: a `GROUP 1` / `GROUP12` heading row followed by that group's
+students (No., name, 9-digit number, sex, programme), a table with a header row
+(Student number, Full name or First name + Surname, Programme, Group), or one
+sheet per group. Programmes: "Computer Science"/BSCS → CS, BSIT → IT, Data
+Science → DS, "ICT with Education" → ICTED.
+
+`apply: false` is a preview: nothing is saved. `apply: true` saves it in one
+transaction (all or nothing) and answers 201 with the same summary.
+
+```json
+{ "success": true, "applied": false,
+  "studentsInFile": 209, "toAdd": 206, "added": 0,
+  "alreadyOnRoster": 0, "alreadyOnRosterRows": [],
+  "unassigned": 0,
+  "groups": [ { "groupCode": "G01", "exists": true, "membersNow": 0, "adding": 16, "willHave": 16,
+                "capacity": 16, "capacityRaisedFrom": 15, "overUsualSize": true, "reopened": false } ],
+  "programmes": { "CS": 192, "IT": 12, "ICTED": 2 },
+  "problems": [ { "row": "row 87", "studentNumber": "…", "kind": "DUPLICATE_IN_FILE", "message": "…" } ],
+  "blankRowsSkipped": 6, "usualGroupSize": 15 }
+```
+
+- A student number already on the roster (also a removed student) is left as it is and counted in `alreadyOnRoster`, so importing the same file twice adds nobody. A lecturer's later group change is kept.
+- A group keeps its whole list: if it would have more than its capacity, the capacity is raised to fit (`capacityRaisedFrom`). New groups get the usual size (`GROUP_CAPACITY`, 15) or more if their list is longer.
+- Problems: `DUPLICATE_IN_FILE` (first row kept), `BAD_STUDENT_NUMBER`, `BAD_NAME`, `UNKNOWN_PROGRAMME` (those rows are skipped).
+
+| Error | When |
+|---|---|
+| 422 `UNREADABLE_FILE` | Not an .xlsx or CSV file |
+| 422 `NO_STUDENTS_FOUND` | No row has a 9-digit student number |
+| 422 `TOO_MANY_ROWS` | More than the limit of students in one file |
+| 422 `VALIDATION_ERROR` | `fileBase64` missing or empty |
+
+### `GET /students/export` (lecturer): the group lists as Excel
+
+Answers the file itself (`Content-Type` .xlsx, `Content-Disposition: attachment;
+filename="Mulungushi-Registrar-groups-YYYY-MM-DD.xlsx"`). Sheets: **Groups**
+(members, capacity, places left), **All students** (No., student number, full
+name, programme, group, signed up; with filters), one sheet per group, and
+**Unassigned** when someone has no group. No NRCs, birth dates or emails.
+
 ### `GET /students/me` (student) → `{ "success": true, "student": { … } }`
 
 ### `PUT /students/me` (student)
@@ -424,6 +477,15 @@ answer is 409 `VERSION_CONFLICT`, for the app to show as a conflict.
 { "success": true, "groupCode": null, "capacity": null, "members": [] }
 ```
 
+### `POST /groups` (lecturer): add a group
+
+```json
+// Request: capacity is optional (1-255; default GROUP_CAPACITY, 15)
+{}
+// 201: the next code after the highest one
+{ "success": true, "group": { "groupCode": "G15", "capacity": 15, "members": 0 } }
+```
+
 ---
 
 ## Change requests
@@ -520,7 +582,9 @@ stays `PENDING` and the student is unchanged: 409 `GROUP_FULL`, 409
 | `NOT_FOUND` | 404 | No such endpoint |
 | `DUPLICATE_STUDENT_NUMBER` | 409 | Number already in use (including by a deleted student) |
 | `DUPLICATE_NRC` | 409 | NRC already in use (including by a deleted student) |
-| `GROUP_FULL` | 409 | The group already has 15 active students |
+| `GROUP_FULL` | 409 | The group already has as many active students as its capacity (15 unless raised) |
+| `UNREADABLE_FILE` / `NO_STUDENTS_FOUND` / `TOO_MANY_ROWS` | 422 | Class list import: see `POST /students/import` |
+| `TRY_AGAIN` | 409 | Two groups were added at the same moment; add again |
 | `VERSION_CONFLICT` | 409 | The record changed since you last read it |
 | `REQUEST_ALREADY_PENDING` | 409 | Already an open request of that kind |
 | `ALREADY_IN_GROUP` | 409 | Asked for the group the student is already in |

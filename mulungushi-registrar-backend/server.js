@@ -19,7 +19,9 @@ const app = express();
 
 app.disable('x-powered-by');
 app.use(cors()); // tighten this to your app's origin before a real deployment
-app.use(express.json({ limit: '50kb' })); // no endpoint needs more
+// The class-list import carries a spreadsheet (base64): it alone may send up to 5 MB.
+app.use('/api/students/import', express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '50kb' })); // no other endpoint needs more
 
 // Simple liveness check — useful for the Android app's "server reachable?"
 // check and for your own sanity when debugging the emulator's networking.

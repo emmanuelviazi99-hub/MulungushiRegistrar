@@ -164,6 +164,29 @@ how the emulator reaches your laptop. **A phone on a USB cable** uses
 each time you replug the phone). A phone on the same Wi-Fi uses your laptop's IP
 address instead. Use HTTPS on a real host for the final submission.
 
+### Importing the lecturer's class list
+
+The lecturer adds the whole class from the spreadsheet instead of typing ~200
+students: on the app's Home tab, **Class list → Import class list** shows a
+preview (how many will be added, which groups, anything skipped) and saves only
+after **Import N students**. From the laptop the same thing is:
+
+```bash
+npm run db:migrate                                   # once: NRC/birth date may wait, ICT with Education
+npm run roster:remove-demo                           # optional: lists the seed's demo students with no account
+npm run roster:remove-demo -- --apply                #           ...and removes them
+npm run roster:import -- "Mobile_application_Group_List.xlsx"           # preview only
+npm run roster:import -- "Mobile_application_Group_List.xlsx" --apply   # save
+```
+
+Imported students have no NRC or birth date yet; they sign up as usual with
+their number, NRC and birth date, which are saved to their row then. Importing
+the same file again adds nobody. **Download group lists** (or `GET
+/students/export`) gives the current groups as an Excel file, and **Add a
+group** creates the next group (G15 after G14) with 15 places for when every
+group is full. Keep the lecturer's spreadsheet out of the repository: it holds
+students' personal details.
+
 ## 6. Tests
 
 ```bash
@@ -275,6 +298,9 @@ student's id from the token, never from the URL, so nobody can read someone
 else's record by changing an id.
 
 ### The 15-seat limit
+
+Each group has its own `capacity` (15 unless the class-list import raised it so
+a group from the lecturer's list stays whole, e.g. 16).
 
 Counting the members and then adding one is not safe: two requests can both
 count 14 before either writes, and the group ends up with 16. Every path that

@@ -19,7 +19,8 @@
 INSERT INTO programmes (code, name) VALUES
   ('CS', 'Computer Science'),
   ('IT', 'Information Technology'),
-  ('DS', 'Data Science');
+  ('DS', 'Data Science'),
+  ('ICTED', 'ICT with Education');
 
 -- -----------------------------------------------------------------
 -- Lab groups (capacity 15 each, matches the brief's hard limit)

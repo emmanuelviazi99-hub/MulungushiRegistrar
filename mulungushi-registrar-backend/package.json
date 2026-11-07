@@ -11,12 +11,15 @@
     "staff:add": "node database/add-staff.js",
     "email:test": "node scripts/email-test.js",
     "db:setup": "node scripts/db-setup.js",
-    "db:migrate": "node scripts/db-migrate.js"
+    "db:migrate": "node scripts/db-migrate.js",
+    "roster:import": "node scripts/roster-import.js",
+    "roster:remove-demo": "node scripts/remove-demo-students.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-rate-limit": "^8.7.1",
     "express-validator": "^7.1.0",

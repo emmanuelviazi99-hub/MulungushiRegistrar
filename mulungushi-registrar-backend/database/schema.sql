@@ -95,7 +95,8 @@ CREATE TABLE programmes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -----------------------------------------------------------------
--- lab_groups — reference data: G01..G04, capacity 15 each
+-- lab_groups — G01, G02 ... each with its own capacity (15 by default; an imported
+-- class list or a lecturer's "Add group" can create more, see migration 003)
 -- -----------------------------------------------------------------
 CREATE TABLE lab_groups (
   group_id   INT AUTO_INCREMENT PRIMARY KEY,
@@ -112,8 +113,8 @@ CREATE TABLE lab_groups (
 CREATE TABLE students (
   student_id      CHAR(36)     NOT NULL PRIMARY KEY,
   student_number  CHAR(9)      NOT NULL,
-  nrc             CHAR(11)     NOT NULL,              -- 123456/10/1
-  date_of_birth   DATE         NOT NULL,
+  nrc             CHAR(11)     NULL,                  -- 123456/10/1; empty for a student imported from the class list until they sign up
+  date_of_birth   DATE         NULL,                  -- same
   full_name       VARCHAR(100) NOT NULL,
   programme_id    INT          NOT NULL,
   group_id        INT          NULL,                 -- NULL = Unassigned
@@ -191,7 +192,9 @@ CREATE TABLE verification_codes (
   staff_id    INT          NULL,
   account_id  INT          NULL,
   new_student JSON         NULL,                      -- self sign-up of a number not on the roster yet:
-                                                      -- {fullName, studentNumber, nrc, dateOfBirth}
+                                                      -- {fullName, studentNumber, nrc, dateOfBirth};
+                                                      -- or, with student_id, an imported row being claimed:
+                                                      -- {claim: true, nrc, dateOfBirth}
   phone       VARCHAR(16)  NULL,                      -- sign-up only: copied onto the account at completion
   attempts    TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- wrong-or-right tries used (max 5)
   expires_at  DATETIME(3)  NOT NULL,
@@ -202,9 +205,10 @@ CREATE TABLE verification_codes (
   CONSTRAINT fk_vcode_staff   FOREIGN KEY (staff_id)   REFERENCES staff_roster(staff_id),
   CONSTRAINT fk_vcode_account FOREIGN KEY (account_id) REFERENCES accounts(account_id),
   -- exactly what the purpose needs: who is signing up, or whose password is reset.
-  -- A student sign-up points at an existing roster row OR carries a new student's details, never both.
+  -- A student sign-up points at an existing roster row, carries a new student's details,
+  -- or both (an imported row being claimed with the NRC and birth date the student typed).
   CONSTRAINT chk_vcode_link CHECK (
-    (purpose = 'STUDENT_SIGNUP' AND (student_id IS NULL) <> (new_student IS NULL)
+    (purpose = 'STUDENT_SIGNUP' AND (student_id IS NOT NULL OR new_student IS NOT NULL)
                                 AND staff_id IS NULL AND account_id IS NULL) OR
     (purpose = 'STAFF_SIGNUP'   AND staff_id   IS NOT NULL AND student_id IS NULL AND account_id IS NULL AND new_student IS NULL) OR
     (purpose = 'PASSWORD_RESET' AND account_id IS NOT NULL AND student_id IS NULL AND staff_id IS NULL   AND new_student IS NULL)
@@ -276,4 +280,4 @@ CREATE TABLE schema_migrations (
   applied_at DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql'), ('002-first-sign-in.sql');
+INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql'), ('002-first-sign-in.sql'), ('003-class-list-import.sql');

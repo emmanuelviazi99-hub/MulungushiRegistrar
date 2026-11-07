@@ -177,14 +177,28 @@ async function studentRegisterRequest(req, res) {
   // Is this student number already on the roster (added by a lecturer, or signed up before)?
   // A soft-deleted student's number stays reserved, so it counts too.
   const [byNumber] = await pool.query(
-    `SELECT student_id, (nrc = ? AND date_of_birth = ? AND active = 1) AS matches
+    `SELECT student_id, active, (nrc IS NULL AND date_of_birth IS NULL) AS from_class_list,
+            (nrc = ? AND date_of_birth = ? AND active = 1) AS matches
        FROM students WHERE student_number = ?`,
     [nrc, dateOfBirth, studentNumber]
   );
 
   let studentId = null;
   let newStudent = null;
-  if (byNumber.length > 0) {
+  if (byNumber.length > 0 && byNumber[0].from_class_list && byNumber[0].active) {
+    // Imported from the lecturer's class list: no NRC or birth date on file yet, so
+    // there is nothing to compare. The NRC must not be someone else's; it and the
+    // birth date wait on the code row and are written to this student only when the
+    // emailed code is confirmed (migration 003).
+    studentId = byNumber[0].student_id;
+    const [byNrc] = await pool.query('SELECT student_id FROM students WHERE nrc = ?', [nrc]);
+    if (byNrc.length > 0) throw notOnRecord();
+    const [existing] = await pool.query('SELECT account_id FROM accounts WHERE student_id = ?', [studentId]);
+    if (existing.length > 0) {
+      throw new ApiError(409, 'ALREADY_REGISTERED', 'This student already has an account. Please sign in.');
+    }
+    newStudent = { claim: true, nrc, dateOfBirth };
+  } else if (byNumber.length > 0) {
     // On the roster: the NRC and birth date must prove the record is theirs. One
     // answer for every mismatch, so it never says which detail was wrong.
     if (!byNumber[0].matches) throw notOnRecord();
@@ -216,8 +230,8 @@ async function studentRegisterVerify(req, res) {
   const { email, code } = req.body;
   const row = await codeService.verify({ purpose: 'STUDENT_SIGNUP', email, code });
   const pending = codeService.newStudentOf(row);
-  let fullName = pending ? pending.fullName : null;
-  if (!pending) {
+  let fullName = pending && !pending.claim ? pending.fullName : null;
+  if (!fullName) {
     const [[student]] = await pool.query('SELECT full_name FROM students WHERE student_id = ?', [row.student_id]);
     fullName = student ? student.full_name : null;
   }
@@ -235,7 +249,25 @@ async function studentRegisterComplete(req, res) {
     password,
     linkStudent: async (conn, verified) => {
       const pending = codeService.newStudentOf(verified);
-      if (pending) {
+      if (pending && pending.claim) {
+        // A student from the class list: their NRC and birth date are saved now that the
+        // email is confirmed. Only if still empty, so two sign-ups cannot both claim the row.
+        try {
+          const [claimed] = await conn.query(
+            `UPDATE students SET nrc = ?, date_of_birth = ?, version = version + 1
+              WHERE student_id = ? AND nrc IS NULL AND date_of_birth IS NULL`,
+            [pending.nrc, pending.dateOfBirth, verified.student_id]
+          );
+          if (claimed.affectedRows !== 1) {
+            throw new ApiError(409, 'ALREADY_REGISTERED', 'This student already has an account. Please sign in.');
+          }
+        } catch (err) {
+          if (err && err.code === 'ER_DUP_ENTRY') {
+            throw new ApiError(404, 'NOT_ON_ROSTER', 'That student number or NRC is already on the university record with different details. Check them, or ask your lecturer.');
+          }
+          throw err;
+        }
+      } else if (pending) {
         // Self sign-up: the email is confirmed, so now the student row is created
         // (Unassigned; a lecturer places them in a lab group).
         if (!programmeCode) throw new ApiError(422, 'VALIDATION_ERROR', 'programmeCode: choose your programme');

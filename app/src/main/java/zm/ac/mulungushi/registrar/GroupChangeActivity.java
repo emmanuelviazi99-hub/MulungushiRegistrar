@@ -144,7 +144,7 @@ public class GroupChangeActivity extends AppCompatActivity {
         textCol.addView(title);
 
         String detail = o.full ? getString(R.string.group_full_note)
-                : getString(R.string.group_places_filled, o.count, StudentRepository.CAPACITY);
+                : getString(R.string.group_places_filled, o.count, o.capacity);
         TextView sub = new TextView(this);
         sub.setText(detail);
         sub.setTextColor(getResources().getColor(R.color.slate_600));

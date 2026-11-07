@@ -193,9 +193,9 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         StudentRepository repo = StudentRepository.getInstance();
         for (String g : StudentRepository.GROUPS) {
             int count = repo.groupCount(g);
-            boolean full = count >= StudentRepository.CAPACITY
+            boolean full = count >= StudentRepository.getInstance().capacityOf(g)
                     && (original == null || !g.equals(original.group));
-            groupLabels.add(g + " — " + count + "/" + StudentRepository.CAPACITY + " filled"
+            groupLabels.add(g + " — " + count + "/" + StudentRepository.getInstance().capacityOf(g) + " filled"
                     + (full ? getString(R.string.full_suffix) : ""));
         }
         ArrayAdapter<String> gAdapter = new ArrayAdapter<>(requireContext(),
@@ -236,12 +236,12 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
 
         // Field errors are only shown after Save is pressed (see submit()), same as the login screen.
         boolean capacityFull = !StudentRepository.UNASSIGNED.equals(group)
-                && StudentRepository.getInstance().groupCount(group) >= StudentRepository.CAPACITY
+                && StudentRepository.getInstance().isFull(group)
                 && (original == null || !group.equals(original.group));
         groupFullError.setVisibility(capacityFull ? View.VISIBLE : View.GONE);
         if (capacityFull) {
             int currentCount = StudentRepository.getInstance().groupCount(group);
-            groupFullError.setText(getString(R.string.error_group_full, currentCount, StudentRepository.CAPACITY));
+            groupFullError.setText(getString(R.string.error_group_full, currentCount, StudentRepository.getInstance().capacityOf(group)));
         }
 
         boolean numberEdited = original != null && numberResult == StudentValidator.NumberResult.OK
@@ -264,7 +264,7 @@ public class EditStudentSheet extends BottomSheetDialogFragment {
         Student owner = numberResult == StudentValidator.NumberResult.OK
                 ? StudentRepository.getInstance().findOwnerOfNumber(number, excludeId) : null;
         boolean capacityFull = !StudentRepository.UNASSIGNED.equals(group)
-                && StudentRepository.getInstance().groupCount(group) >= StudentRepository.CAPACITY
+                && StudentRepository.getInstance().isFull(group)
                 && (original == null || !group.equals(original.group));
 
         layoutName.setError(StudentValidator.isOk(nameResult) ? null : nameError(nameResult));

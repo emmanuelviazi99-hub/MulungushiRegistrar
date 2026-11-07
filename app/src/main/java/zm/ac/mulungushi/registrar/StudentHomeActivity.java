@@ -122,7 +122,7 @@ public class StudentHomeActivity extends AppCompatActivity {
         TextView groupSub = findViewById(R.id.textGroupSub);
         groupTitle.setText(assigned ? getString(R.string.lab_group_prefix, student.group) : getString(R.string.no_group_yet));
         groupSub.setText(assigned
-                ? getString(R.string.group_places_filled, count, StudentRepository.CAPACITY)
+                ? getString(R.string.group_places_filled, count, StudentRepository.getInstance().capacityOf(student.group))
                 : getString(R.string.request_group_below));
 
         View fill = findViewById(R.id.occupancyFill);
@@ -130,13 +130,13 @@ public class StudentHomeActivity extends AppCompatActivity {
         View track = findViewById(R.id.occupancyBar);
         android.widget.LinearLayout.LayoutParams fillLp = (android.widget.LinearLayout.LayoutParams) fill.getLayoutParams();
         android.widget.LinearLayout.LayoutParams emptyLp = (android.widget.LinearLayout.LayoutParams) empty.getLayoutParams();
-        int remaining = Math.max(StudentRepository.CAPACITY - count, 0);
+        int remaining = Math.max(StudentRepository.getInstance().capacityOf(student.group) - count, 0);
         fillLp.weight = assigned ? count : 0f;
         emptyLp.weight = assigned ? Math.max(remaining, 0.0001f) : 1f;
         fill.setLayoutParams(fillLp);
         empty.setLayoutParams(emptyLp);
         track.setVisibility(assigned ? View.VISIBLE : View.GONE);
-        if (assigned && count >= StudentRepository.CAPACITY) {
+        if (assigned && count >= StudentRepository.getInstance().capacityOf(student.group)) {
             fill.setBackgroundResource(R.drawable.bg_fill_red);
         } else {
             fill.setBackgroundResource(R.drawable.bg_fill_navy);

@@ -27,11 +27,13 @@ public class GroupViewModel extends ViewModel {
     static final class Option {
         final String group;
         final int count;
+        final int capacity; // this group's own limit (15 usually)
         final boolean full;
 
-        Option(String group, int count, boolean full) {
+        Option(String group, int count, int capacity, boolean full) {
             this.group = group;
             this.count = count;
+            this.capacity = capacity;
             this.full = full;
         }
     }
@@ -168,7 +170,8 @@ public class GroupViewModel extends ViewModel {
         List<Option> out = new ArrayList<>();
         for (String g : GroupRequestRules.choices(me, StudentRepository.GROUPS)) {
             int count = repo.groupCount(g);
-            out.add(new Option(g, count, count >= StudentRepository.CAPACITY));
+            int capacity = repo.capacityOf(g);
+            out.add(new Option(g, count, capacity, count >= capacity));
         }
         return out;
     }

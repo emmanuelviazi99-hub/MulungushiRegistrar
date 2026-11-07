@@ -18,6 +18,13 @@ const {
   handleValidation,
 } = require('../middleware/validation');
 
+const classListController = require('../controllers/classlist.controller');
+
+// --- The class list as a spreadsheet (role: LECTURER) ------------------------
+// Before "/:id" so "export" and "import" are never read as a student id.
+router.get('/export', requireAuth, requireRole('LECTURER'), asyncHandler(classListController.exportClassList));
+router.post('/import', requireAuth, requireRole('LECTURER'), asyncHandler(classListController.importClassList));
+
 // --- Student's own profile (role: STUDENT) ---------------------------------
 // IMPORTANT: these come before "/:id" below so "/me" is never swallowed by
 // the ":id" param route.
