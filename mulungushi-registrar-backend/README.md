@@ -126,15 +126,24 @@ This creates a ready-made lecturer login from the `SEED_LECTURER_*` values in
 `.env` (by default `b.nyirenda@mulungushi.edu.zm` / `Lecturer#2025`, employee
 ID `EMP-1001`). Change the password before anyone outside your group sees it.
 
-Lecturers can only sign up if they are on the **staff list**. Add one with:
+Lecturers **don't sign up in the app** (the Register screen is for students).
+Create a lecturer's login on the laptop instead. It adds them to the staff list
+and makes the login in one step:
 
 ```bash
 npm run staff:add -- --email j.banda@mulungushi.edu.zm --employee-id EMP-2001 --name "Joseph Banda"
+# prints a temporary password; or choose it:
+npm run staff:add -- --email j.banda@mulungushi.edu.zm --employee-id EMP-2001 --name "Joseph Banda" --password "Their#Pass2026"
 ```
+
+Give the password to them privately; they can set their own with "Forgot
+password" on the sign-in screen. Running it again changes nothing; with
+`--password` it sets a new one (their other sign-ins stop working).
 
 There is deliberately no API endpoint for this: a lecturer account can edit the
 whole roster, so it must never be creatable by someone who only knows an email
-address.
+address. (The server still has `/auth/staff/*`, the emailed-code sign-up for
+people on the staff list, but the app no longer offers it.)
 
 Demo data in `seed.sql` (all fictitious):
 
@@ -142,7 +151,7 @@ Demo data in `seed.sql` (all fictitious):
 |---|---|
 | Students `202301001` – `202301018`, NRC `700001/10/1` … `700018/10/1`, birth dates listed in `seed.sql` | Student sign-up as a roster student. E.g. `202301001`, `700001/10/1`, `2003-04-12` |
 | Any new 9-digit number and an unused NRC (e.g. `202399001`, `799001/10/1`) | Student self sign-up (not on the roster) |
-| Lecturer `m.chilufya@mulungushi.edu.zm`, `EMP-1002` | Lecturer sign-up (on the staff list, no account yet) |
+| Lecturer `m.chilufya@mulungushi.edu.zm`, `EMP-1002` | On the staff list, no login yet: `npm run staff:add -- --email m.chilufya@mulungushi.edu.zm --employee-id EMP-1002 --name "Mutale Chilufya"` |
 | Group G01 | Holds 14 of 15, so "racing for the last seat" can be shown at once |
 
 ## 5. Run it
@@ -179,7 +188,8 @@ npm run roster:import -- "Mobile_application_Group_List.xlsx"           # previe
 npm run roster:import -- "Mobile_application_Group_List.xlsx" --apply   # save
 ```
 
-Imported students have no NRC or birth date yet; they sign up as usual with
+A group with more than 15 on the list keeps everyone and shows as full (16/16)
+until it is below 15. Imported students have no NRC or birth date yet; they sign up as usual with
 their number, NRC and birth date, which are saved to their row then. Importing
 the same file again adds nobody. **Download group lists** (or `GET
 /students/export`) gives the current groups as an Excel file, and **Add a
@@ -299,8 +309,10 @@ else's record by changing an id.
 
 ### The 15-seat limit
 
-Each group has its own `capacity` (15 unless the class-list import raised it so
-a group from the lecturer's list stays whole, e.g. 16).
+Each group's limit is 15 (`lab_groups.capacity`). A group the class list filled
+past that keeps all its members: it shows as full ("16/16"), takes nobody new,
+and once members leave reads "15/15" again. `GET /groups` sends both `limit`
+(15) and `capacity` (what to show: the limit, or the member count if higher).
 
 Counting the members and then adding one is not safe: two requests can both
 count 14 before either writes, and the group ends up with 16. Every path that

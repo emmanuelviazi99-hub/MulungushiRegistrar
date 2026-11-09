@@ -250,7 +250,7 @@
 
     <!-- ===== Register with an emailed code (3 pages) and Forgot password (email, code, new password) ===== -->
     <string name="register_step1_title">Create your account</string>
-    <string name="register_step1_sub">New here? Just enter your details. If your lecturer already added you, use the same student number, NRC and date of birth. We\'ll email you a code.</string>
+    <string name="register_step1_sub">For students. Enter your details with the student number your lecturer has for you, and we\'ll email you a code. Lecturer accounts are set up by the administrator.</string>
     <string name="register_step2_title">Enter the code from your email</string>
     <string name="register_step2_sub_fmt">We sent a code to %1$s. It is valid for %2$d minutes.</string>
     <string name="register_step3_title">Finish your account</string>
@@ -527,4 +527,20 @@
     <string name="why_import_class_list">Choose a spreadsheet of students and groups to add to the roster</string>
     <string name="why_download_groups">Save the current group lists as an Excel file</string>
     <string name="why_add_group">Create one more lab group</string>
+
+    <!-- Groups (lecturer): each group and its members -->
+    <string name="groups_title">Groups</string>
+    <string name="view_groups_button">View group members</string>
+    <string name="groups_tab_fmt">%1$s · %2$d/%3$d</string>
+    <string name="groups_unassigned_tab">No group · %1$d</string>
+    <string name="groups_unassigned">No group yet</string>
+    <plurals name="groups_unassigned_count">
+        <item quantity="one">%1$d student without a group</item>
+        <item quantity="other">%1$d students without a group</item>
+    </plurals>
+    <string name="groups_full">Full</string>
+    <string name="groups_open">Places left</string>
+    <string name="groups_empty">Nobody in this group yet. Students join through a group request, or you can move them here from the edit sheet.</string>
+    <string name="why_view_groups">See each group and its members</string>
+    <string name="why_open_group_row">See this group\'s members</string>
 </resources>

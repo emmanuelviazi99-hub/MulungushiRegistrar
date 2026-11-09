@@ -13,6 +13,25 @@
         android:importantForAccessibility="no" />
 
     <Button
+        android:id="@+id/buttonViewGroups"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:minWidth="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:text="@string/view_groups_button"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:backgroundTint="@color/navy_600"
+        app:icon="@drawable/ic_users"
+        app:iconTint="@color/white"
+        app:iconGravity="textStart"
+        app:cornerRadius="10dp" />
+
+    <Button
         android:id="@+id/buttonShareSummary"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"

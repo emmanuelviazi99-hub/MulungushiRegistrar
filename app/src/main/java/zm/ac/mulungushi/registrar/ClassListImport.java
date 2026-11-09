@@ -26,19 +26,19 @@ final class ClassListImport {
         final int membersNow;
         final int adding;
         final int willHave;
-        final int capacity;
-        final int capacityRaisedFrom; // 0 when unchanged
+        final int capacity;           // as the dashboard will show it: 15, or 16 for a list of 16
+        final boolean overUsualSize;  // more members than the limit: kept together, the group shows as full
         final boolean reopened;
 
         Group(String code, boolean exists, int membersNow, int adding, int willHave, int capacity,
-              int capacityRaisedFrom, boolean reopened) {
+              boolean overUsualSize, boolean reopened) {
             this.code = code;
             this.exists = exists;
             this.membersNow = membersNow;
             this.adding = adding;
             this.willHave = willHave;
             this.capacity = capacity;
-            this.capacityRaisedFrom = capacityRaisedFrom;
+            this.overUsualSize = overUsualSize;
             this.reopened = reopened;
         }
     }
@@ -93,8 +93,7 @@ final class ClassListImport {
                 groups.add(new Group(o.optString("groupCode", "?"), o.optBoolean("exists"),
                         o.optInt("membersNow"), o.optInt("adding"), o.optInt("willHave"),
                         o.optInt("capacity", StudentRepository.CAPACITY),
-                        o.isNull("capacityRaisedFrom") ? 0 : o.optInt("capacityRaisedFrom"),
-                        o.optBoolean("reopened")));
+                        o.optBoolean("overUsualSize"), o.optBoolean("reopened")));
             }
         }
         Map<String, Integer> programmes = new LinkedHashMap<>();
@@ -185,8 +184,7 @@ final class ClassListImport {
             b.append("+").append(g.adding).append(" (").append(g.willHave).append(" of ").append(g.capacity).append(')');
             if (g.reopened) b.append(", reopened");
         }
-        if (g.capacityRaisedFrom > 0) b.append(", size raised from ").append(g.capacityRaisedFrom).append(" to keep the list");
-        else if (!g.exists && g.capacity > usualGroupSize) b.append(", larger than usual to keep the list");
+        if (g.overUsualSize) b.append(", more than ").append(usualGroupSize).append(": all kept, full until below ").append(usualGroupSize);
         return b.toString();
     }
 

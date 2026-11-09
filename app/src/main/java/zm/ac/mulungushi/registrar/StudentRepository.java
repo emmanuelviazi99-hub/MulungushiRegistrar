@@ -116,18 +116,23 @@ public class StudentRepository {
         return n;
     }
 
-    /** Active members of a group: the server's total when known, else counted from the roster. */
-    /**
-     * A group's limit as the server has it: 15 usually, more for a group imported from
-     * the class list with more students (kept whole), or one the lecturer set.
-     */
-    public int capacityOf(String group) {
+    /** The group's seat limit as the server has it (15): it takes new members only below this. */
+    public int limitOf(String group) {
         Integer c = group == null ? null : groupCapacities.get(group);
         return c != null && c > 0 ? c : CAPACITY;
     }
 
+    /**
+     * The number shown after the slash: the limit, or the member count when the
+     * class list put more in the group than that. So 15/15 and 16/16 (both full),
+     * never 15/18 with places nobody may take.
+     */
+    public int capacityOf(String group) {
+        return Math.max(limitOf(group), groupCount(group));
+    }
+
     public boolean isFull(String group) {
-        return group != null && groupCount(group) >= capacityOf(group);
+        return group != null && groupCount(group) >= limitOf(group);
     }
 
     /** True when every group is full: the lecturer should add a group. */
@@ -146,6 +151,7 @@ public class StudentRepository {
         return String.format(java.util.Locale.ROOT, "G%02d", highest + 1);
     }
 
+    /** Active members of a group: the server's total when known, else counted from the roster. */
     public int groupCount(String group) {
         Integer n = groupCounts.get(group);
         if (n != null) return n;

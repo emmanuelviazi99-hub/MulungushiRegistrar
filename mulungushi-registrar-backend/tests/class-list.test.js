@@ -106,7 +106,8 @@ describe('POST /api/students/import', () => {
     expect(res.body.toAdd).toBe(21);
     const byCode = Object.fromEntries(res.body.groups.map((g) => [g.groupCode, g]));
     expect(byCode.G05.willHave).toBe(16);
-    expect(byCode.G05.capacity).toBe(16);               // kept whole, not cut to 15
+    expect(byCode.G05.capacity).toBe(16);               // kept whole, not cut to 15: shown as 16 of 16
+    expect(byCode.G05.overUsualSize).toBe(true);
     expect(byCode.G05.exists).toBe(false);
     expect(byCode.G12.willHave).toBe(2);
     expect(res.body.programmes).toEqual(expect.objectContaining({ CS: expect.any(Number), IT: expect.any(Number), ICTED: expect.any(Number) }));
@@ -125,7 +126,9 @@ describe('POST /api/students/import', () => {
     expect(res.body.added).toBe(21);
 
     const [[g05]] = await pool.query("SELECT capacity, (SELECT COUNT(*) FROM students s WHERE s.group_id = g.group_id AND s.active = 1) AS members FROM lab_groups g WHERE group_code = 'G05'");
-    expect(g05).toEqual({ capacity: 16, members: 16 });
+    expect(g05).toEqual({ capacity: 15, members: 16 }); // everyone kept; the limit stays 15
+    const totals = await asLecturer(request(app).get('/api/groups'));
+    expect(totals.body.groups.find((g) => g.groupCode === 'G05')).toEqual({ groupCode: 'G05', capacity: 16, limit: 15, activeCount: 16, full: true });
     const [[dup]] = await pool.query("SELECT g.group_code FROM students s JOIN lab_groups g USING (group_id) WHERE s.student_number = ?", [num(2)]);
     expect(dup.group_code).toBe('G05');                  // the first listing counts
     const [[row]] = await pool.query('SELECT nrc, date_of_birth, full_name FROM students WHERE student_number = ?', [num(1)]);
@@ -146,6 +149,37 @@ describe('POST /api/students/import', () => {
     await importFile(await classListFile(), true);
     const [[after]] = await pool.query("SELECT g.group_code FROM students s JOIN lab_groups g USING (group_id) WHERE s.student_number = ?", [num(3)]);
     expect(after.group_code).toBe('G12');
+  });
+
+  test('a group the list filled past 15 is full, takes nobody new, and reads 15/15 once members leave', async () => {
+    const g05 = async () => (await asLecturer(request(app).get('/api/groups'))).body.groups.find((g) => g.groupCode === 'G05');
+    const moveTo = async (number, groupCode) => {
+      const [[s]] = await pool.query('SELECT student_id, version FROM students WHERE student_number = ?', [number]);
+      return asLecturer(request(app).put(`/api/students/${s.student_id}`)).send({ groupCode, version: s.version });
+    };
+    const membersOfG05 = async () => (await pool.query(
+      "SELECT s.student_number FROM students s JOIN lab_groups g USING (group_id) WHERE g.group_code = 'G05' AND s.active = 1 ORDER BY s.student_number")) [0].map((r) => r.student_number);
+
+    // the test above moved one out of G05 (16 -> 15); a later list adds one back: 16 again
+    const csv = 'Student number,Full name,Programme,Group\n' + `${num(70)},Late Comer,Computer Science,Group 5\n`;
+    const added = await asLecturer(request(app).post('/api/students/import')).send({ fileName: 'late.csv', fileBase64: Buffer.from(csv).toString('base64'), apply: true });
+    expect(added.body.groups[0]).toEqual(expect.objectContaining({ groupCode: 'G05', willHave: 16, capacity: 16, overUsualSize: true }));
+    expect((await g05()).activeCount).toBe(16);
+    expect(await g05()).toEqual(expect.objectContaining({ full: true }));
+    expect((await g05()).capacity).toBe((await g05()).activeCount);          // 16/16, not 16/15 or 16/18
+    expect((await moveTo(num(3), 'G05')).body.error).toBe('GROUP_FULL');      // nobody new while over
+
+    let members = await membersOfG05();
+    while (members.length > 15) {
+      expect((await moveTo(members[0], 'G12')).status).toBe(200);
+      members = await membersOfG05();
+    }
+    expect(await g05()).toEqual({ groupCode: 'G05', capacity: 15, limit: 15, activeCount: 15, full: true }); // 15/15
+    expect((await moveTo(num(3), 'G05')).body.error).toBe('GROUP_FULL');
+
+    expect((await moveTo(members[0], 'G12')).status).toBe(200);
+    expect(await g05()).toEqual({ groupCode: 'G05', capacity: 15, limit: 15, activeCount: 14, full: false });
+    expect((await moveTo(num(3), 'G05')).status).toBe(200);                  // a place again
   });
 
   test('a file that is not a spreadsheet is refused clearly', async () => {

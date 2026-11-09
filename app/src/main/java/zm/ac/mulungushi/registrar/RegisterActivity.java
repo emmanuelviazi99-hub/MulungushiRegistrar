@@ -113,8 +113,8 @@ public class RegisterActivity extends AppCompatActivity {
         onDone(inputConfirm, this::finishRegistration);
 
         inputDob.setOnClickListener(v -> pickDateOfBirth());
-        tabStudent.setOnClickListener(v -> setRole(false));
-        tabLecturer.setOnClickListener(v -> setRole(true));
+        // Students only: lecturer accounts are created on the server (npm run staff:add),
+        // so the Student / Lecturer switch is hidden and this screen always signs up a student.
 
         buttonProceed.setOnClickListener(v -> proceed());
         buttonVerify.setOnClickListener(v -> verify());
@@ -126,7 +126,7 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState != null) {
-            staff = savedInstanceState.getBoolean(S_STAFF, false);
+            staff = false; // lecturer sign-up is no longer offered in the app
             String email = savedInstanceState.getString(S_EMAIL, null);
             if (email != null) {
                 if (staff) {

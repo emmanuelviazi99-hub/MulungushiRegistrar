@@ -36,6 +36,7 @@ XML layout + Activity (View)  ──actions──▶  ViewModel  ──calls─�
 | Welcome line, role checks | `StudentHomeActivity`, `LecturerDashboardActivity` | `AuthViewModel` (+ `Greeting`) | `Session` ← `firstSignIn` from the server |
 | Roster search and filters | `LecturerRosterActivity`, `RosterFilterSheet` | `LecturerViewModel` (+ `RosterQuery`) | `StudentRepository.search()` ← `RosterApi.loadRoster()` → `GET /students` |
 | Group request | `GroupChangeActivity`, home card | `GroupViewModel` (+ `GroupRequestRules`) | `RosterApi.loadMine()`, `requestGroupChange()`, `cancelGroupChange()` → `/students/me`, `/group-requests`, `/my-requests/group` |
+| Groups and their members (lecturer) | `LecturerGroupsActivity` (group tabs, member list; a tap opens `EditStudentSheet`) | `GroupsViewModel` | `StudentRepository` (the roster already loaded) ← `RosterApi.loadRoster()` → `GET /students`, `GET /groups` |
 | Class list (import, download, add group) | `LecturerDashboardActivity` (file picker, preview dialog) | `ClassListViewModel` (+ `ClassListImport`) | `ClassListApi` → `POST /students/import`, `GET /students/export`, `POST /groups`; then `RosterApi.loadRoster()` |
 
 **Why one Java package?** The data classes (`RosterApi`, `StudentRepository`,

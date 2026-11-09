@@ -29,15 +29,18 @@ mulungushi-registrar-backend/  the backend the app talks to (see its README.md)
 
 ## Accounts
 
-- **Students** create their own account in the app: "Create an account" → **Student**, then
+- **Students** create their own account in the app: "Create an account" (students only), then
   name, student number, NRC, date of birth and an email you can open. A code is emailed (valid
   10 minutes, 5 tries). Type it in, pick your programme and a password.
   - **Not on the roster yet?** Just sign up. Your student record is created when you confirm
     the code (no lab group yet; a lecturer places you). Try e.g. `202399001`, NRC `799001/10/1`.
   - **Already added by a lecturer?** Use the same number, NRC and date of birth they entered.
     Demo roster: `202301001`, born `2003-04-12`, NRC `700001/10/1` (more in `seed.sql`).
-- **Lecturers** choose **Lecturer**: email + employee ID must be on the staff list. Add someone
-  with `npm run staff:add -- --email … --employee-id … --name "…"`. Demo: `m.chilufya@mulungushi.edu.zm`, `EMP-1002`.
+  - **Imported from the class list?** Use the number on the list and your own NRC and date of
+    birth; they are saved to your row once you confirm the code.
+- **Lecturers don't sign up in the app.** Their login is created on the laptop, in the backend
+  folder: `npm run staff:add -- --email … --employee-id … --name "…"` prints a temporary
+  password (or add `--password "…"`). They can choose their own with "Forgot password".
 - **Ready-made lecturer login** from `npm run seed:accounts`: `b.nyirenda@mulungushi.edu.zm`
   with the `SEED_LECTURER_PASSWORD` from the backend `.env`.
 

@@ -280,4 +280,4 @@ CREATE TABLE schema_migrations (
   applied_at DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql'), ('002-first-sign-in.sql'), ('003-class-list-import.sql');
+INSERT INTO schema_migrations (name) VALUES ('001-open-student-signup.sql'), ('002-first-sign-in.sql'), ('003-class-list-import.sql'), ('004-group-size-15.sql');

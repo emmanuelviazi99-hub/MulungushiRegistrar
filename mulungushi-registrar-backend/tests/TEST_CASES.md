@@ -1,6 +1,6 @@
 # Documented test cases
 
-Everything below except the last section is automated: `npm test` runs 147
+Everything below except the last section is automated: `npm test` runs 148
 tests in eleven files against a throwaway database rebuilt from `schema.sql` +
 `seed.sql`. The email tests run a real SMTP server inside the test, so they
 check the actual Nodemailer path without needing the internet.
@@ -11,7 +11,7 @@ exactly what Jest prints.
 
 | File | What it covers | Tests |
 |---|---|---|
-| `auth.test.js` | Student and lecturer sign-up with codes (including self sign-up by a student not yet on the roster), code rules, password reset, login, lockout | 40 |
+| `auth.test.js` | Student and lecturer sign-up with codes (the app now offers student sign-up only; lecturers get a login from `npm run staff:add`) (including self sign-up by a student not yet on the roster), code rules, password reset, login, lockout | 40 |
 | `email.test.js` | Codes really sent by email (Nodemailer → SMTP), delivery failure, startup checks | 6 |
 | `students.test.js` | Roster, NRC and birth date, who may see what, soft delete, retries, offline operations | 25 |
 | `capacity.test.js` | The 15-seat limit on every path, under simultaneous requests | 9 |
@@ -21,7 +21,7 @@ exactly what Jest prints.
 | `password-change.test.js` | Change password while signed in: current password checked, old one stops, other phones signed out, guesses lock | 5 |
 | `idempotency.test.js` | The `Idempotency-Key` header the app's offline queue sends: every change applied once however often it is sent | 13 |
 | `first-sign-in.test.js` | "Welcome" on the first sign-in, "Welcome back" after (sign-up counts, failed sign-ins don't, two at once give one first); asking for the group you are already in is refused; an unassigned student's request is the same kind | 8 |
-| `class-list.test.js` | The lecturer's class list: reading the spreadsheet layouts, preview then import (all or nothing, nobody added twice), groups kept whole, the Excel download, Add group, and signing up after being imported | 15 |
+| `class-list.test.js` | The lecturer's class list: reading the spreadsheet layouts, preview then import (all or nothing, nobody added twice), groups kept whole, the Excel download, Add group, a group filled past 15 by the list (full, 16/16, then 15/15), and signing up after being imported | 16 |
 
 ---
 
@@ -106,6 +106,7 @@ exactly what Jest prints.
 |---|---|
 | Only a lecturer can import, download or add groups | `class-list.test.js › POST /api/students/import › lecturers only`; `… GET /api/students/export › lecturers only`; `… capacity can be given; … students cannot add groups` |
 | The import preview saves nothing; saving adds everyone as listed and a second import adds nobody | `class-list.test.js › … › the preview saves nothing …`; `… saving adds everyone as listed …` |
+| A group the list filled past 15 keeps everyone, shows as full (16/16), takes nobody new, and reads 15/15 once members leave | `class-list.test.js › … › a group the list filled past 15 is full …` |
 | Importing again never undoes a lecturer's group change made in the app | `class-list.test.js › … › a lecturer's change in the app is kept …` |
 | An imported student signs up with their own NRC and birth date, saved only after the code; two people racing for the same number get one account | `class-list.test.js › signing up when you were imported from the class list › …` (4 tests) |
 | A new account is greeted "Welcome" once, then "Welcome back" | `first-sign-in.test.js › a finished sign-up is the first sign-in; every later sign-in is a return` |

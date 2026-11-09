@@ -47,6 +47,7 @@
         <activity android:name=".SyncActivity" android:exported="false" />
         <activity android:name=".LecturerDashboardActivity" android:exported="false" />
         <activity android:name=".RequestsActivity" android:exported="false" />
+        <activity android:name=".LecturerGroupsActivity" android:exported="false" />
     </application>
 
 </manifest>

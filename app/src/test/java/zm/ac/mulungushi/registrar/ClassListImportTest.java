@@ -16,9 +16,9 @@ public class ClassListImportTest {
             + "\"toAdd\":7,\"added\":0,\"alreadyOnRoster\":1,\"alreadyOnRosterRows\":[],\"unassigned\":1,"
             + "\"groups\":["
             + "{\"groupCode\":\"G01\",\"exists\":true,\"membersNow\":14,\"adding\":2,\"willHave\":16,\"capacity\":16,"
-            + "\"capacityRaisedFrom\":15,\"overUsualSize\":true,\"reopened\":false},"
+            + "\"overUsualSize\":true,\"reopened\":false},"
             + "{\"groupCode\":\"G09\",\"exists\":false,\"membersNow\":0,\"adding\":4,\"willHave\":4,\"capacity\":15,"
-            + "\"capacityRaisedFrom\":null,\"overUsualSize\":false,\"reopened\":false}],"
+            + "\"overUsualSize\":false,\"reopened\":false}],"
             + "\"programmes\":{\"IT\":2,\"CS\":5},"
             + "\"problems\":["
             + "{\"row\":\"row 12\",\"studentNumber\":\"241000003\",\"kind\":\"DUPLICATE_IN_FILE\",\"message\":\"listed twice\"},"
@@ -37,8 +37,8 @@ public class ClassListImportTest {
         assertEquals(1, p.alreadyOnRoster);
         assertEquals(2, p.groups.size());
         assertEquals(16, p.groups.get(0).capacity);
-        assertEquals(15, p.groups.get(0).capacityRaisedFrom);
-        assertEquals(0, p.groups.get(1).capacityRaisedFrom); // null on the server: unchanged
+        assertTrue(p.groups.get(0).overUsualSize);
+        assertFalse(p.groups.get(1).overUsualSize);
         assertEquals(1, p.count("DUPLICATE_IN_FILE"));
         assertEquals(1, p.rowsWithMistakes());
         assertEquals(1, p.newGroups());
@@ -48,9 +48,9 @@ public class ClassListImportTest {
         assertTrue(preview().previewText().contains("Programmes: CS 5, IT 2."));
     }
 
-    @Test public void aGroupKeptWholeSaysItsSizeWasRaised() throws Exception {
+    @Test public void aGroupKeptWholeSaysItIsFull() throws Exception {
         ClassListImport p = preview();
-        assertEquals("G01: +2 (16 of 16), size raised from 15 to keep the list", p.groupLine(p.groups.get(0)));
+        assertEquals("G01: +2 (16 of 16), more than 15: all kept, full until below 15", p.groupLine(p.groups.get(0)));
         assertEquals("G09: new group, 4 of 15 places", p.groupLine(p.groups.get(1)));
     }
 

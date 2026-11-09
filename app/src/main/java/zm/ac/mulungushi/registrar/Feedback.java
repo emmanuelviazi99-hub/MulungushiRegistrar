@@ -14,7 +14,10 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
-/** Dark rounded confirmation pill with a green tick, like the prototype's toast. */
+/**
+ * Dark rounded message pill, like the prototype's toast: a green tick for a
+ * confirmation (show), a red warning sign when something went wrong (problem).
+ */
 final class Feedback {
 
     private static String nextScreenMessage;
@@ -35,18 +38,31 @@ final class Feedback {
     }
 
     static void show(Activity a, String message) {
+        show(a, message, false);
+    }
+
+    /** Something went wrong or was refused: the same pill with a red warning sign, not a tick. */
+    static void problem(Activity a, String message) {
+        show(a, message, true);
+    }
+
+    static void problem(Activity a, int messageRes) {
+        problem(a, a.getString(messageRes));
+    }
+
+    private static void show(Activity a, String message, boolean problem) {
         if (a == null || a.isFinishing() || a.isDestroyed()) return;
         try {
-            showStyled(a, message);
+            showStyled(a, message, problem);
         } catch (RuntimeException e) {
             // never let a confirmation message take the app down
             android.widget.Toast.makeText(a, message, android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 
-    private static void showStyled(Activity a, String message) {
+    private static void showStyled(Activity a, String message, boolean problem) {
         View root = a.findViewById(android.R.id.content);
-        Snackbar bar = Snackbar.make(root, message, 2300);
+        Snackbar bar = Snackbar.make(root, message, problem ? 4000 : 2300);
         bar.setAnimationMode(Snackbar.ANIMATION_MODE_FADE);
         View nav = a.findViewById(R.id.bottomNav);
         if (nav != null) bar.setAnchorView(nav);
@@ -78,11 +94,12 @@ final class Feedback {
             tv.setTextColor(ContextCompat.getColor(a, R.color.white));
             tv.setTextSize(13.5f);
             tv.setTypeface(null, Typeface.BOLD);
-            tv.setMaxLines(2);
-            android.graphics.drawable.Drawable tick = ContextCompat.getDrawable(a, R.drawable.ic_check_circle);
+            tv.setMaxLines(problem ? 4 : 2); // a reason needs room
+            android.graphics.drawable.Drawable tick = ContextCompat.getDrawable(a,
+                    problem ? R.drawable.ic_alert_circle : R.drawable.ic_check_circle);
             if (tick != null) {
                 tick = tick.mutate();
-                tick.setTint(0xFF4ADE80);
+                tick.setTint(problem ? 0xFFF87171 : 0xFF4ADE80);
                 tick.setBounds(0, 0, RosterFormat.dp(a, 16), RosterFormat.dp(a, 16));
                 tv.setCompoundDrawablesRelative(tick, null, null, null);
                 tv.setCompoundDrawablePadding(RosterFormat.dp(a, 8));

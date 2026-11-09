@@ -62,7 +62,7 @@ final class RosterUi {
      */
     static boolean report(Activity a, RosterApi.Outcome o) {
         if (signedOut(a, o)) return true;
-        Feedback.show(a, message(a, o));
+        Feedback.problem(a, message(a, o));
         return false;
     }
 
@@ -106,10 +106,10 @@ final class RosterUi {
         if (signedOut(a, o) || alreadyWarned) return;
         long saved = StudentRepository.getInstance().dataSavedAt();
         if (o.is(RosterApi.Outcome.NETWORK) && saved > 0) {
-            Feedback.show(a, a.getString(R.string.offline_showing_saved, savedAtText(saved)));
+            Feedback.problem(a, a.getString(R.string.offline_showing_saved, savedAtText(saved)));
             return;
         }
-        Feedback.show(a, message(a, o));
+        Feedback.problem(a, message(a, o));
     }
 
     /** UNAUTHORIZED: the token is missing, expired, or from before a password reset. */

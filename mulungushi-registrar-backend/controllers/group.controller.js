@@ -40,9 +40,10 @@ async function listTotals(req, res) {
     success: true,
     groups: totals.map((g) => ({
       groupCode: g.group_code,
-      capacity: g.capacity,
+      capacity: g.capacity,     // what to show: 15, or 16 when a class list put 16 in it ("16/16")
+      limit: g.limit,           // the seat limit itself (15): below it the group takes new members
       activeCount: g.activeCount,
-      full: g.activeCount >= g.capacity,
+      full: g.activeCount >= g.limit,
     })),
   });
 }

@@ -187,8 +187,10 @@ number or NRC a moment earlier).
 
 ### `POST /auth/staff/request` → `/auth/staff/verify` → `/auth/staff/complete` (lecturer)
 
-Same three steps. The email + employee ID must be on the staff list (added by
-the server operator with `npm run staff:add`), and the code goes to that email.
+Same three steps. The email + employee ID must be on the staff list, and the
+code goes to that email. **The app no longer offers this**: the server operator
+creates lecturer logins with `npm run staff:add`, which adds them to the staff
+list and makes the login (temporary password, or `--password`).
 
 ```json
 // request
@@ -326,14 +328,14 @@ transaction (all or nothing) and answers 201 with the same summary.
   "alreadyOnRoster": 0, "alreadyOnRosterRows": [],
   "unassigned": 0,
   "groups": [ { "groupCode": "G01", "exists": true, "membersNow": 0, "adding": 16, "willHave": 16,
-                "capacity": 16, "capacityRaisedFrom": 15, "overUsualSize": true, "reopened": false } ],
+                "capacity": 16, "overUsualSize": true, "reopened": false } ],
   "programmes": { "CS": 192, "IT": 12, "ICTED": 2 },
   "problems": [ { "row": "row 87", "studentNumber": "…", "kind": "DUPLICATE_IN_FILE", "message": "…" } ],
   "blankRowsSkipped": 6, "usualGroupSize": 15 }
 ```
 
 - A student number already on the roster (also a removed student) is left as it is and counted in `alreadyOnRoster`, so importing the same file twice adds nobody. A lecturer's later group change is kept.
-- A group keeps its whole list: if it would have more than its capacity, the capacity is raised to fit (`capacityRaisedFrom`). New groups get the usual size (`GROUP_CAPACITY`, 15) or more if their list is longer.
+- A group keeps its whole list, even past 15 (`overUsualSize`; `capacity` is then the member count, as the dashboard will show it: "16 of 16"). Its limit stays 15, so it takes nobody new until it is below 15. New groups get the usual limit (`GROUP_CAPACITY`, 15).
 - Problems: `DUPLICATE_IN_FILE` (first row kept), `BAD_STUDENT_NUMBER`, `BAD_NAME`, `UNKNOWN_PROGRAMME` (those rows are skipped).
 
 | Error | When |
@@ -462,9 +464,13 @@ answer is 409 `VERSION_CONFLICT`, for the app to show as a conflict.
 ### `GET /groups`
 ```json
 { "success": true, "groups": [
-  { "groupCode": "G01", "capacity": 15, "activeCount": 14, "full": false },
-  { "groupCode": "G02", "capacity": 15, "activeCount": 2, "full": false } ] }
+  { "groupCode": "G01", "capacity": 15, "limit": 15, "activeCount": 14, "full": false },
+  { "groupCode": "G04", "capacity": 16, "limit": 15, "activeCount": 16, "full": true } ] }
 ```
+
+`limit` is the seat limit (15). `capacity` is what to show after the slash: the
+limit, or the member count when a class list put more in the group ("16/16",
+never "15/18"). `full` is `activeCount >= limit`.
 
 ### `GET /groups/mine` (student)
 ```json
@@ -582,7 +588,7 @@ stays `PENDING` and the student is unchanged: 409 `GROUP_FULL`, 409
 | `NOT_FOUND` | 404 | No such endpoint |
 | `DUPLICATE_STUDENT_NUMBER` | 409 | Number already in use (including by a deleted student) |
 | `DUPLICATE_NRC` | 409 | NRC already in use (including by a deleted student) |
-| `GROUP_FULL` | 409 | The group already has as many active students as its capacity (15 unless raised) |
+| `GROUP_FULL` | 409 | The group already has 15 active students (or more, from a class list) |
 | `UNREADABLE_FILE` / `NO_STUDENTS_FOUND` / `TOO_MANY_ROWS` | 422 | Class list import: see `POST /students/import` |
 | `TRY_AGAIN` | 409 | Two groups were added at the same moment; add again |
 | `VERSION_CONFLICT` | 409 | The record changed since you last read it |

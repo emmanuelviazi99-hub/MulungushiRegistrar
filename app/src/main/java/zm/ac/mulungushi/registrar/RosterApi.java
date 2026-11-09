@@ -602,7 +602,8 @@ public final class RosterApi {
             JSONObject g = groups.getJSONObject(i);
             t.codes.add(g.getString("groupCode"));
             t.counts.put(g.getString("groupCode"), g.optInt("activeCount", 0));
-            t.capacities.put(g.getString("groupCode"), g.optInt("capacity", StudentRepository.CAPACITY));
+            // the seat limit (15); "capacity" is only what to show, an older server sends just that
+            t.capacities.put(g.getString("groupCode"), g.optInt("limit", g.optInt("capacity", StudentRepository.CAPACITY)));
         }
         return t;
     }

@@ -138,10 +138,16 @@ async function assignStudentToGroup(options) {
   return withTransaction((conn) => moveStudent(conn, options));
 }
 
-/** Active-member counts per group, for the lecturer dashboard. */
+/**
+ * Active-member counts per group, for the lecturer dashboard. capacity is the
+ * group's limit (15), or its member count when a class list put more in it than
+ * that: "16/16", full, never "15/18". The seat check (lockAndCheckSeat) uses the
+ * stored limit, so such a group takes nobody new until it is below 15.
+ */
 async function getGroupTotals() {
   const [rows] = await pool.query(
-    `SELECT g.group_code, g.capacity, COUNT(s.student_id) AS activeCount
+    `SELECT g.group_code, g.capacity AS \`limit\`, GREATEST(g.capacity, COUNT(s.student_id)) AS capacity,
+            COUNT(s.student_id) AS activeCount
      FROM lab_groups g
      LEFT JOIN students s ON s.group_id = g.group_id AND s.active = 1
      WHERE g.active = 1
@@ -169,7 +175,8 @@ async function membersOfStudentsGroup(studentId) {
     'SELECT full_name, student_number FROM students WHERE group_id = ? AND active = 1 ORDER BY full_name',
     [me.group_id]
   );
-  return { groupCode: me.group_code, capacity: me.capacity, members };
+  // a group from the class list can have more than its limit (16 of 15): shown as 16 of 16, full
+  return { groupCode: me.group_code, capacity: Math.max(me.capacity, members.length), members };
 }
 
 module.exports = { membersOfStudentsGroup, assignStudentToGroup, moveStudent, reserveSeat, getGroupTotals, resolveGroupId };

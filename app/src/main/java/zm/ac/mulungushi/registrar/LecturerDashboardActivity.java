@@ -158,6 +158,8 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
             occupancy.addView(occupancyRow(g, repo.groupCount(g)));
         }
         View shareRow = getLayoutInflater().inflate(R.layout.row_share_summary, occupancy, false);
+        shareRow.findViewById(R.id.buttonViewGroups).setOnClickListener(v -> startActivity(LecturerGroupsActivity.open(this, null)));
+        Accessibility.explain(shareRow.findViewById(R.id.buttonViewGroups), R.string.why_view_groups);
         shareRow.findViewById(R.id.buttonShareSummary).setOnClickListener(v -> shareSummary());
         Accessibility.explain(shareRow.findViewById(R.id.buttonShareSummary), R.string.why_share_summary);
         occupancy.addView(shareRow);
@@ -192,7 +194,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         try {
             startActivityForResult(pick, PICK_CLASS_LIST);
         } catch (android.content.ActivityNotFoundException e) {
-            Feedback.show(this, R.string.import_no_picker);
+            Feedback.problem(this, R.string.import_no_picker);
         }
     }
 
@@ -235,7 +237,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
                 reading = false;
                 if (isFinishing() || isDestroyed()) return;
                 if (read == null || read.length == 0) {
-                    Feedback.show(this, why != 0 ? why : R.string.import_file_unreadable);
+                    Feedback.problem(this, why != 0 ? why : R.string.import_file_unreadable);
                     renderClassList();
                     return;
                 }
@@ -279,7 +281,7 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
                     startActivityForResult(create, SAVE_GROUP_LISTS);
                 } catch (android.content.ActivityNotFoundException e) {
                     classList.takeDownloaded();
-                    Feedback.show(this, R.string.import_no_picker);
+                    Feedback.problem(this, R.string.import_no_picker);
                 }
                 break;
             case GROUP_ADDED:
@@ -322,8 +324,8 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
             final boolean saved = ok;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
-                Feedback.show(this, saved ? getString(R.string.download_saved_fmt, file.fileName)
-                        : getString(R.string.download_failed));
+                if (saved) Feedback.show(this, getString(R.string.download_saved_fmt, file.fileName));
+                else Feedback.problem(this, R.string.download_failed);
             });
         });
     }
@@ -407,6 +409,16 @@ public class LecturerDashboardActivity extends AppCompatActivity implements Edit
         countView.setLayoutParams(new LinearLayout.LayoutParams(dp(48), LinearLayout.LayoutParams.WRAP_CONTENT));
         countView.setGravity(Gravity.END);
         row.addView(countView);
+
+        // a tap opens that group's members (Groups screen)
+        row.setMinimumHeight(dp(44));
+        android.util.TypedValue ripple = new android.util.TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, ripple, true);
+        row.setBackgroundResource(ripple.resourceId);
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(v -> startActivity(LecturerGroupsActivity.open(this, group)));
+        Accessibility.explainRow(row, getString(R.string.why_open_group_row));
 
         // TalkBack reads the whole row as one sentence, not "G01", then "14 slash 15"
         row.setContentDescription(getString(R.string.group_summary_line, group, count, capacity));

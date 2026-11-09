@@ -22,8 +22,9 @@
 // The list is taken AS IT IS: nobody is moved, nothing is fixed by guessing.
 //   - A student number listed twice: the first row counts, the others are
 //     reported (the lecturer fixes them in the app later).
-//   - A group bigger than the usual 15 keeps everyone: its capacity is raised
-//     to fit, and reported.
+//   - A group bigger than the usual 15 keeps everyone and is reported. Its
+//     capacity stays 15: it shows as full (16/16) and takes nobody new; as
+//     members leave it comes down to 15/15 like any other group.
 //   - A student number already on the roster is left alone (re-importing the
 //     same sheet adds nothing), so the lecturer's changes in the app are kept.
 //   - A programme that can't be recognised, a bad student number or name:
@@ -271,9 +272,10 @@ async function buildPlan(conn, parsed, { lock = false } = {}) {
       const adding = toAdd.filter((s) => s.groupCode === code).length;
       const g = byCode.get(code);
       const now = g ? Number(g.members) : 0;
-      const capacityBefore = g ? Number(g.capacity) : DEFAULT_CAPACITY;
+      const limit = g ? Number(g.capacity) : DEFAULT_CAPACITY;
       const willHave = now + adding;
-      const capacity = Math.min(255, Math.max(capacityBefore, willHave));
+      // shown like the dashboard shows it: a group over its limit reads "16 of 16" (full)
+      const capacity = Math.max(limit, willHave);
       groups.push({
         groupCode: code,
         exists: !!g,
@@ -281,8 +283,7 @@ async function buildPlan(conn, parsed, { lock = false } = {}) {
         adding,
         willHave,
         capacity,
-        capacityRaisedFrom: capacity > capacityBefore && g ? capacityBefore : null,
-        overUsualSize: willHave > DEFAULT_CAPACITY,
+        overUsualSize: willHave > limit,
         reopened: !!g && !g.active,
       });
     }
@@ -337,12 +338,13 @@ async function importClassList({ buffer, fileName, apply = false }) {
   }
   return withTransaction(async (conn) => {
     const plan = await buildPlan(conn, parsed, { lock: true });
-    // groups first: create new ones, reopen, and grow the ones that must keep their whole list
+    // groups first: create new ones (the usual size) and reopen closed ones. A group whose
+    // list is longer keeps everyone, but its limit is not raised (see the top of this file).
     for (const g of plan.groups) {
       if (!g.exists) {
-        await conn.query('INSERT INTO lab_groups (group_code, capacity, active) VALUES (?, ?, 1)', [g.groupCode, g.capacity]);
-      } else {
-        await conn.query('UPDATE lab_groups SET capacity = GREATEST(capacity, ?), active = 1 WHERE group_code = ?', [g.capacity, g.groupCode]);
+        await conn.query('INSERT INTO lab_groups (group_code, capacity, active) VALUES (?, ?, 1)', [g.groupCode, DEFAULT_CAPACITY]);
+      } else if (g.reopened) {
+        await conn.query('UPDATE lab_groups SET active = 1 WHERE group_code = ?', [g.groupCode]);
       }
     }
     if (plan.toAdd.length) {
@@ -397,7 +399,7 @@ async function exportClassList() {
       ORDER BY (g.group_code IS NULL), g.group_code, s.full_name`
   );
   const [groups] = await pool.query(
-    `SELECT g.group_code, g.capacity, COUNT(s.student_id) AS members
+    `SELECT g.group_code, GREATEST(g.capacity, COUNT(s.student_id)) AS capacity, COUNT(s.student_id) AS members
        FROM lab_groups g
        LEFT JOIN students s ON s.group_id = g.group_id AND s.active = 1
       WHERE g.active = 1
